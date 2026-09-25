@@ -272,13 +272,13 @@ private:
         }
         .p3-dot { width: 8px; height: 8px; border-radius: 50%; background: #a855f7; }
         .domino-controls-bar {
-            display: none; width: 100%; justify-content: center; gap: 8px; margin-bottom: 6px;
+            display: none; width: 100%; justify-content: center; gap: 8px; margin-top: 8px; margin-bottom: 4px;
         }
         .domino-end-choice {
-            display: none; width: 100%; justify-content: center; gap: 8px; margin-bottom: 6px;
+            display: none; width: 100%; justify-content: center; gap: 8px; margin-top: 8px; margin-bottom: 4px;
         }
         .domino-btn {
-            flex: 1; padding: 8px 12px; font-weight: 700; font-size: 0.82rem; border-radius: var(--radius-sm); cursor: pointer;
+            flex: 1; min-height: 40px; padding: 9px 14px; font-weight: 700; font-size: 0.88rem; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s ease;
         }
     </style>
 </head>
@@ -528,16 +528,6 @@ private:
                 <button id="btn-deploy-fleet" class="btn-solid" style="width:100%; padding:10px;">Deploy Fleet (Auto-Arrange)</button>
             </div>
 
-            <!-- Domino Controls -->
-            <div id="domino-controls" class="domino-controls-bar">
-                <button id="btn-domino-draw" class="btn-solid domino-btn">Draw Tile (<span id="boneyard-count">14</span>)</button>
-                <button id="btn-domino-pass" class="btn-secondary domino-btn">Pass Turn</button>
-            </div>
-            <div id="domino-end-choice" class="domino-end-choice">
-                <button id="btn-place-left" class="btn-solid domino-btn" style="background:#0284c7;">Place Left End</button>
-                <button id="btn-place-right" class="btn-solid domino-btn" style="background:#0284c7;">Place Right End</button>
-            </div>
-
             <div id="canvas-wrap">
                 <canvas id="game-canvas" width="400" height="400"></canvas>
                 <!-- Game Over Modal Overlay -->
@@ -550,6 +540,16 @@ private:
                         <button id="btn-modal-lobby" class="btn-secondary">Lobby</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Domino Controls (Positioned directly below canvas near player's hand) -->
+            <div id="domino-controls" class="domino-controls-bar">
+                <button id="btn-domino-draw" class="btn-solid domino-btn">Draw Tile (<span id="boneyard-count">14</span>)</button>
+                <button id="btn-domino-pass" class="btn-secondary domino-btn">Pass Turn</button>
+            </div>
+            <div id="domino-end-choice" class="domino-end-choice">
+                <button id="btn-place-left" class="btn-solid domino-btn" style="background:#0284c7;">Place Left End</button>
+                <button id="btn-place-right" class="btn-solid domino-btn" style="background:#0284c7;">Place Right End</button>
             </div>
 
             <div class="dpad-container" id="touch-controls">
@@ -802,15 +802,15 @@ private:
         function switchView(name) {
             [viewLobby, viewWaiting, viewGame].forEach(v => v.classList.remove('active'));
             if (modalGameOver) modalGameOver.classList.remove('active');
-            if (battleshipControls) battleshipControls.style.display = 'none';
-            if (dominoControls) dominoControls.style.display = 'none';
-            if (dominoEndChoice) dominoEndChoice.style.display = 'none';
             if (name === 'lobby') {
                 resetClientGameState();
                 viewLobby.classList.add('active');
+            } else if (name === 'waiting') {
+                viewWaiting.classList.add('active');
+            } else if (name === 'game') {
+                viewGame.classList.add('active');
+                setupGameView(activeGameType);
             }
-            if (name === 'waiting') viewWaiting.classList.add('active');
-            if (name === 'game') viewGame.classList.add('active');
         }
 
         // --- WebSocket Networking ---
@@ -947,19 +947,17 @@ private:
         }
 
         function setupGameView(gType) {
-            touchControls.style.display = 'none';
-            battleshipControls.style.display = 'none';
-            dominoControls.style.display = 'none';
-            dominoEndChoice.style.display = 'none';
+            if (touchControls) touchControls.style.display = 'none';
+            if (battleshipControls) battleshipControls.style.display = 'none';
+            if (dominoControls) dominoControls.style.display = 'none';
+            if (dominoEndChoice) dominoEndChoice.style.display = 'none';
 
-            if (gType === 'snake_solo' || gType === 'snake_duel' || gType === 'tron_duel') {
-                touchControls.style.display = 'grid';
-            } else if (gType === 'pong_duel') {
-                touchControls.style.display = 'grid';
+            if (gType === 'snake_solo' || gType === 'snake_duel' || gType === 'tron_duel' || gType === 'pong_duel') {
+                if (touchControls) touchControls.style.display = 'grid';
             } else if (gType === 'battleship_pvp') {
-                battleshipControls.style.display = 'flex';
-            } else if (gType === 'domino_solo' || gType === 'domino_pvp') {
-                dominoControls.style.display = 'flex';
+                if (battleshipControls) battleshipControls.style.display = 'flex';
+            } else if (gType && (gType === 'domino_solo' || gType === 'domino_pvp' || gType === 'domino')) {
+                if (dominoControls) dominoControls.style.display = 'flex';
             }
         }
 
@@ -1315,6 +1313,9 @@ private:
             } else if (state.game === 'battleship') {
                 renderBattleshipGame(state);
             } else if (state.game === 'domino') {
+                if (dominoControls && !state.finished) {
+                    dominoControls.style.display = (selectedDominoIdx >= 0) ? 'none' : 'flex';
+                }
                 renderDominoGame(state);
             }
             ctx.restore();
@@ -1870,23 +1871,30 @@ private:
             );
 
             if (state.finished) {
+                if (dominoControls) dominoControls.style.display = 'none';
+                if (dominoEndChoice) dominoEndChoice.style.display = 'none';
                 hudStatus.textContent = "Game Over";
                 showModal(state);
-            } else if (isMyTurn) {
-                if (hasPlayableTile) {
-                    hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : "Your Turn";
-                } else {
-                    if ((state.boneyard_count || 0) > 0) {
-                        hudStatus.textContent = "No valid move! Draw or Pass";
-                    } else {
-                        hudStatus.textContent = "Blocked! Passing turn...";
-                    }
-                }
             } else {
-                if (activeGameType === 'domino_solo') {
-                    hudStatus.textContent = "Bot Thinking...";
+                if (dominoControls) dominoControls.style.display = (selectedDominoIdx >= 0) ? 'none' : 'flex';
+                if (dominoEndChoice) dominoEndChoice.style.display = (selectedDominoIdx >= 0) ? 'flex' : 'none';
+
+                if (isMyTurn) {
+                    if (hasPlayableTile) {
+                        hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : "Your Turn";
+                    } else {
+                        if ((state.boneyard_count || 0) > 0) {
+                            hudStatus.textContent = "No valid move! Draw or Pass";
+                        } else {
+                            hudStatus.textContent = "Blocked! Passing turn...";
+                        }
+                    }
                 } else {
-                    hudStatus.textContent = `P${state.turn}'s Turn`;
+                    if (activeGameType === 'domino_solo') {
+                        hudStatus.textContent = "Bot Thinking...";
+                    } else {
+                        hudStatus.textContent = `P${state.turn}'s Turn`;
+                    }
                 }
             }
 
