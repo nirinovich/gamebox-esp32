@@ -158,8 +158,8 @@ bool DominoGame::drawTile(int pidx) {
 }
 
 void DominoGame::passTurn(int pidx) {
-    // Only allowed to pass if cannot play and boneyard is empty
-    if (!m_boneyard.empty() || canPlayerPlay(pidx)) return;
+    // Only allowed to pass if player cannot play any tile in hand
+    if (canPlayerPlay(pidx)) return;
 
     m_consecutivePasses++;
     if (m_consecutivePasses >= m_numPlayers) {

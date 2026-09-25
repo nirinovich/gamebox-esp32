@@ -147,6 +147,15 @@ int main() {
         std::string sSolo = dominoSolo.serializeState();
         assert(sSolo.find("\"game\":\"domino\"") != std::string::npos);
         std::cout << "    Domino Solo AI bot play verified." << std::endl;
+
+        // Pass validation test: player cannot pass if they hold playable tiles
+        gamehub::core::DominoGame dominoPass(false, 2);
+        dominoPass.init();
+        assert(dominoPass.canPlayerPlay(0)); // Opening move is always playable
+        dominoPass.handleInput(1, "{\"cmd\":\"pass\"}");
+        std::string sPassReject = dominoPass.serializeState();
+        assert(sPassReject.find("\"turn\":1") != std::string::npos); // Rejected: turn must remain 1
+        std::cout << "    Domino pass rules verified (cannot pass when playable moves exist)." << std::endl;
     }
 
     std::cout << "[SUCCESS] All new game tests passed!" << std::endl;

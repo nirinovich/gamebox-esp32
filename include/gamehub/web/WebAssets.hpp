@@ -788,6 +788,10 @@ private:
             particles = [];
             shakeFrames = 0;
             selectedDominoIdx = -1;
+            if (window._dominoAutoPassTimer) {
+                clearTimeout(window._dominoAutoPassTimer);
+                window._dominoAutoPassTimer = null;
+            }
             if (modalGameOver) modalGameOver.classList.remove('active');
             if (dominoControls) dominoControls.style.display = 'none';
             if (dominoEndChoice) dominoEndChoice.style.display = 'none';
@@ -1858,14 +1862,25 @@ private:
                 hudP3Wrap.style.display = 'none';
             }
 
+            const isMyTurn = (state.turn === myPlayerNum && !state.finished);
+            const hasPlayableTile = myHand.some(t =>
+                (state.left_end === -1) ||
+                (t[0] === state.left_end || t[1] === state.left_end ||
+                 t[0] === state.right_end || t[1] === state.right_end)
+            );
+
             if (state.finished) {
                 hudStatus.textContent = "Game Over";
                 showModal(state);
-            } else if (state.turn === myPlayerNum) {
-                if (selectedDominoIdx >= 0) {
-                    hudStatus.textContent = "Select End (Left / Right)";
+            } else if (isMyTurn) {
+                if (hasPlayableTile) {
+                    hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : "Your Turn";
                 } else {
-                    hudStatus.textContent = "Your Turn";
+                    if ((state.boneyard_count || 0) > 0) {
+                        hudStatus.textContent = "No valid move! Draw or Pass";
+                    } else {
+                        hudStatus.textContent = "Blocked! Passing turn...";
+                    }
                 }
             } else {
                 if (activeGameType === 'domino_solo') {
@@ -1880,9 +1895,42 @@ private:
             }
 
             if (btnDominoDraw) {
-                const canDraw = (state.turn === myPlayerNum && !state.finished && (state.boneyard_count || 0) > 0);
+                const canDraw = isMyTurn && ((state.boneyard_count || 0) > 0);
                 btnDominoDraw.disabled = !canDraw;
-                btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.5';
+                btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.4';
+            }
+
+            if (btnDominoPass) {
+                const canPass = isMyTurn && !hasPlayableTile;
+                btnDominoPass.disabled = !canPass;
+                btnDominoPass.style.opacity = canPass ? '1.0' : '0.4';
+                if (canPass) {
+                    btnDominoPass.style.background = '#0284c7';
+                    btnDominoPass.style.color = '#ffffff';
+                    btnDominoPass.style.fontWeight = '700';
+                } else {
+                    btnDominoPass.style.background = '';
+                    btnDominoPass.style.color = '';
+                    btnDominoPass.style.fontWeight = '';
+                }
+            }
+
+            // Auto-pass if completely blocked with empty boneyard
+            if (isMyTurn && !hasPlayableTile && (state.boneyard_count || 0) === 0) {
+                if (!window._dominoAutoPassTimer) {
+                    window._dominoAutoPassTimer = setTimeout(() => {
+                        window._dominoAutoPassTimer = null;
+                        if (ws && ws.readyState === WebSocket.OPEN && lastState && lastState.turn === myPlayerNum && !lastState.finished) {
+                            sound.move();
+                            ws.send(JSON.stringify({ cmd: 'pass' }));
+                        }
+                    }, 800);
+                }
+            } else {
+                if (window._dominoAutoPassTimer) {
+                    clearTimeout(window._dominoAutoPassTimer);
+                    window._dominoAutoPassTimer = null;
+                }
             }
         }
 

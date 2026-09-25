@@ -33,9 +33,10 @@ public:
     int getNumPlayers() const { return m_numPlayers; }
     int getLeftEnd() const;
     int getRightEnd() const;
+    bool canPlayerPlay(int pidx) const;
+    size_t getBoneyardCount() const { return m_boneyard.size(); }
 
 private:
-    bool canPlayerPlay(int pidx) const;
     bool playTile(int pidx, int tileIdx, const std::string& end);
     bool drawTile(int pidx);
     void passTurn(int pidx);
