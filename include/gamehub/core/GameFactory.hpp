@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <memory>
 #include "GameTypes.hpp"
@@ -9,6 +9,7 @@
 #include "PongGame.hpp"
 #include "TronGame.hpp"
 #include "BattleshipGame.hpp"
+#include "DominoGame.hpp"
 
 namespace gamehub {
 namespace core {
@@ -26,6 +27,8 @@ public:
             case GameType::PONG_DUEL:          return std::make_unique<PongGame>();
             case GameType::TRON_DUEL:          return std::make_unique<TronGame>();
             case GameType::BATTLESHIP_PVP:     return std::make_unique<BattleshipGame>();
+            case GameType::DOMINO_SOLO:        return std::make_unique<DominoGame>(true, 2);
+            case GameType::DOMINO_PVP:         return std::make_unique<DominoGame>(false, 3);
             default:                           return std::make_unique<SnakeGame>(false);
         }
     }

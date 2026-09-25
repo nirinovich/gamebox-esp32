@@ -7,10 +7,12 @@
 #include <gamehub/web/WebAssets.hpp>
 #include <gamehub/core/Session.hpp>
 #include <gamehub/core/RoomManager.hpp>
+#include <gamehub/core/DominoGame.hpp>
 #include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <sstream>
+#include <vector>
 
 static const char* AP_SSID = "Gamebox";
 static const byte DNS_PORT = 53;
@@ -22,7 +24,7 @@ AsyncWebSocket ws("/ws");
 gamehub::core::RoomManager roomManager(4);
 std::unordered_map<uint32_t, std::unique_ptr<gamehub::core::Session>> sessions;
 std::unordered_map<uint32_t, uint32_t> sessionPlayerMap;
-std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> roomPlayers;
+std::unordered_map<std::string, std::vector<uint32_t>> roomPlayers;
 std::mutex engineMutex;
 
 TaskHandle_t gameTaskHandle = NULL;
@@ -41,8 +43,9 @@ static std::string extractJsonString(const std::string& json, const std::string&
 void broadcastToRoom(const std::string& code, const std::string& message) {
     auto it = roomPlayers.find(code);
     if (it != roomPlayers.end()) {
-        if (it->second.first != 0) ws.text(it->second.first, message.c_str());
-        if (it->second.second != 0) ws.text(it->second.second, message.c_str());
+        for (uint32_t sidPlayer : it->second) {
+            if (sidPlayer != 0) ws.text(sidPlayer, message.c_str());
+        }
     }
 }
 
@@ -52,9 +55,10 @@ static void detachPlayerFromRoom(uint32_t sid) {
         std::string code = room->getCode();
         auto it = roomPlayers.find(code);
         if (it != roomPlayers.end()) {
-            uint32_t other = (it->second.first == sid) ? it->second.second : it->second.first;
-            if (other != 0) {
-                ws.text(other, "{\"type\":\"opponent_left\"}");
+            for (uint32_t other : it->second) {
+                if (other != 0 && other != sid) {
+                    ws.text(other, "{\"type\":\"opponent_left\"}");
+                }
             }
             roomPlayers.erase(it);
         }
@@ -92,6 +96,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 detachPlayerFromRoom(sid);
 
                 gamehub::core::GameType gtype = gamehub::core::GameType::TICTACTOE_PVP;
+                size_t maxPlayers = 2;
                 if (msg.find("\"snake_duel\"") != std::string::npos) {
                     gtype = gamehub::core::GameType::SNAKE_DUEL;
                 } else if (msg.find("\"connect4_pvp\"") != std::string::npos) {
@@ -102,19 +107,22 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                     gtype = gamehub::core::GameType::TRON_DUEL;
                 } else if (msg.find("\"battleship_pvp\"") != std::string::npos) {
                     gtype = gamehub::core::GameType::BATTLESHIP_PVP;
+                } else if (msg.find("\"domino_pvp\"") != std::string::npos) {
+                    gtype = gamehub::core::GameType::DOMINO_PVP;
+                    maxPlayers = (msg.find("\"players\":2") != std::string::npos || msg.find("\"max\":2") != std::string::npos) ? 2 : 3;
                 }
 
                 std::string hostName = extractJsonString(msg, "host");
                 if (hostName.empty()) hostName = "Player 1";
 
-                gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sid, hostName);
+                gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sid, hostName, maxPlayers);
                 if (!newRoom) {
                     client->text("{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}");
                     return;
                 }
 
                 sessionPlayerMap[sid] = 1;
-                roomPlayers[newRoom->getCode()] = {sid, 0};
+                roomPlayers[newRoom->getCode()] = {sid};
 
                 // Broadcast directory to all clients
                 ws.textAll(roomManager.serializeDirectory().c_str());
@@ -138,20 +146,51 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                     return;
                 }
 
-                sessionPlayerMap[sid] = 2;
-                roomPlayers[code].second = sid;
+                uint32_t pNum = static_cast<uint32_t>(room->getPlayerCount());
+                sessionPlayerMap[sid] = pNum;
+                roomPlayers[code].push_back(sid);
 
                 // Broadcast directory update
                 ws.textAll(roomManager.serializeDirectory().c_str());
 
                 std::ostringstream oss;
-                oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2,\"host\":\"" << room->getHostName() << "\"}";
+                oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":" << pNum << ",\"host\":\"" << room->getHostName() << "\"}";
                 client->text(oss.str().c_str());
 
-                std::string state = room->serializeState();
-                uint32_t hostSession = roomPlayers[code].first;
-                ws.text(hostSession, "{\"type\":\"room_ready\"}");
-                broadcastToRoom(code, state);
+                if (room->getPlayerCount() >= room->getMaxPlayers()) {
+                    auto* dg = dynamic_cast<gamehub::core::DominoGame*>(room->getGame());
+                    if (dg) {
+                        dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                    }
+                    std::string state = room->serializeState();
+                    for (uint32_t sidPlayer : roomPlayers[code]) {
+                        ws.text(sidPlayer, "{\"type\":\"room_ready\"}");
+                    }
+                    broadcastToRoom(code, state);
+                } else {
+                    std::ostringstream ossCount;
+                    ossCount << "{\"type\":\"room_waiting_update\",\"count\":" << room->getPlayerCount() << ",\"max\":" << room->getMaxPlayers() << "}";
+                    for (uint32_t sidPlayer : roomPlayers[code]) {
+                        ws.text(sidPlayer, ossCount.str().c_str());
+                    }
+                }
+                return;
+            }
+
+            // 2b. Start Room Early (Host starts 3P game with 2 players)
+            if (msg.find("\"cmd\":\"start_room\"") != std::string::npos) {
+                gamehub::core::Room* room = roomManager.findRoomByPlayer(sid);
+                if (room && room->getPlayerCount() >= 2 && !room->isFinished()) {
+                    auto* dg = dynamic_cast<gamehub::core::DominoGame*>(room->getGame());
+                    if (dg) {
+                        dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                    }
+                    std::string state = room->serializeState();
+                    for (uint32_t sidPlayer : roomPlayers[room->getCode()]) {
+                        ws.text(sidPlayer, "{\"type\":\"room_ready\"}");
+                    }
+                    broadcastToRoom(room->getCode(), state);
+                }
                 return;
             }
 
@@ -207,7 +246,7 @@ void GameEngineTask(void* parameter) {
 
         std::lock_guard<std::mutex> lock(engineMutex);
         for (auto& pair : roomPlayers) {
-            if (pair.second.first != 0 && pair.second.second != 0) {
+            if (pair.second.size() >= 2) {
                 gamehub::core::Room* r = roomManager.findRoomByCode(pair.first);
                 if (r && !r->isFinished()) {
                     auto gt = r->getGameType();

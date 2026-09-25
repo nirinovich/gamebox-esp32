@@ -17,6 +17,7 @@ add_library(gamehub_core STATIC
     src/core/PongGame.cpp
     src/core/TronGame.cpp
     src/core/BattleshipGame.cpp
+    src/core/DominoGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include)
 

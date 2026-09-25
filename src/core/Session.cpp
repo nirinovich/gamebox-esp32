@@ -46,6 +46,10 @@ std::string Session::handleMessage(const std::string& rawMessage) {
             m_room = std::make_unique<Room>("SOLO_C4", GameType::CONNECT_FOUR_SOLO);
             m_room->init();
             return m_room->serializeState();
+        } else if (rawMessage.find("\"domino_solo\"") != std::string::npos) {
+            m_room = std::make_unique<Room>("SOLO_DOMINO", GameType::DOMINO_SOLO);
+            m_room->init();
+            return m_room->serializeState();
         }
     }
 
@@ -55,8 +59,11 @@ std::string Session::handleMessage(const std::string& rawMessage) {
         return m_room->serializeState();
     }
 
-    // 4. Handle Move Placement (TTT / Battleship)
-    if (rawMessage.find("\"place\"") != std::string::npos && m_room) {
+    // 4. Handle Move Placement (TTT / Battleship / Domino)
+    if ((rawMessage.find("\"place\"") != std::string::npos ||
+         rawMessage.find("\"play\"") != std::string::npos ||
+         rawMessage.find("\"draw\"") != std::string::npos ||
+         rawMessage.find("\"pass\"") != std::string::npos) && m_room) {
         m_room->handleInput(1, rawMessage);
         return m_room->serializeState();
     }

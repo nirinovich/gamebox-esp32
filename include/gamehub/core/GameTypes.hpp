@@ -17,7 +17,9 @@ enum class GameType {
     CONNECT_FOUR_PVP,
     PONG_DUEL,
     TRON_DUEL,
-    BATTLESHIP_PVP
+    BATTLESHIP_PVP,
+    DOMINO_SOLO,
+    DOMINO_PVP
 };
 
 struct Point {

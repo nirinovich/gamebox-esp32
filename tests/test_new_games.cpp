@@ -1,9 +1,10 @@
-﻿#include <iostream>
+#include <iostream>
 #include <cassert>
 #include <gamehub/core/ConnectFourGame.hpp>
 #include <gamehub/core/PongGame.hpp>
 #include <gamehub/core/TronGame.hpp>
 #include <gamehub/core/BattleshipGame.hpp>
+#include <gamehub/core/DominoGame.hpp>
 
 int main() {
     std::cout << "[TEST] Running New Games test suite..." << std::endl;
@@ -97,6 +98,55 @@ int main() {
         std::string battleState = bship.serializeState();
         assert(battleState.find("\"turn\":2") != std::string::npos);
         std::cout << "    Battleship fleet deployment and battle firing verified." << std::endl;
+    }
+
+    // --- 5. Domino Tests ---
+    {
+        std::cout << "  - Testing DominoGame..." << std::endl;
+        gamehub::core::DominoGame domino2(false, 2); // 2P PvP
+        domino2.init();
+        assert(!domino2.isFinished());
+        assert(domino2.getLeftEnd() == -1);
+        assert(domino2.getRightEnd() == -1);
+
+        std::string s2 = domino2.serializeState();
+        assert(s2.find("\"game\":\"domino\"") != std::string::npos);
+        assert(s2.find("\"p1_count\":7") != std::string::npos);
+        assert(s2.find("\"p2_count\":7") != std::string::npos);
+        assert(s2.find("\"boneyard_count\":14") != std::string::npos);
+
+        // Player 1 plays tile 0 on empty board
+        domino2.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        assert(domino2.getLeftEnd() >= 0 && domino2.getRightEnd() >= 0);
+        std::string s2_played = domino2.serializeState();
+        assert(s2_played.find("\"p1_count\":6") != std::string::npos);
+        assert(s2_played.find("\"turn\":2") != std::string::npos);
+        std::cout << "    Domino 2P dealing, empty board placement, and turn shift verified." << std::endl;
+
+        // 3-Player game test
+        gamehub::core::DominoGame domino3(false, 3);
+        domino3.init();
+        std::string s3 = domino3.serializeState();
+        assert(s3.find("\"num_players\":3") != std::string::npos);
+        assert(s3.find("\"p1_count\":7") != std::string::npos);
+        assert(s3.find("\"p2_count\":7") != std::string::npos);
+        assert(s3.find("\"p3_count\":7") != std::string::npos);
+        assert(s3.find("\"boneyard_count\":7") != std::string::npos); // 28 - 21 = 7
+
+        // Draw tile from boneyard
+        domino3.handleInput(1, "{\"cmd\":\"draw\"}");
+        std::string s3_drawn = domino3.serializeState();
+        assert(s3_drawn.find("\"p1_count\":8") != std::string::npos);
+        assert(s3_drawn.find("\"boneyard_count\":6") != std::string::npos);
+        std::cout << "    Domino 3P dealing and Boneyard drawing verified." << std::endl;
+
+        // Solo Mode with Strategic Minimax Bot
+        gamehub::core::DominoGame dominoSolo(true, 2);
+        dominoSolo.init();
+        dominoSolo.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        std::string sSolo = dominoSolo.serializeState();
+        assert(sSolo.find("\"game\":\"domino\"") != std::string::npos);
+        std::cout << "    Domino Solo AI bot play verified." << std::endl;
     }
 
     std::cout << "[SUCCESS] All new game tests passed!" << std::endl;

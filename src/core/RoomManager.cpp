@@ -26,13 +26,13 @@ std::string RoomManager::generateUniqueCode() {
     return "AAAA";
 }
 
-Room* RoomManager::createRoom(GameType type, PlayerId hostId, const std::string& hostName) {
+Room* RoomManager::createRoom(GameType type, PlayerId hostId, const std::string& hostName, size_t maxPlayers) {
     if (m_rooms.size() >= m_maxRooms) {
         return nullptr;
     }
 
     std::string code = generateUniqueCode();
-    auto room = std::make_unique<Room>(code, type, hostName);
+    auto room = std::make_unique<Room>(code, type, hostName, maxPlayers);
     room->init();
     room->addPlayer(hostId);
 
@@ -63,7 +63,7 @@ std::string RoomManager::serializeDirectory() const {
     oss << "{\"type\":\"room_directory\",\"rooms\":[";
     bool first = true;
     for (const auto& r : m_rooms) {
-        if (r->getPlayerCount() < 2 && !r->isFinished()) {
+        if (r->getPlayerCount() < r->getMaxPlayers() && !r->isFinished()) {
             if (!first) oss << ",";
             first = false;
             std::string gname = "ttt_pvp";
@@ -74,13 +74,14 @@ std::string RoomManager::serializeDirectory() const {
                 case GameType::PONG_DUEL: gname = "pong_duel"; break;
                 case GameType::TRON_DUEL: gname = "tron_duel"; break;
                 case GameType::BATTLESHIP_PVP: gname = "battleship_pvp"; break;
+                case GameType::DOMINO_PVP: gname = "domino_pvp"; break;
                 default: break;
             }
             oss << "{\"code\":\"" << r->getCode() << "\","
                 << "\"game\":\"" << gname << "\","
                 << "\"host\":\"" << r->getHostName() << "\","
                 << "\"players\":" << r->getPlayerCount() << ","
-                << "\"max\":2}";
+                << "\"max\":" << r->getMaxPlayers() << "}";
         }
     }
     oss << "]}";
@@ -91,7 +92,7 @@ Room* RoomManager::joinRoom(const std::string& code, PlayerId playerId) {
     Room* room = findRoomByCode(code);
     if (!room) return nullptr;
 
-    if (room->getPlayerCount() >= 2) {
+    if (room->getPlayerCount() >= room->getMaxPlayers()) {
         return nullptr; // Room full
     }
 

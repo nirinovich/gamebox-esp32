@@ -4,8 +4,10 @@
 namespace gamehub {
 namespace core {
 
-Room::Room(const std::string& code, GameType type, const std::string& hostName)
-    : m_code(code), m_hostName(hostName.empty() ? "Player 1" : hostName), m_type(type), m_game(GameFactory::create(type)) {}
+Room::Room(const std::string& code, GameType type, const std::string& hostName, size_t maxPlayers)
+    : m_code(code), m_hostName(hostName.empty() ? "Player 1" : hostName), m_type(type),
+      m_maxPlayers(type == GameType::DOMINO_PVP ? std::clamp<size_t>(maxPlayers, 2, 3) : 2),
+      m_game(GameFactory::create(type)) {}
 
 void Room::init() {
     if (m_game) {

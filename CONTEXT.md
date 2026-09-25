@@ -59,3 +59,19 @@ _Avoid_: Status, Phase, State
 **AutoDetachment**:
 The Host mechanism that automatically cleans up and unbinds a Session from any prior Room when the Session initiates, joins, or leaves a Game.
 _Avoid_: ForceLeave, ResetConnection
+
+**Leaderboard**:
+The dual-layer record system tracking a Client PersonalBest in local storage and the HostRecord in Host memory.
+_Avoid_: ScoreTable, HighScoreList
+
+**DominoGame**:
+A polymorphic Game model implementing Double-Six Draw Dominoes for 2 to 3 Players with Boneyard drawing and PipSum tie-breaking.
+_Avoid_: Dominos, TileMatch
+
+**Boneyard**:
+The shared face-down reserve pool of unplayed domino tiles drawn by a Player when no legal move can be made.
+_Avoid_: Talon, DrawPile, Deck
+
+**PipSum**:
+The cumulative point value of dot markings on tiles remaining in a Player hand when the Game is blocked.
+_Avoid_: HandValue, TileCount

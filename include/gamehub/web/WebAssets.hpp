@@ -13,7 +13,8 @@ class WebAssets {
 public:
     static std::string getIndexHtml() {
         return std::string(INDEX_HTML_PART1) + INDEX_HTML_PART2 + INDEX_HTML_PART3 + 
-               INDEX_HTML_PART4 + INDEX_HTML_PART5 + INDEX_HTML_PART6;
+               INDEX_HTML_PART4 + INDEX_HTML_PART5 + INDEX_HTML_PART6 + INDEX_HTML_PART7 +
+               INDEX_HTML_PART8;
     }
 
 private:
@@ -269,6 +270,16 @@ private:
             font-weight: 700; font-size: 0.85rem; padding: 9px 16px;
             border-radius: var(--radius-sm); cursor: pointer;
         }
+        .p3-dot { width: 8px; height: 8px; border-radius: 50%; background: #a855f7; }
+        .domino-controls-bar {
+            display: none; width: 100%; justify-content: center; gap: 8px; margin-bottom: 6px;
+        }
+        .domino-end-choice {
+            display: none; width: 100%; justify-content: center; gap: 8px; margin-bottom: 6px;
+        }
+        .domino-btn {
+            flex: 1; padding: 8px 12px; font-weight: 700; font-size: 0.82rem; border-radius: var(--radius-sm); cursor: pointer;
+        }
     </style>
 </head>
 )rawliteral";
@@ -358,6 +369,19 @@ private:
                     </div>
                     <span class="game-tag">vs Bot</span>
                 </div>
+
+                <div class="game-item" id="card-solo-domino">
+                    <div class="game-info">
+                        <div class="game-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="7" r="1.3" fill="currentColor"/><circle cx="15" cy="7" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.3" fill="currentColor"/></svg>
+                        </div>
+                        <div class="game-text">
+                            <span class="game-title">Draw Dominoes</span>
+                            <span class="game-desc">Double-Six vs Strategic AI Bot</span>
+                        </div>
+                    </div>
+                    <span class="game-tag">vs Bot</span>
+                </div>
             </div>
 
             <!-- Multiplayer Games List -->
@@ -439,8 +463,22 @@ private:
                     </div>
                     <span class="game-tag">2 Players</span>
                 </div>
-            </div>
 
+                <div class="game-item" id="card-mp-domino">
+                    <div class="game-info">
+                        <div class="game-icon-box duel">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="7" r="1.3" fill="currentColor"/><circle cx="15" cy="7" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.3" fill="currentColor"/></svg>
+                        </div>
+                        <div class="game-text">
+                            <span class="game-title">2-3P Dominoes</span>
+                            <span class="game-desc">Draw Dominoes arena with up to 3 players</span>
+                        </div>
+                    </div>
+                    <span class="game-tag">2-3 Players</span>
+                </div>
+            </div>
+)rawliteral";
+    static constexpr const char* INDEX_HTML_PART3 = R"rawliteral(
             <div class="section-title">
                 <span>Active Matches</span>
                 <span id="latency-val" style="font-size:0.72rem; color:var(--text-tertiary);">Ping: -- ms</span>
@@ -462,6 +500,7 @@ private:
                 </div>
                 <h2 id="waiting-game-title" style="font-size:1.15rem; font-weight:800;">Waiting for Challenger</h2>
                 <p id="waiting-host-msg" style="color:var(--text-secondary); font-size:0.82rem;">Visible in the match feed. Anyone can join directly.</p>
+                <button id="btn-start-early" class="btn-solid" style="display:none; width:100%; margin-top:4px;">Start Match Now (2P)</button>
                 <button id="btn-cancel-room" class="btn-danger">Cancel Match</button>
             </div>
         </div>
@@ -478,11 +517,25 @@ private:
                     <span id="hud-p2-marker" class="p2-dot"></span>
                     <span id="hud-p2-name">P2</span>: <span id="hud-p2-score">0</span>
                 </div>
+                <div class="hud-player" id="hud-p3-wrap" style="display:none;">
+                    <span class="p3-dot"></span>
+                    <span id="hud-p3-name">P3</span>: <span id="hud-p3-score">0</span>
+                </div>
             </div>
 
             <!-- Battleship Deployment Controls -->
             <div id="battleship-controls" style="display:none; width:100%; justify-content:center; gap:8px;">
                 <button id="btn-deploy-fleet" class="btn-solid" style="width:100%; padding:10px;">Deploy Fleet (Auto-Arrange)</button>
+            </div>
+
+            <!-- Domino Controls -->
+            <div id="domino-controls" class="domino-controls-bar">
+                <button id="btn-domino-draw" class="btn-solid domino-btn">Draw Tile (<span id="boneyard-count">14</span>)</button>
+                <button id="btn-domino-pass" class="btn-secondary domino-btn">Pass Turn</button>
+            </div>
+            <div id="domino-end-choice" class="domino-end-choice">
+                <button id="btn-place-left" class="btn-solid domino-btn" style="background:#0284c7;">Place Left End</button>
+                <button id="btn-place-right" class="btn-solid domino-btn" style="background:#0284c7;">Place Right End</button>
             </div>
 
             <div id="canvas-wrap">
@@ -520,7 +573,7 @@ private:
         </div>
     </div>
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART3 = R"rawliteral(
+    static constexpr const char* INDEX_HTML_PART4 = R"rawliteral(
     <script>
         // --- Web Audio Procedural Chiptune Synthesizer ---
         class SoundEngine {
@@ -599,6 +652,10 @@ private:
                 setTimeout(() => this.playTone(659.25, 'sine', 0.08, 0.12), 60);
                 setTimeout(() => this.playTone(783.99, 'sine', 0.12, 0.12), 120);
             }
+            place() {
+                this.playTone(320, 'triangle', 0.04, 0.12);
+                setTimeout(() => this.playTone(480, 'sine', 0.03, 0.1), 30);
+            }
             defeat() {
                 this.playTone(293.66, 'sawtooth', 0.15, 0.15);
                 setTimeout(() => this.playTone(220.00, 'sawtooth', 0.2, 0.15), 100);
@@ -634,10 +691,19 @@ private:
         const nicknameInput = document.getElementById('player-nickname');
         const roomDirectoryList = document.getElementById('room-directory-list');
         const waitingGameTitle = document.getElementById('waiting-game-title');
+        const waitingHostMsg = document.getElementById('waiting-host-msg');
         const btnCancelRoom = document.getElementById('btn-cancel-room');
         const btnForfeit = document.getElementById('btn-forfeit');
         const battleshipControls = document.getElementById('battleship-controls');
         const btnDeployFleet = document.getElementById('btn-deploy-fleet');
+        const dominoControls = document.getElementById('domino-controls');
+        const dominoEndChoice = document.getElementById('domino-end-choice');
+        const btnDominoDraw = document.getElementById('btn-domino-draw');
+        const btnDominoPass = document.getElementById('btn-domino-pass');
+        const btnPlaceLeft = document.getElementById('btn-place-left');
+        const btnPlaceRight = document.getElementById('btn-place-right');
+        const boneyardCountSpan = document.getElementById('boneyard-count');
+        const btnStartEarly = document.getElementById('btn-start-early');
 
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
@@ -654,6 +720,9 @@ private:
         const hudP2Name = document.getElementById('hud-p2-name');
         const hudP2Score = document.getElementById('hud-p2-score');
         const hudP2Marker = document.getElementById('hud-p2-marker');
+        const hudP3Wrap = document.getElementById('hud-p3-wrap');
+        const hudP3Name = document.getElementById('hud-p3-name');
+        const hudP3Score = document.getElementById('hud-p3-score');
         const hudStatus = document.getElementById('hud-status');
 
         let ws = null;
@@ -667,6 +736,7 @@ private:
         let lastState = null;
         let particles = [];
         let shakeFrames = 0;
+        let selectedDominoIdx = -1;
 
         // Restore Nickname
         const defaultNames = ["Ace", "Pilot", "Striker", "Cyber", "Viper", "Echo", "Nova", "Blaze"];
@@ -717,13 +787,20 @@ private:
             prevScore = 0;
             particles = [];
             shakeFrames = 0;
+            selectedDominoIdx = -1;
             if (modalGameOver) modalGameOver.classList.remove('active');
+            if (dominoControls) dominoControls.style.display = 'none';
+            if (dominoEndChoice) dominoEndChoice.style.display = 'none';
+            if (btnStartEarly) btnStartEarly.style.display = 'none';
+            if (hudP3Wrap) hudP3Wrap.style.display = 'none';
         }
 
         function switchView(name) {
             [viewLobby, viewWaiting, viewGame].forEach(v => v.classList.remove('active'));
             if (modalGameOver) modalGameOver.classList.remove('active');
             if (battleshipControls) battleshipControls.style.display = 'none';
+            if (dominoControls) dominoControls.style.display = 'none';
+            if (dominoEndChoice) dominoEndChoice.style.display = 'none';
             if (name === 'lobby') {
                 resetClientGameState();
                 viewLobby.classList.add('active');
@@ -771,7 +848,7 @@ private:
             }, 1000);
         }
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART4 = R"rawliteral(
+    static constexpr const char* INDEX_HTML_PART5 = R"rawliteral(
         function getGameTitle(gameKey) {
             switch(gameKey) {
                 case 'snake_duel': return 'Snake Arena';
@@ -780,6 +857,8 @@ private:
                 case 'pong_duel': return 'Pong Duel';
                 case 'tron_duel': return 'Tron Light Cycles';
                 case 'battleship_pvp': return 'Battleship Fleet';
+                case 'domino_pvp': return '2-3P Dominoes';
+                case 'domino_solo': return 'Draw Dominoes';
                 default: return 'Custom Game';
             }
         }
@@ -796,17 +875,25 @@ private:
                 myPlayerNum = 1;
                 switchView('waiting');
                 waitingGameTitle.textContent = `Hosting ${getGameTitle(activeGameType)}`;
+                waitingHostMsg.textContent = 'Visible in the match feed. Anyone can join directly.';
+                btnStartEarly.style.display = 'none';
             } else if (data.type === 'room_joined') {
                 activeRoomCode = data.code;
                 isHost = false;
-                myPlayerNum = 2;
+                myPlayerNum = data.player || 2;
                 opponentName = data.host || "Host";
                 hudP2Name.textContent = nicknameInput.value;
                 hudP1Name.textContent = opponentName;
                 setupGameView(activeGameType);
                 switchView('game');
                 sound.click();
+            } else if (data.type === 'room_waiting_update') {
+                waitingHostMsg.textContent = `${data.count} / ${data.max} players joined.`;
+                if (isHost && data.count >= 2) {
+                    btnStartEarly.style.display = 'block';
+                }
             } else if (data.type === 'room_ready') {
+                btnStartEarly.style.display = 'none';
                 setupGameView(activeGameType);
                 switchView('game');
                 sound.click();
@@ -833,7 +920,7 @@ private:
                 item.innerHTML = `
                     <div class="room-meta">
                         <span class="room-name">${escapeHtml(r.host)} · ${getGameTitle(r.game)}</span>
-                        <span class="room-sub">Waiting for challenger</span>
+                        <span class="room-sub">${r.players || 1}/${r.max || 2} players · Click to join</span>
                     </div>
                     <button class="btn-solid" data-code="${r.code}">Join Match</button>
                 `;
@@ -858,6 +945,8 @@ private:
         function setupGameView(gType) {
             touchControls.style.display = 'none';
             battleshipControls.style.display = 'none';
+            dominoControls.style.display = 'none';
+            dominoEndChoice.style.display = 'none';
 
             if (gType === 'snake_solo' || gType === 'snake_duel' || gType === 'tron_duel') {
                 touchControls.style.display = 'grid';
@@ -865,6 +954,8 @@ private:
                 touchControls.style.display = 'grid';
             } else if (gType === 'battleship_pvp') {
                 battleshipControls.style.display = 'flex';
+            } else if (gType === 'domino_solo' || gType === 'domino_pvp') {
+                dominoControls.style.display = 'flex';
             }
         }
 
@@ -876,8 +967,10 @@ private:
             activeGameType = 'snake_solo';
             myPlayerNum = 1;
             hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "High";
+            hudP2Name.textContent = "Record";
             hudP2Marker.style.display = 'none';
+            const bestScore = parseInt(localStorage.getItem('gamebox_snake_high') || '0', 10);
+            hudP2Score.textContent = bestScore;
             setupGameView('snake_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'snake_solo' }));
@@ -914,6 +1007,21 @@ private:
             ws.send(JSON.stringify({ cmd: 'start', game: 'connect4_solo' }));
         });
 
+        document.getElementById('card-solo-domino').addEventListener('click', () => {
+            sound.click();
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'leave' }));
+            resetClientGameState();
+            activeGameType = 'domino_solo';
+            myPlayerNum = 1;
+            hudP1Name.textContent = nicknameInput.value;
+            hudP2Name.textContent = "Bot";
+            hudP2Marker.className = 'bot-dot';
+            hudP2Marker.style.display = 'inline-block';
+            setupGameView('domino_solo');
+            switchView('game');
+            ws.send(JSON.stringify({ cmd: 'start', game: 'domino_solo' }));
+        });
+
         // --- Multiplayer Game Triggers ---
         function hostMultiplayer(gameType) {
             sound.click();
@@ -929,6 +1037,48 @@ private:
         document.getElementById('card-mp-pong').addEventListener('click', () => hostMultiplayer('pong_duel'));
         document.getElementById('card-mp-tron').addEventListener('click', () => hostMultiplayer('tron_duel'));
         document.getElementById('card-mp-battleship').addEventListener('click', () => hostMultiplayer('battleship_pvp'));
+        document.getElementById('card-mp-domino').addEventListener('click', () => hostMultiplayer('domino_pvp'));
+
+        btnStartEarly.addEventListener('click', () => {
+            sound.click();
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ cmd: 'start_room' }));
+            }
+        });
+
+        btnDominoDraw.addEventListener('click', () => {
+            sound.click();
+            haptic(15);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ cmd: 'draw' }));
+            }
+        });
+
+        btnDominoPass.addEventListener('click', () => {
+            sound.move();
+            haptic(15);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ cmd: 'pass' }));
+            }
+        });
+
+        btnPlaceLeft.addEventListener('click', () => {
+            if (selectedDominoIdx >= 0 && ws && ws.readyState === WebSocket.OPEN) {
+                sound.place();
+                ws.send(JSON.stringify({ cmd: 'play', index: selectedDominoIdx, end: 'left' }));
+                selectedDominoIdx = -1;
+                dominoEndChoice.style.display = 'none';
+            }
+        });
+
+        btnPlaceRight.addEventListener('click', () => {
+            if (selectedDominoIdx >= 0 && ws && ws.readyState === WebSocket.OPEN) {
+                sound.place();
+                ws.send(JSON.stringify({ cmd: 'play', index: selectedDominoIdx, end: 'right' }));
+                selectedDominoIdx = -1;
+                dominoEndChoice.style.display = 'none';
+            }
+        });
 
         btnCancelRoom.addEventListener('click', () => {
             sound.click();
@@ -965,6 +1115,8 @@ private:
                 ws.send(JSON.stringify({ cmd: 'start', game: 'ttt_solo' }));
             } else if (activeGameType === 'connect4_solo') {
                 ws.send(JSON.stringify({ cmd: 'start', game: 'connect4_solo' }));
+            } else if (activeGameType === 'domino_solo') {
+                ws.send(JSON.stringify({ cmd: 'start', game: 'domino_solo' }));
             } else {
                 if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'leave' }));
                 switchView('lobby');
@@ -989,7 +1141,7 @@ private:
             }
         }
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART5 = R"rawliteral(
+    static constexpr const char* INDEX_HTML_PART6 = R"rawliteral(
         // D-Pad and Keyboard Listeners
         document.querySelectorAll('.dpad-btn').forEach(btn => {
             const dir = btn.getAttribute('data-dir');
@@ -1064,6 +1216,60 @@ private:
                     }
                 }
             }
+            // 4. Domino Interaction
+            else if (lastState.game === 'domino' && !lastState.finished) {
+                if (lastState.turn === myPlayerNum) {
+                    const myHand = (lastState.hands && lastState.hands[myPlayerNum]) || [];
+                    const handCount = myHand.length;
+                    if (handCount > 0 && y >= 300 && y <= 395) {
+                        const tileW = Math.min(42, Math.max(20, Math.floor((canvas.width - 20) / handCount)));
+                        const totalW = handCount * tileW;
+                        const startX = Math.max(10, Math.floor((canvas.width - totalW) / 2));
+                        if (x >= startX && x <= startX + totalW) {
+                            const idx = Math.floor((x - startX) / tileW);
+                            if (idx >= 0 && idx < handCount) {
+                                const tile = myHand[idx];
+                                const lEnd = lastState.left_end;
+                                const rEnd = lastState.right_end;
+                                if (lEnd === -1 && rEnd === -1) {
+                                    sound.place();
+                                    haptic(20);
+                                    ws.send(JSON.stringify({ cmd: 'play', index: idx, end: 'right' }));
+                                } else {
+                                    const mLeft = (tile[0] === lEnd || tile[1] === lEnd);
+                                    const mRight = (tile[0] === rEnd || tile[1] === rEnd);
+                                    if (mLeft && mRight) {
+                                        selectedDominoIdx = idx;
+                                        dominoEndChoice.style.display = 'flex';
+                                        sound.click();
+                                    } else if (mLeft) {
+                                        sound.place();
+                                        haptic(20);
+                                        ws.send(JSON.stringify({ cmd: 'play', index: idx, end: 'left' }));
+                                        selectedDominoIdx = -1;
+                                        dominoEndChoice.style.display = 'none';
+                                    } else if (mRight) {
+                                        sound.place();
+                                        haptic(20);
+                                        ws.send(JSON.stringify({ cmd: 'play', index: idx, end: 'right' }));
+                                        selectedDominoIdx = -1;
+                                        dominoEndChoice.style.display = 'none';
+                                    } else {
+                                        sound.move();
+                                    }
+                                }
+                            }
+                        }
+                    } else if (selectedDominoIdx >= 0 && y >= 60 && y < 300) {
+                        sound.place();
+                        haptic(20);
+                        const end = (x < canvas.width / 2) ? 'left' : 'right';
+                        ws.send(JSON.stringify({ cmd: 'play', index: selectedDominoIdx, end: end }));
+                        selectedDominoIdx = -1;
+                        dominoEndChoice.style.display = 'none';
+                    }
+                }
+            }
         });
 
         // --- Particles & Canvas Juice ---
@@ -1104,10 +1310,20 @@ private:
                 renderTronGame(state);
             } else if (state.game === 'battleship') {
                 renderBattleshipGame(state);
+            } else if (state.game === 'domino') {
+                renderDominoGame(state);
             }
             ctx.restore();
 
-            // Audio cues
+            // Audio cues & High score check
+            if (state.game === 'snake' && !state.duel) {
+                const currentHigh = parseInt(localStorage.getItem('gamebox_snake_high') || '0', 10);
+                if ((state.score || 0) > currentHigh) {
+                    localStorage.setItem('gamebox_snake_high', state.score);
+                    hudP2Score.textContent = state.score;
+                }
+            }
+
             if (state.score > prevScore) {
                 sound.eat();
                 haptic(25);
@@ -1124,11 +1340,24 @@ private:
                 } else {
                     sound.defeat();
                 }
+
+                // Win/Loss stats tracking
+                try {
+                    const stats = JSON.parse(localStorage.getItem('gamebox_stats') || '{}');
+                    const gk = state.game + (state.duel ? '_duel' : (activeGameType && activeGameType.includes('pvp') ? '_pvp' : '_solo'));
+                    if (!stats[gk]) stats[gk] = { w: 0, l: 0 };
+                    if (state.winner === myPlayerNum || (state.game === 'snake' && !state.duel)) {
+                        stats[gk].w++;
+                    } else if (state.winner > 0) {
+                        stats[gk].l++;
+                    }
+                    localStorage.setItem('gamebox_stats', JSON.stringify(stats));
+                } catch(e) {}
             }
             prevFinished = state.finished;
         }
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART6 = R"rawliteral(
+    static constexpr const char* INDEX_HTML_PART7 = R"rawliteral(
         // --- 1. Snake Renderer ---
         function renderSnakeGame(state) {
             const grid = 20;
@@ -1412,6 +1641,250 @@ private:
 
             if (state.finished) showModal(state);
         }
+)rawliteral";
+    static constexpr const char* INDEX_HTML_PART8 = R"rawliteral(
+        // --- 7. Domino Renderer & Helpers ---
+        function drawDominoPips(c, val, x, y, w, h) {
+            if (val <= 0) return;
+            const r = Math.max(1.6, Math.min(2.8, w * 0.08));
+            c.fillStyle = '#0f172a';
+
+            const c1 = x + w * 0.26;
+            const c2 = x + w * 0.5;
+            const c3 = x + w * 0.74;
+
+            const r1 = y + h * 0.26;
+            const r2 = y + h * 0.5;
+            const r3 = y + h * 0.74;
+
+            const dot = (px, py) => {
+                c.beginPath();
+                c.arc(px, py, r, 0, Math.PI * 2);
+                c.fill();
+            };
+
+            if (val === 1) {
+                dot(c2, r2);
+            } else if (val === 2) {
+                dot(c1, r1); dot(c3, r3);
+            } else if (val === 3) {
+                dot(c1, r1); dot(c2, r2); dot(c3, r3);
+            } else if (val === 4) {
+                dot(c1, r1); dot(c3, r1);
+                dot(c1, r3); dot(c3, r3);
+            } else if (val === 5) {
+                dot(c1, r1); dot(c3, r1);
+                dot(c2, r2);
+                dot(c1, r3); dot(c3, r3);
+            } else if (val === 6) {
+                dot(c1, r1); dot(c3, r1);
+                dot(c1, r2); dot(c3, r2);
+                dot(c1, r3); dot(c3, r3);
+            }
+        }
+
+        function renderDominoGame(state) {
+            // Felt gaming green table
+            ctx.fillStyle = '#0b241b';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Subtle table border
+            ctx.strokeStyle = '#143c2e';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+
+            // --- Top Bar: Opponents Hand Info ---
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 11px system-ui, sans-serif';
+            ctx.textAlign = 'left';
+
+            let oppStr = "";
+            if (activeGameType === 'domino_solo') {
+                oppStr = `Bot: ${state.p2_count || 0} tiles`;
+            } else if (state.num_players === 3) {
+                oppStr = `P1: ${state.p1_count} · P2: ${state.p2_count} · P3: ${state.p3_count}`;
+            } else {
+                oppStr = (myPlayerNum === 1) ? `Opponent: ${state.p2_count || 0} tiles` : `Opponent: ${state.p1_count || 0} tiles`;
+            }
+            ctx.fillText(oppStr, 14, 24);
+
+            // Boneyard badge
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillText(`Pioche: ${state.boneyard_count || 0}`, canvas.width - 14, 24);
+
+            // --- Open End Indicators in Middle ---
+            ctx.font = '700 11px system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            if (state.left_end !== -1) {
+                ctx.fillStyle = '#38bdf8';
+                ctx.fillText(`◄ Left: ${state.left_end}`, 14, 42);
+            }
+            ctx.textAlign = 'right';
+            if (state.right_end !== -1) {
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillText(`Right: ${state.right_end} ►`, canvas.width - 14, 42);
+            }
+
+            // --- Middle Board Domino Chain ---
+            const board = state.board || [];
+            if (board.length === 0) {
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#64748b';
+                ctx.font = '500 13px system-ui, sans-serif';
+                ctx.fillText("Board is open. Tap any tile in your hand to lead!", canvas.width / 2, 160);
+            } else {
+                const maxPerRow = 7;
+                const bTileW = 38;
+                const bTileH = 22;
+
+                board.forEach((t, i) => {
+                    const row = Math.floor(i / maxPerRow);
+                    const colInRow = i % maxPerRow;
+                    const isEvenRow = (row % 2 === 0);
+                    const col = isEvenRow ? colInRow : (maxPerRow - 1 - colInRow);
+
+                    const bx = 22 + col * (bTileW + 8);
+                    const by = 56 + row * (bTileH + 16);
+
+                    // Ivory Tile Body
+                    ctx.fillStyle = '#fffbeb';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(bx, by, bTileW, bTileH, 4) : ctx.rect(bx, by, bTileW, bTileH);
+                    ctx.fill();
+
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+
+                    // Center divider
+                    ctx.strokeStyle = '#475569';
+                    ctx.beginPath();
+                    ctx.moveTo(bx + bTileW / 2, by + 2);
+                    ctx.lineTo(bx + bTileW / 2, by + bTileH - 2);
+                    ctx.stroke();
+
+                    // Pips
+                    drawDominoPips(ctx, t[0], bx, by, bTileW / 2, bTileH);
+                    drawDominoPips(ctx, t[1], bx + bTileW / 2, by, bTileW / 2, bTileH);
+
+                    // Highlight open ends
+                    if (i === 0) {
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(bx - 1, by - 1, bTileW + 2, bTileH + 2);
+                    } else if (i === board.length - 1) {
+                        ctx.strokeStyle = '#fbbf24';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(bx - 1, by - 1, bTileW + 2, bTileH + 2);
+                    }
+                });
+            }
+
+            // Separator line
+            ctx.strokeStyle = '#143c2e';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(10, 290);
+            ctx.lineTo(canvas.width - 10, 290);
+            ctx.stroke();
+
+            // --- Bottom Area: Player's Hand ---
+            const myHand = (state.hands && state.hands[myPlayerNum]) || [];
+            const count = myHand.length;
+
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 11px system-ui, sans-serif';
+            ctx.fillText(`Your Hand (${count} domino${count > 1 ? 'es' : ''}):`, 14, 306);
+
+            if (count > 0) {
+                const tileW = Math.min(42, Math.max(20, Math.floor((canvas.width - 24) / count)));
+                const tileH = 68;
+                const totalW = count * tileW;
+                const startX = Math.max(12, Math.floor((canvas.width - totalW) / 2));
+                const isMyTurn = (state.turn === myPlayerNum && !state.finished);
+
+                myHand.forEach((t, i) => {
+                    const tx = startX + i * tileW;
+                    let ty = 314;
+                    const isSelected = (selectedDominoIdx === i);
+                    if (isSelected) ty -= 8;
+
+                    const canPlay = (state.left_end === -1) ||
+                                    (t[0] === state.left_end || t[1] === state.left_end ||
+                                     t[0] === state.right_end || t[1] === state.right_end);
+
+                    // Ivory Body
+                    ctx.fillStyle = isSelected ? '#ffffff' : '#fffbeb';
+                    ctx.beginPath();
+                    ctx.roundRect ? ctx.roundRect(tx + 2, ty, tileW - 4, tileH, 5) : ctx.rect(tx + 2, ty, tileW - 4, tileH);
+                    ctx.fill();
+
+                    // Highlight border
+                    if (isSelected) {
+                        ctx.strokeStyle = '#fbbf24';
+                        ctx.lineWidth = 2.5;
+                    } else if (isMyTurn && canPlay) {
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 2;
+                    } else {
+                        ctx.strokeStyle = '#334155';
+                        ctx.lineWidth = 1.2;
+                    }
+                    ctx.stroke();
+
+                    // Divider line
+                    ctx.strokeStyle = '#475569';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(tx + 4, ty + tileH / 2);
+                    ctx.lineTo(tx + tileW - 4, ty + tileH / 2);
+                    ctx.stroke();
+
+                    // Pips
+                    drawDominoPips(ctx, t[0], tx + 2, ty, tileW - 4, tileH / 2);
+                    drawDominoPips(ctx, t[1], tx + 2, ty + tileH / 2, tileW - 4, tileH / 2);
+                });
+            }
+
+            // HUD scores and status updates
+            hudP1Score.textContent = `${state.p1_count || 0}`;
+            hudP2Score.textContent = `${state.p2_count || 0}`;
+            if (state.num_players === 3) {
+                hudP3Wrap.style.display = 'flex';
+                hudP3Score.textContent = `${state.p3_count || 0}`;
+            } else {
+                hudP3Wrap.style.display = 'none';
+            }
+
+            if (state.finished) {
+                hudStatus.textContent = "Game Over";
+                showModal(state);
+            } else if (state.turn === myPlayerNum) {
+                if (selectedDominoIdx >= 0) {
+                    hudStatus.textContent = "Select End (Left / Right)";
+                } else {
+                    hudStatus.textContent = "Your Turn";
+                }
+            } else {
+                if (activeGameType === 'domino_solo') {
+                    hudStatus.textContent = "Bot Thinking...";
+                } else {
+                    hudStatus.textContent = `P${state.turn}'s Turn`;
+                }
+            }
+
+            if (boneyardCountSpan) {
+                boneyardCountSpan.textContent = state.boneyard_count || 0;
+            }
+
+            if (btnDominoDraw) {
+                const canDraw = (state.turn === myPlayerNum && !state.finished && (state.boneyard_count || 0) > 0);
+                btnDominoDraw.disabled = !canDraw;
+                btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.5';
+            }
+        }
 
         function spawnVictoryCelebration() {
             const colors = ['#38bdf8', '#4ade80', '#fbbf24', '#ec4899', '#f1f5f9'];
@@ -1440,6 +1913,15 @@ private:
                 sub = isWin ? "Light cycle survival!" : (isDraw ? "Mutual crash." : "Crashed into light trail.");
             } else if (state.game === 'battleship') {
                 sub = isWin ? "Enemy naval fleet sunk!" : "Your naval fleet was sunk.";
+            } else if (state.game === 'domino') {
+                if (isWin) {
+                    sub = (state.p1_count === 0 || state.p2_count === 0 || state.p3_count === 0) ?
+                          "Dominó! All tiles placed!" : "Lowest pip sum in blocked game!";
+                } else if (isDraw) {
+                    sub = "Deadlock on board! Tied on pip sum.";
+                } else {
+                    sub = state.winner > 0 ? `Player ${state.winner} won the domino match.` : "Opponent won the match.";
+                }
             }
 
             modalTitle.textContent = title;

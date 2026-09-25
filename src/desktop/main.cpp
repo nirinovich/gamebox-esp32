@@ -1,6 +1,7 @@
 #include "DesktopServer.hpp"
 #include <gamehub/core/Session.hpp>
 #include <gamehub/core/RoomManager.hpp>
+#include <gamehub/core/DominoGame.hpp>
 #include <iostream>
 #include <unordered_map>
 #include <memory>
@@ -8,6 +9,7 @@
 #include <thread>
 #include <chrono>
 #include <sstream>
+#include <vector>
 
 int main(int argc, char* argv[]) {
     std::cout << "=========================================" << std::endl;
@@ -34,8 +36,8 @@ int main(int argc, char* argv[]) {
 
     gamehub::core::RoomManager roomManager(4);
     std::unordered_map<uint32_t, std::unique_ptr<gamehub::core::Session>> sessions;
-    std::unordered_map<uint32_t, uint32_t> sessionPlayerMap; // sessionId -> playerIndex in room (1 or 2)
-    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> roomPlayers; // roomCode -> (p1Session, p2Session)
+    std::unordered_map<uint32_t, uint32_t> sessionPlayerMap; // sessionId -> playerIndex in room (1, 2, or 3)
+    std::unordered_map<std::string, std::vector<uint32_t>> roomPlayers; // roomCode -> [player sessions]
     std::mutex engineMutex;
 
     gamehub::desktop::DesktopServer server(initialPort);
@@ -57,9 +59,10 @@ int main(int argc, char* argv[]) {
             std::string code = room->getCode();
             auto itR = roomPlayers.find(code);
             if (itR != roomPlayers.end()) {
-                uint32_t other = (itR->second.first == sid) ? itR->second.second : itR->second.first;
-                if (other != 0) {
-                    server.sendToClient(other, "{\"type\":\"opponent_left\"}");
+                for (uint32_t other : itR->second) {
+                    if (other != 0 && other != sid) {
+                        server.sendToClient(other, "{\"type\":\"opponent_left\"}");
+                    }
                 }
                 roomPlayers.erase(itR);
             }
@@ -95,6 +98,7 @@ int main(int argc, char* argv[]) {
             detachPlayerFromRoom(sessionId);
 
             gamehub::core::GameType gtype = gamehub::core::GameType::TICTACTOE_PVP;
+            size_t maxPlayers = 2;
             if (msg.find("\"snake_duel\"") != std::string::npos) {
                 gtype = gamehub::core::GameType::SNAKE_DUEL;
             } else if (msg.find("\"connect4_pvp\"") != std::string::npos) {
@@ -105,18 +109,21 @@ int main(int argc, char* argv[]) {
                 gtype = gamehub::core::GameType::TRON_DUEL;
             } else if (msg.find("\"battleship_pvp\"") != std::string::npos) {
                 gtype = gamehub::core::GameType::BATTLESHIP_PVP;
+            } else if (msg.find("\"domino_pvp\"") != std::string::npos) {
+                gtype = gamehub::core::GameType::DOMINO_PVP;
+                maxPlayers = (msg.find("\"players\":2") != std::string::npos || msg.find("\"max\":2") != std::string::npos) ? 2 : 3;
             }
 
             std::string hostName = extractJsonString(msg, "host");
             if (hostName.empty()) hostName = "Player 1";
 
-            gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sessionId, hostName);
+            gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sessionId, hostName, maxPlayers);
             if (!newRoom) {
                 return "{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}";
             }
 
             sessionPlayerMap[sessionId] = 1;
-            roomPlayers[newRoom->getCode()] = {sessionId, 0};
+            roomPlayers[newRoom->getCode()] = {sessionId};
 
             // Broadcast updated directory to all clients in lobby
             server.broadcast(roomManager.serializeDirectory());
@@ -138,24 +145,54 @@ int main(int argc, char* argv[]) {
                 return "{\"type\":\"error\",\"msg\":\"Room not found or already full.\"}";
             }
 
-            sessionPlayerMap[sessionId] = 2;
-            roomPlayers[code].second = sessionId;
+            uint32_t pNum = static_cast<uint32_t>(room->getPlayerCount());
+            sessionPlayerMap[sessionId] = pNum;
+            roomPlayers[code].push_back(sessionId);
 
-            // Broadcast updated directory (room is no longer joinable)
+            // Broadcast updated directory
             server.broadcast(roomManager.serializeDirectory());
 
             // Notify joiner
             std::ostringstream oss;
-            oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2,\"host\":\"" << room->getHostName() << "\"}";
+            oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":" << pNum << ",\"host\":\"" << room->getHostName() << "\"}";
             server.sendToClient(sessionId, oss.str());
 
-            // Notify host and start game
-            std::string state = room->serializeState();
-            uint32_t hostSession = roomPlayers[code].first;
-            server.sendToClient(hostSession, "{\"type\":\"room_ready\"}");
-            server.sendToClient(hostSession, state);
-            server.sendToClient(sessionId, state);
+            // If room is ready (reached maxPlayers)
+            if (room->getPlayerCount() >= room->getMaxPlayers()) {
+                auto* dg = dynamic_cast<gamehub::core::DominoGame*>(room->getGame());
+                if (dg) {
+                    dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                }
+                std::string state = room->serializeState();
+                for (uint32_t sidPlayer : roomPlayers[code]) {
+                    server.sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
+                    server.sendToClient(sidPlayer, state);
+                }
+            } else {
+                std::ostringstream ossCount;
+                ossCount << "{\"type\":\"room_waiting_update\",\"count\":" << room->getPlayerCount() << ",\"max\":" << room->getMaxPlayers() << "}";
+                for (uint32_t sidPlayer : roomPlayers[code]) {
+                    server.sendToClient(sidPlayer, ossCount.str());
+                }
+            }
 
+            return "";
+        }
+
+        // 2b. Start Room Early (Host starts 3P game with 2 players)
+        if (msg.find("\"cmd\":\"start_room\"") != std::string::npos) {
+            gamehub::core::Room* room = roomManager.findRoomByPlayer(sessionId);
+            if (room && room->getPlayerCount() >= 2 && !room->isFinished()) {
+                auto* dg = dynamic_cast<gamehub::core::DominoGame*>(room->getGame());
+                if (dg) {
+                    dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                }
+                std::string state = room->serializeState();
+                for (uint32_t sidPlayer : roomPlayers[room->getCode()]) {
+                    server.sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
+                    server.sendToClient(sidPlayer, state);
+                }
+            }
             return "";
         }
 
@@ -178,11 +215,14 @@ int main(int argc, char* argv[]) {
             activeRoom->handleInput(playerNum, msg);
             std::string state = activeRoom->serializeState();
 
-            // Broadcast to both players
+            // Broadcast to all room players
             auto itRoom = roomPlayers.find(activeRoom->getCode());
             if (itRoom != roomPlayers.end()) {
-                server.sendToClient(itRoom->second.first, state);
-                server.sendToClient(itRoom->second.second, state);
+                for (uint32_t sidPlayer : itRoom->second) {
+                    if (sidPlayer != 0) {
+                        server.sendToClient(sidPlayer, state);
+                    }
+                }
             }
             return "";
         }
@@ -208,7 +248,7 @@ int main(int argc, char* argv[]) {
             std::this_thread::sleep_for(std::chrono::milliseconds(66)); // 15 Hz
             std::lock_guard<std::mutex> lock(engineMutex);
             for (auto& pair : roomPlayers) {
-                if (pair.second.first != 0 && pair.second.second != 0) {
+                if (pair.second.size() >= 2) {
                     gamehub::core::Room* r = roomManager.findRoomByCode(pair.first);
                     if (r && !r->isFinished()) {
                         auto gt = r->getGameType();
@@ -217,8 +257,11 @@ int main(int argc, char* argv[]) {
                             gt == gamehub::core::GameType::TRON_DUEL) {
                             r->tick(0.066f);
                             std::string state = r->serializeState();
-                            server.sendToClient(pair.second.first, state);
-                            server.sendToClient(pair.second.second, state);
+                            for (uint32_t sidPlayer : pair.second) {
+                                if (sidPlayer != 0) {
+                                    server.sendToClient(sidPlayer, state);
+                                }
+                            }
                         }
                     }
                 }
