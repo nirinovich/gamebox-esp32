@@ -1,0 +1,3 @@
+# Dual-Target Desktop Runner and Wokwi Simulation
+
+We need to build, test, and evaluate the C++ game engine without requiring physical ESP32 hardware. We decided to decouple the core C++ OOP engine (`src/core/`) from hardware drivers, supporting two compilation targets: a native desktop runner (`src/desktop/` serving `http://localhost:8080` via a lightweight C++ HTTP/WebSocket server) and an ESP32-S3 firmware build (`src/esp32/` for physical hardware or virtual execution via the Wokwi simulator). This allows rapid local debugging and hardware-free grading while preserving seamless portability to physical microcontrollers.

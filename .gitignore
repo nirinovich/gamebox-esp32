@@ -1,0 +1,73 @@
+# ==========================================
+# Build & Compilation Artifacts
+# ==========================================
+build/
+Testing/
+cmake-build-*/
+CMakeUserPresets.json
+
+# PlatformIO build directories & dependencies
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Compiled object files and libraries
+*.obj
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.d
+
+# Embedded / ESP32 firmware binaries & maps
+*.elf
+*.bin
+*.hex
+*.map
+
+# Logic analyzer & test dumps
+*.vcd
+*.log
+*.dmp
+
+# ==========================================
+# Credentials & Secrets (ESP32 Wi-Fi / APIs)
+# ==========================================
+secrets.h
+credentials.h
+.env
+.env.*
+*.key
+*.pem
+
+# ==========================================
+# IDEs & Editors
+# ==========================================
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# JetBrains / CLion
+.idea/
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vscode/ipch/
+
+# ==========================================
+# Operating System Files
+# ==========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
