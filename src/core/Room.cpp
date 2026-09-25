@@ -4,8 +4,8 @@
 namespace gamehub {
 namespace core {
 
-Room::Room(const std::string& code, GameType type)
-    : m_code(code), m_type(type), m_game(GameFactory::create(type)) {}
+Room::Room(const std::string& code, GameType type, const std::string& hostName)
+    : m_code(code), m_hostName(hostName.empty() ? "Player 1" : hostName), m_type(type), m_game(GameFactory::create(type)) {}
 
 void Room::init() {
     if (m_game) {

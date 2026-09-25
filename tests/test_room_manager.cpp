@@ -48,9 +48,22 @@ int main() {
     assert(manager.findRoomByCode(code1) == nullptr && "Room must be destroyed on player disconnect");
 
     // After cleanup, a new room CAN be created
-    Room* roomNew = manager.createRoom(GameType::TICTACTOE_PVP, 601);
+    Room* roomNew = manager.createRoom(GameType::TICTACTOE_PVP, 601, "Alice");
     assert(roomNew != nullptr && "Capacity must be freed after room destruction");
+    assert(roomNew->getHostName() == "Alice" && "Room must store host name");
     std::cout << "  [PASS] Room cleanup on player disconnect verified." << std::endl;
+
+    // 6. RoomDirectory Serialization
+    std::string dirJson = manager.serializeDirectory();
+    assert(dirJson.find("\"type\":\"room_directory\"") != std::string::npos && "Directory must have type room_directory");
+    assert(dirJson.find("\"host\":\"Alice\"") != std::string::npos && "Directory must include Alice as host");
+    assert(dirJson.find("\"players\":1") != std::string::npos && "Directory must list 1 player");
+
+    // When joined, it becomes full and is excluded from open directory
+    manager.joinRoom(roomNew->getCode(), 602);
+    std::string fullDirJson = manager.serializeDirectory();
+    assert(fullDirJson.find("\"host\":\"Alice\"") == std::string::npos && "Full room must not be in open directory");
+    std::cout << "  [PASS] RoomDirectory serialization and open filter verified." << std::endl;
 
     std::cout << "[TEST] All RoomManager Lifecycle Tests Passed!" << std::endl;
     return 0;

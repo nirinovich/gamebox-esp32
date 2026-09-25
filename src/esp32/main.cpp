@@ -12,7 +12,7 @@
 #include <mutex>
 #include <sstream>
 
-static const char* AP_SSID = "ESP32-GameHub";
+static const char* AP_SSID = "Gamebox";
 static const byte DNS_PORT = 53;
 
 DNSServer dnsServer;
@@ -27,6 +27,17 @@ std::mutex engineMutex;
 
 TaskHandle_t gameTaskHandle = NULL;
 
+static std::string extractJsonString(const std::string& json, const std::string& key) {
+    std::string needle = "\"" + key + "\":";
+    auto pos = json.find(needle);
+    if (pos == std::string::npos) return "";
+    auto start = json.find("\"", pos + needle.size());
+    if (start == std::string::npos) return "";
+    auto end = json.find("\"", start + 1);
+    if (end == std::string::npos) return "";
+    return json.substr(start + 1, end - start - 1);
+}
+
 void broadcastToRoom(const std::string& code, const std::string& message) {
     auto it = roomPlayers.find(code);
     if (it != roomPlayers.end()) {
@@ -39,6 +50,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
     if (type == WS_EVT_CONNECT) {
         std::lock_guard<std::mutex> lock(engineMutex);
         sessions[client->id()] = std::make_unique<gamehub::core::Session>(client->id());
+        client->text(roomManager.serializeDirectory().c_str());
     } else if (type == WS_EVT_DISCONNECT) {
         std::lock_guard<std::mutex> lock(engineMutex);
         uint32_t sid = client->id();
@@ -56,6 +68,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 roomPlayers.erase(it);
             }
             roomManager.handleDisconnect(sid);
+            ws.textAll(roomManager.serializeDirectory().c_str());
         }
         sessionPlayerMap.erase(sid);
     } else if (type == WS_EVT_DATA) {
@@ -65,14 +78,31 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
             std::lock_guard<std::mutex> lock(engineMutex);
             uint32_t sid = client->id();
 
+            // 0. Query Live Room Directory
+            if (msg.find("\"cmd\":\"get_rooms\"") != std::string::npos) {
+                client->text(roomManager.serializeDirectory().c_str());
+                return;
+            }
+
             // 1. Create Multiplayer Room
             if (msg.find("\"cmd\":\"create\"") != std::string::npos) {
                 gamehub::core::GameType gtype = gamehub::core::GameType::TICTACTOE_PVP;
                 if (msg.find("\"snake_duel\"") != std::string::npos) {
                     gtype = gamehub::core::GameType::SNAKE_DUEL;
+                } else if (msg.find("\"connect4_pvp\"") != std::string::npos) {
+                    gtype = gamehub::core::GameType::CONNECT_FOUR_PVP;
+                } else if (msg.find("\"pong_duel\"") != std::string::npos) {
+                    gtype = gamehub::core::GameType::PONG_DUEL;
+                } else if (msg.find("\"tron_duel\"") != std::string::npos) {
+                    gtype = gamehub::core::GameType::TRON_DUEL;
+                } else if (msg.find("\"battleship_pvp\"") != std::string::npos) {
+                    gtype = gamehub::core::GameType::BATTLESHIP_PVP;
                 }
 
-                gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sid);
+                std::string hostName = extractJsonString(msg, "host");
+                if (hostName.empty()) hostName = "Player 1";
+
+                gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sid, hostName);
                 if (!newRoom) {
                     client->text("{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}");
                     return;
@@ -81,20 +111,19 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 sessionPlayerMap[sid] = 1;
                 roomPlayers[newRoom->getCode()] = {sid, 0};
 
+                // Broadcast directory to all clients
+                ws.textAll(roomManager.serializeDirectory().c_str());
+
                 std::ostringstream oss;
-                oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1}";
+                oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1,\"host\":\"" << hostName << "\"}";
                 client->text(oss.str().c_str());
                 return;
             }
 
             // 2. Join Multiplayer Room
             if (msg.find("\"cmd\":\"join\"") != std::string::npos) {
-                auto codePos = msg.find("\"code\":");
-                if (codePos == std::string::npos) return;
-
-                auto start = msg.find("\"", codePos + 7) + 1;
-                auto end = msg.find("\"", start);
-                std::string code = msg.substr(start, end - start);
+                std::string code = extractJsonString(msg, "code");
+                if (code.empty()) return;
 
                 gamehub::core::Room* room = roomManager.joinRoom(code, sid);
                 if (!room) {
@@ -105,8 +134,11 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 sessionPlayerMap[sid] = 2;
                 roomPlayers[code].second = sid;
 
+                // Broadcast directory update
+                ws.textAll(roomManager.serializeDirectory().c_str());
+
                 std::ostringstream oss;
-                oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2}";
+                oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2,\"host\":\"" << room->getHostName() << "\"}";
                 client->text(oss.str().c_str());
 
                 std::string state = room->serializeState();
@@ -116,7 +148,28 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 return;
             }
 
-            // 3. Multiplayer Move & Input
+            // 3. Leave / Cancel Room
+            if (msg.find("\"cmd\":\"leave\"") != std::string::npos) {
+                gamehub::core::Room* room = roomManager.findRoomByPlayer(sid);
+                if (room) {
+                    std::string code = room->getCode();
+                    auto it = roomPlayers.find(code);
+                    if (it != roomPlayers.end()) {
+                        uint32_t other = (it->second.first == sid) ? it->second.second : it->second.first;
+                        if (other != 0) {
+                            ws.text(other, "{\"type\":\"opponent_left\"}");
+                        }
+                        roomPlayers.erase(it);
+                    }
+                    roomManager.handleDisconnect(sid);
+                    ws.textAll(roomManager.serializeDirectory().c_str());
+                }
+                sessionPlayerMap.erase(sid);
+                client->text("{\"type\":\"left\"}");
+                return;
+            }
+
+            // 4. Multiplayer Move & Input
             gamehub::core::Room* activeRoom = roomManager.findRoomByPlayer(sid);
             if (activeRoom && activeRoom->getPlayerCount() >= 2) {
                 uint32_t playerNum = sessionPlayerMap[sid];
@@ -126,7 +179,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 return;
             }
 
-            // 4. Solo fallback
+            // 5. Solo fallback
             auto it = sessions.find(sid);
             if (it != sessions.end()) {
                 std::string reply = it->second->handleMessage(msg);
@@ -150,10 +203,15 @@ void GameEngineTask(void* parameter) {
         for (auto& pair : roomPlayers) {
             if (pair.second.first != 0 && pair.second.second != 0) {
                 gamehub::core::Room* r = roomManager.findRoomByCode(pair.first);
-                if (r && r->getGameType() == gamehub::core::GameType::SNAKE_DUEL && !r->isFinished()) {
-                    r->tick(0.066f);
-                    std::string state = r->serializeState();
-                    broadcastToRoom(pair.first, state);
+                if (r && !r->isFinished()) {
+                    auto gt = r->getGameType();
+                    if (gt == gamehub::core::GameType::SNAKE_DUEL ||
+                        gt == gamehub::core::GameType::PONG_DUEL ||
+                        gt == gamehub::core::GameType::TRON_DUEL) {
+                        r->tick(0.066f);
+                        std::string state = r->serializeState();
+                        broadcastToRoom(pair.first, state);
+                    }
                 }
             }
         }
