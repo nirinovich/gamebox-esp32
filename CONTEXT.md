@@ -1,4 +1,4 @@
-# ESP32 Game Hub
+# Gamebox
 
 An authoritative headless game engine running on an ESP32-S3 that hosts multiplayer and solo games over a local Wi-Fi captive portal.
 
@@ -33,8 +33,12 @@ A single fixed-interval execution step of the real-time game loop on the Host.
 _Avoid_: Frame, cycle, step
 
 **RoomCode**:
-A unique 4-character alphanumeric identifier used by Clients to join a specific Room.
+A unique 4-character alphanumeric identifier used by Host and Clients to address a specific Room.
 _Avoid_: Pin, key, password
+
+**RoomDirectory**:
+The real-time registry of active and joinable Rooms broadcast from the Host to all connected Clients in the Lobby.
+_Avoid_: RoomList, ServerBrowser, MatchFinder
 
 **PlayerController**:
 An abstract strategy interface providing decision-making or input ingestion for a Player.

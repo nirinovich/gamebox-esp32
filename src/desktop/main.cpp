@@ -40,6 +40,17 @@ int main(int argc, char* argv[]) {
 
     gamehub::desktop::DesktopServer server(initialPort);
 
+    static auto extractJsonString = [](const std::string& json, const std::string& key) -> std::string {
+        std::string needle = "\"" + key + "\":";
+        auto pos = json.find(needle);
+        if (pos == std::string::npos) return "";
+        auto start = json.find("\"", pos + needle.size());
+        if (start == std::string::npos) return "";
+        auto end = json.find("\"", start + 1);
+        if (end == std::string::npos) return "";
+        return json.substr(start + 1, end - start - 1);
+    };
+
     // Disconnect Handler
     server.setDisconnectHandler([&](uint32_t sessionId) {
         std::lock_guard<std::mutex> lock(engineMutex);
@@ -58,6 +69,7 @@ int main(int argc, char* argv[]) {
                 roomPlayers.erase(it);
             }
             roomManager.handleDisconnect(sessionId);
+            server.broadcast(roomManager.serializeDirectory());
         }
         sessionPlayerMap.erase(sessionId);
     });
@@ -71,14 +83,30 @@ int main(int argc, char* argv[]) {
             it = sessions.emplace(sessionId, std::make_unique<gamehub::core::Session>(sessionId)).first;
         }
 
+        // 0. Query Live Room Directory
+        if (msg.find("\"cmd\":\"get_rooms\"") != std::string::npos) {
+            return roomManager.serializeDirectory();
+        }
+
         // 1. Create Multiplayer Room
         if (msg.find("\"cmd\":\"create\"") != std::string::npos) {
             gamehub::core::GameType gtype = gamehub::core::GameType::TICTACTOE_PVP;
             if (msg.find("\"snake_duel\"") != std::string::npos) {
                 gtype = gamehub::core::GameType::SNAKE_DUEL;
+            } else if (msg.find("\"connect4_pvp\"") != std::string::npos) {
+                gtype = gamehub::core::GameType::CONNECT_FOUR_PVP;
+            } else if (msg.find("\"pong_duel\"") != std::string::npos) {
+                gtype = gamehub::core::GameType::PONG_DUEL;
+            } else if (msg.find("\"tron_duel\"") != std::string::npos) {
+                gtype = gamehub::core::GameType::TRON_DUEL;
+            } else if (msg.find("\"battleship_pvp\"") != std::string::npos) {
+                gtype = gamehub::core::GameType::BATTLESHIP_PVP;
             }
 
-            gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sessionId);
+            std::string hostName = extractJsonString(msg, "host");
+            if (hostName.empty()) hostName = "Player 1";
+
+            gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sessionId, hostName);
             if (!newRoom) {
                 return "{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}";
             }
@@ -86,19 +114,18 @@ int main(int argc, char* argv[]) {
             sessionPlayerMap[sessionId] = 1;
             roomPlayers[newRoom->getCode()] = {sessionId, 0};
 
+            // Broadcast updated directory to all clients in lobby
+            server.broadcast(roomManager.serializeDirectory());
+
             std::ostringstream oss;
-            oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1}";
+            oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1,\"host\":\"" << hostName << "\"}";
             return oss.str();
         }
 
         // 2. Join Multiplayer Room
         if (msg.find("\"cmd\":\"join\"") != std::string::npos) {
-            auto codePos = msg.find("\"code\":");
-            if (codePos == std::string::npos) return "{\"type\":\"error\",\"msg\":\"Missing code\"}";
-
-            auto start = msg.find("\"", codePos + 7) + 1;
-            auto end = msg.find("\"", start);
-            std::string code = msg.substr(start, end - start);
+            std::string code = extractJsonString(msg, "code");
+            if (code.empty()) return "{\"type\":\"error\",\"msg\":\"Missing code\"}";
 
             gamehub::core::Room* room = roomManager.joinRoom(code, sessionId);
             if (!room) {
@@ -108,9 +135,12 @@ int main(int argc, char* argv[]) {
             sessionPlayerMap[sessionId] = 2;
             roomPlayers[code].second = sessionId;
 
+            // Broadcast updated directory (room is no longer joinable)
+            server.broadcast(roomManager.serializeDirectory());
+
             // Notify joiner
             std::ostringstream oss;
-            oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2}";
+            oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2,\"host\":\"" << room->getHostName() << "\"}";
             server.sendToClient(sessionId, oss.str());
 
             // Notify host and start game
@@ -123,7 +153,27 @@ int main(int argc, char* argv[]) {
             return "";
         }
 
-        // 3. Multiplayer Moves & Inputs
+        // 3. Leave / Cancel Room
+        if (msg.find("\"cmd\":\"leave\"") != std::string::npos) {
+            gamehub::core::Room* room = roomManager.findRoomByPlayer(sessionId);
+            if (room) {
+                std::string code = room->getCode();
+                auto itR = roomPlayers.find(code);
+                if (itR != roomPlayers.end()) {
+                    uint32_t other = (itR->second.first == sessionId) ? itR->second.second : itR->second.first;
+                    if (other != 0) {
+                        server.sendToClient(other, "{\"type\":\"opponent_left\"}");
+                    }
+                    roomPlayers.erase(itR);
+                }
+                roomManager.handleDisconnect(sessionId);
+                server.broadcast(roomManager.serializeDirectory());
+            }
+            sessionPlayerMap.erase(sessionId);
+            return "{\"type\":\"left\"}";
+        }
+
+        // 4. Multiplayer Moves & Inputs
         gamehub::core::Room* activeRoom = roomManager.findRoomByPlayer(sessionId);
         if (activeRoom && activeRoom->getPlayerCount() >= 2) {
             uint32_t playerNum = sessionPlayerMap[sessionId];
@@ -139,7 +189,7 @@ int main(int argc, char* argv[]) {
             return "";
         }
 
-        // 4. Fallback to session handling (Solo games, ping, etc.)
+        // 5. Fallback to session handling (Solo games, ping, etc.)
         return it->second->handleMessage(msg);
     });
 
@@ -162,11 +212,16 @@ int main(int argc, char* argv[]) {
             for (auto& pair : roomPlayers) {
                 if (pair.second.first != 0 && pair.second.second != 0) {
                     gamehub::core::Room* r = roomManager.findRoomByCode(pair.first);
-                    if (r && r->getGameType() == gamehub::core::GameType::SNAKE_DUEL && !r->isFinished()) {
-                        r->tick(0.066f);
-                        std::string state = r->serializeState();
-                        server.sendToClient(pair.second.first, state);
-                        server.sendToClient(pair.second.second, state);
+                    if (r && !r->isFinished()) {
+                        auto gt = r->getGameType();
+                        if (gt == gamehub::core::GameType::SNAKE_DUEL ||
+                            gt == gamehub::core::GameType::PONG_DUEL ||
+                            gt == gamehub::core::GameType::TRON_DUEL) {
+                            r->tick(0.066f);
+                            std::string state = r->serializeState();
+                            server.sendToClient(pair.second.first, state);
+                            server.sendToClient(pair.second.second, state);
+                        }
                     }
                 }
             }

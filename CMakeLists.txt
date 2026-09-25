@@ -13,6 +13,10 @@ add_library(gamehub_core STATIC
     src/core/TicTacToeGame.cpp
     src/core/Room.cpp
     src/core/RoomManager.cpp
+    src/core/ConnectFourGame.cpp
+    src/core/PongGame.cpp
+    src/core/TronGame.cpp
+    src/core/BattleshipGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include)
 
@@ -32,12 +36,16 @@ target_link_libraries(test_room_manager PRIVATE gamehub_core)
 add_executable(test_snake_duel tests/test_snake_duel.cpp)
 target_link_libraries(test_snake_duel PRIVATE gamehub_core)
 
+add_executable(test_new_games tests/test_new_games.cpp)
+target_link_libraries(test_new_games PRIVATE gamehub_core)
+
 enable_testing()
 add_test(NAME TracerBulletTest COMMAND test_tracer_bullet)
 add_test(NAME SnakeGameTest COMMAND test_snake_game)
 add_test(NAME TicTacToeGameTest COMMAND test_tictactoe_game)
 add_test(NAME RoomManagerTest COMMAND test_room_manager)
 add_test(NAME SnakeDuelTest COMMAND test_snake_duel)
+add_test(NAME NewGamesTest COMMAND test_new_games)
 
 # Desktop runner executable
 if (WIN32)
