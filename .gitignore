@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Build & Compilation Artifacts
 # ==========================================
 build/
@@ -71,3 +71,5 @@ credentials.h
 Thumbs.db
 desktop.ini
 *.tmp
+
+.agents/skills/impeccable/

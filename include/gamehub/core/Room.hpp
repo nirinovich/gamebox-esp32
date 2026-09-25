@@ -12,7 +12,7 @@ namespace core {
 
 class Room {
 public:
-    Room(const std::string& code, GameType type);
+    Room(const std::string& code, GameType type, const std::string& hostName = "Player 1");
     virtual ~Room() = default;
 
     void init();
@@ -23,6 +23,7 @@ public:
     int getWinner() const;
 
     const std::string& getCode() const { return m_code; }
+    const std::string& getHostName() const { return m_hostName; }
     GameType getGameType() const { return m_type; }
 
     void addPlayer(PlayerId id);
@@ -31,6 +32,7 @@ public:
 
 private:
     std::string m_code;
+    std::string m_hostName;
     GameType m_type;
     std::unique_ptr<Game> m_game;
     std::vector<PlayerId> m_players;

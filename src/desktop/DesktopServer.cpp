@@ -350,5 +350,18 @@ bool DesktopServer::sendToClient(uint32_t sessionId, const std::string& message)
     return res > 0;
 }
 
+void DesktopServer::broadcast(const std::string& message) {
+    std::vector<uint32_t> sessionIds;
+    {
+        std::lock_guard<std::mutex> lk(m_clientsMutex);
+        for (const auto& pair : m_clients) {
+            sessionIds.push_back(pair.first);
+        }
+    }
+    for (uint32_t sid : sessionIds) {
+        sendToClient(sid, message);
+    }
+}
+
 } // namespace desktop
 } // namespace gamehub

@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <random>
 
+#include <sstream>
+
 namespace gamehub {
 namespace core {
 
@@ -24,13 +26,13 @@ std::string RoomManager::generateUniqueCode() {
     return "AAAA";
 }
 
-Room* RoomManager::createRoom(GameType type, PlayerId hostId) {
+Room* RoomManager::createRoom(GameType type, PlayerId hostId, const std::string& hostName) {
     if (m_rooms.size() >= m_maxRooms) {
         return nullptr;
     }
 
     std::string code = generateUniqueCode();
-    auto room = std::make_unique<Room>(code, type);
+    auto room = std::make_unique<Room>(code, type, hostName);
     room->init();
     room->addPlayer(hostId);
 
@@ -38,6 +40,51 @@ Room* RoomManager::createRoom(GameType type, PlayerId hostId) {
     m_rooms.push_back(std::move(room));
     m_playerToRoom[hostId] = code;
     return ptr;
+}
+
+void RoomManager::removeRoom(const std::string& code) {
+    std::vector<PlayerId> playersToRemove;
+    for (const auto& pair : m_playerToRoom) {
+        if (pair.second == code) {
+            playersToRemove.push_back(pair.first);
+        }
+    }
+    for (PlayerId id : playersToRemove) {
+        m_playerToRoom.erase(id);
+    }
+    m_rooms.erase(std::remove_if(m_rooms.begin(), m_rooms.end(),
+        [&code](const std::unique_ptr<Room>& r) {
+            return r->getCode() == code;
+        }), m_rooms.end());
+}
+
+std::string RoomManager::serializeDirectory() const {
+    std::ostringstream oss;
+    oss << "{\"type\":\"room_directory\",\"rooms\":[";
+    bool first = true;
+    for (const auto& r : m_rooms) {
+        if (r->getPlayerCount() < 2 && !r->isFinished()) {
+            if (!first) oss << ",";
+            first = false;
+            std::string gname = "ttt_pvp";
+            switch (r->getGameType()) {
+                case GameType::SNAKE_DUEL: gname = "snake_duel"; break;
+                case GameType::TICTACTOE_PVP: gname = "ttt_pvp"; break;
+                case GameType::CONNECT_FOUR_PVP: gname = "connect4_pvp"; break;
+                case GameType::PONG_DUEL: gname = "pong_duel"; break;
+                case GameType::TRON_DUEL: gname = "tron_duel"; break;
+                case GameType::BATTLESHIP_PVP: gname = "battleship_pvp"; break;
+                default: break;
+            }
+            oss << "{\"code\":\"" << r->getCode() << "\","
+                << "\"game\":\"" << gname << "\","
+                << "\"host\":\"" << r->getHostName() << "\","
+                << "\"players\":" << r->getPlayerCount() << ","
+                << "\"max\":2}";
+        }
+    }
+    oss << "]}";
+    return oss.str();
 }
 
 Room* RoomManager::joinRoom(const std::string& code, PlayerId playerId) {

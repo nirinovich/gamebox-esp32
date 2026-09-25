@@ -31,6 +31,7 @@ public:
     void setDisconnectHandler(DisconnectHandler handler) { m_disconnectHandler = handler; }
 
     bool sendToClient(uint32_t sessionId, const std::string& message);
+    void broadcast(const std::string& message);
 
 private:
     void acceptLoop();

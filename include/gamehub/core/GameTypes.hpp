@@ -12,7 +12,12 @@ enum class GameType {
     SNAKE_SOLO,
     SNAKE_DUEL,
     TICTACTOE_SOLO,
-    TICTACTOE_PVP
+    TICTACTOE_PVP,
+    CONNECT_FOUR_SOLO,
+    CONNECT_FOUR_PVP,
+    PONG_DUEL,
+    TRON_DUEL,
+    BATTLESHIP_PVP
 };
 
 struct Point {

@@ -15,12 +15,15 @@ public:
     explicit RoomManager(size_t maxRooms = 4);
     virtual ~RoomManager() = default;
 
-    Room* createRoom(GameType type, PlayerId hostId);
+    Room* createRoom(GameType type, PlayerId hostId, const std::string& hostName = "Player 1");
     Room* joinRoom(const std::string& code, PlayerId playerId);
     Room* findRoomByCode(const std::string& code);
     Room* findRoomByPlayer(PlayerId playerId);
     void handleDisconnect(PlayerId playerId);
+    void removeRoom(const std::string& code);
     void tickAll(float dt);
+
+    std::string serializeDirectory() const;
 
     size_t getRoomCount() const { return m_rooms.size(); }
     size_t getMaxRooms() const { return m_maxRooms; }
