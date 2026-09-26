@@ -53,6 +53,7 @@ private:
     std::deque<DominoTile> m_board;
     std::vector<DominoTile> m_hands[3];
     std::vector<DominoTile> m_boneyard;
+    std::string m_lastAction;
 };
 
 } // namespace core

@@ -1742,6 +1742,13 @@ private:
                 ctx.fillText(`Right: ${state.right_end} ►`, canvas.width - 14, 42);
             }
 
+            if (state.last_action) {
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '600 10px system-ui, sans-serif';
+                ctx.fillText(state.last_action, canvas.width / 2, 42);
+            }
+
             // --- Middle Board Domino Chain ---
             const board = state.board || [];
             if (board.length === 0) {
@@ -1823,7 +1830,8 @@ private:
             ctx.moveTo(10, 290);
             ctx.lineTo(canvas.width - 10, 290);
             ctx.stroke();
-
+)rawliteral";
+    static constexpr const char* INDEX_HTML_PART9 = R"rawliteral(
             // --- Bottom Area: Player's Hand ---
             const myHand = (state.hands && state.hands[myPlayerNum]) || [];
             const count = myHand.length;
@@ -1884,11 +1892,11 @@ private:
             }
 
             // HUD scores and status updates
-            hudP1Score.textContent = `${state.p1_count || 0}`;
-            hudP2Score.textContent = `${state.p2_count || 0}`;
+            hudP1Score.textContent = `${state.p1_count || 0} tiles`;
+            hudP2Score.textContent = `${state.p2_count || 0} tiles`;
             if (state.num_players === 3) {
                 hudP3Wrap.style.display = 'flex';
-                hudP3Score.textContent = `${state.p3_count || 0}`;
+                hudP3Score.textContent = `${state.p3_count || 0} tiles`;
             } else {
                 hudP3Wrap.style.display = 'none';
             }
@@ -1916,21 +1924,22 @@ private:
                     btnPlaceRight.textContent = `Place Right (${state.right_end})`;
                 }
 
+                const actionPrefix = state.last_action ? `${state.last_action} · ` : "";
                 if (isMyTurn) {
                     if (hasPlayableTile) {
-                        hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : "Your Turn";
+                        hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : (actionPrefix + "Your Turn");
                     } else {
                         if ((state.boneyard_count || 0) > 0) {
-                            hudStatus.textContent = "No valid move! Draw or Pass";
+                            hudStatus.textContent = actionPrefix + "No valid move! Draw or Pass";
                         } else {
-                            hudStatus.textContent = "Blocked! Passing turn...";
+                            hudStatus.textContent = actionPrefix + "Blocked! Passing turn...";
                         }
                     }
                 } else {
                     if (activeGameType === 'domino_solo') {
-                        hudStatus.textContent = "Bot Thinking...";
+                        hudStatus.textContent = state.last_action ? `${state.last_action} · Bot Turn` : "Bot Thinking...";
                     } else {
-                        hudStatus.textContent = `P${state.turn}'s Turn`;
+                        hudStatus.textContent = state.last_action ? `${state.last_action} · P${state.turn}'s Turn` : `P${state.turn}'s Turn`;
                     }
                 }
             }
@@ -1943,6 +1952,15 @@ private:
                 const canDraw = isMyTurn && ((state.boneyard_count || 0) > 0);
                 btnDominoDraw.disabled = !canDraw;
                 btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.4';
+                if (isMyTurn && !hasPlayableTile && canDraw) {
+                    btnDominoDraw.style.background = '#0284c7';
+                    btnDominoDraw.style.color = '#ffffff';
+                    btnDominoDraw.style.fontWeight = '700';
+                } else {
+                    btnDominoDraw.style.background = '';
+                    btnDominoDraw.style.color = '';
+                    btnDominoDraw.style.fontWeight = '';
+                }
             }
 
             if (btnDominoPass) {
@@ -1978,8 +1996,7 @@ private:
                 }
             }
         }
-)rawliteral";
-    static constexpr const char* INDEX_HTML_PART9 = R"rawliteral(
+
         function spawnVictoryCelebration() {
             const colors = ['#38bdf8', '#4ade80', '#fbbf24', '#ec4899', '#f1f5f9'];
             for (let i = 0; i < 40; i++) {

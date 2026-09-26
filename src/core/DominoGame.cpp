@@ -24,6 +24,7 @@ void DominoGame::init() {
     m_finished = false;
     m_winner = 0;
     m_consecutivePasses = 0;
+    m_lastAction.clear();
 
     // 1. Generate full Double-Six 28-tile set
     std::vector<DominoTile> allTiles;
@@ -190,34 +191,52 @@ void DominoGame::checkBlockedWin() {
 void DominoGame::executeBotTurns() {
     while (m_isSolo && !m_finished && m_turn != 1) {
         int bidx = m_turn - 1;
+        int drawnCount = 0;
+        std::string botName = (m_numPlayers == 3) ? ("Bot " + std::to_string(bidx)) : "Bot";
 
-        // 1. Try to find highest pip playable tile
-        int bestIdx = -1;
-        int bestPips = -1;
-        std::string bestEnd = "right";
+        while (!m_finished && m_turn == bidx + 1) {
+            // 1. Try to find highest pip playable tile
+            int bestIdx = -1;
+            int bestPips = -1;
+            std::string bestEnd = "right";
 
-        int l = getLeftEnd();
-        int r = getRightEnd();
+            int l = getLeftEnd();
+            int r = getRightEnd();
 
-        for (int i = 0; i < (int)m_hands[bidx].size(); ++i) {
-            const auto& t = m_hands[bidx][i];
-            if (m_board.empty()) {
-                if (t.pips() > bestPips) { bestPips = t.pips(); bestIdx = i; }
-            } else {
-                if (t.matches(r) && t.pips() > bestPips) {
-                    bestPips = t.pips(); bestIdx = i; bestEnd = "right";
-                } else if (t.matches(l) && t.pips() > bestPips) {
-                    bestPips = t.pips(); bestIdx = i; bestEnd = "left";
+            for (int i = 0; i < (int)m_hands[bidx].size(); ++i) {
+                const auto& t = m_hands[bidx][i];
+                if (m_board.empty()) {
+                    if (t.pips() > bestPips) { bestPips = t.pips(); bestIdx = i; }
+                } else {
+                    if (t.matches(r) && t.pips() > bestPips) {
+                        bestPips = t.pips(); bestIdx = i; bestEnd = "right";
+                    } else if (t.matches(l) && t.pips() > bestPips) {
+                        bestPips = t.pips(); bestIdx = i; bestEnd = "left";
+                    }
                 }
             }
-        }
 
-        if (bestIdx != -1) {
-            playTile(bidx, bestIdx, bestEnd);
-        } else if (!m_boneyard.empty()) {
-            drawTile(bidx);
-        } else {
-            passTurn(bidx);
+            if (bestIdx != -1) {
+                DominoTile played = m_hands[bidx][bestIdx];
+                playTile(bidx, bestIdx, bestEnd);
+                if (drawnCount > 0) {
+                    m_lastAction = botName + " drew " + std::to_string(drawnCount) + " tile" + (drawnCount > 1 ? "s" : "") + " & played [" + std::to_string(played.left) + "|" + std::to_string(played.right) + "]";
+                } else {
+                    m_lastAction = botName + " played [" + std::to_string(played.left) + "|" + std::to_string(played.right) + "]";
+                }
+                break;
+            } else if (!m_boneyard.empty()) {
+                drawTile(bidx);
+                drawnCount++;
+            } else {
+                passTurn(bidx);
+                if (drawnCount > 0) {
+                    m_lastAction = botName + " drew " + std::to_string(drawnCount) + " tile" + (drawnCount > 1 ? "s" : "") + " & passed";
+                } else {
+                    m_lastAction = botName + " passed turn";
+                }
+                break;
+            }
         }
     }
 }
@@ -238,15 +257,22 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
         std::string endChoice = "right";
         if (input.find("\"left\"") != std::string::npos) endChoice = "left";
 
-        if (playTile(pidx, tileIdx, endChoice)) {
-            if (m_isSolo && !m_finished && m_turn != 1) {
-                executeBotTurns();
+        if (tileIdx >= 0 && tileIdx < (int)m_hands[pidx].size()) {
+            DominoTile played = m_hands[pidx][tileIdx];
+            if (playTile(pidx, tileIdx, endChoice)) {
+                m_lastAction = "You played [" + std::to_string(played.left) + "|" + std::to_string(played.right) + "]";
+                if (m_isSolo && !m_finished && m_turn != 1) {
+                    executeBotTurns();
+                }
             }
         }
     } else if (input.find("\"draw\"") != std::string::npos || input.find("\"cmd\":\"draw\"") != std::string::npos) {
-        drawTile(pidx);
+        if (drawTile(pidx)) {
+            m_lastAction = "You drew a tile";
+        }
     } else if (input.find("\"pass\"") != std::string::npos || input.find("\"cmd\":\"pass\"") != std::string::npos) {
         passTurn(pidx);
+        m_lastAction = "You passed turn";
         if (m_isSolo && !m_finished && m_turn != 1) {
             executeBotTurns();
         }
@@ -263,6 +289,7 @@ std::string DominoGame::serializeState() const {
         << ",\"left_end\":" << getLeftEnd()
         << ",\"right_end\":" << getRightEnd()
         << ",\"boneyard_count\":" << m_boneyard.size()
+        << ",\"last_action\":\"" << m_lastAction << "\""
         << ",\"p1_count\":" << m_hands[0].size()
         << ",\"p2_count\":" << m_hands[1].size()
         << ",\"p3_count\":" << m_hands[2].size();

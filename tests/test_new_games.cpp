@@ -146,7 +146,8 @@ int main() {
         dominoSolo.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
         std::string sSolo = dominoSolo.serializeState();
         assert(sSolo.find("\"game\":\"domino\"") != std::string::npos);
-        std::cout << "    Domino Solo AI bot play verified." << std::endl;
+        assert(sSolo.find("\"last_action\"") != std::string::npos);
+        std::cout << "    Domino Solo AI bot play and action tracking verified." << std::endl;
 
         // Pass validation test: player cannot pass if they hold playable tiles
         gamehub::core::DominoGame dominoPass(false, 2);
