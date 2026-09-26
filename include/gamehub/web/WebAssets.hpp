@@ -14,7 +14,7 @@ public:
     static std::string getIndexHtml() {
         return std::string(INDEX_HTML_PART1) + INDEX_HTML_PART2 + INDEX_HTML_PART3 + 
                INDEX_HTML_PART4 + INDEX_HTML_PART5 + INDEX_HTML_PART6 + INDEX_HTML_PART7 +
-               INDEX_HTML_PART8;
+               INDEX_HTML_PART8 + INDEX_HTML_PART9;
     }
 
 private:
@@ -1262,13 +1262,24 @@ private:
                                 }
                             }
                         }
-                    } else if (selectedDominoIdx >= 0 && y >= 60 && y < 300) {
+                    } else if (selectedDominoIdx >= 0 && y >= 50 && y < 300) {
                         sound.place();
                         haptic(20);
-                        const end = (x < canvas.width / 2) ? 'left' : 'right';
+                        const bLen = (lastState.board && lastState.board.length) || 1;
+                        const rRow = Math.floor((bLen - 1) / 7);
+                        const rColInRow = (bLen - 1) % 7;
+                        const rCol = (rRow % 2 === 0) ? rColInRow : (6 - rColInRow);
+                        const x0 = 41;
+                        const y0 = 67;
+                        const x1 = 22 + rCol * 46 + 19;
+                        const y1 = 56 + rRow * 38 + 11;
+                        const d0 = (x - x0)*(x - x0) + (y - y0)*(y - y0);
+                        const d1 = (x - x1)*(x - x1) + (y - y1)*(y - y1);
+                        const end = (d0 <= d1) ? 'left' : 'right';
                         ws.send(JSON.stringify({ cmd: 'play', index: selectedDominoIdx, end: end }));
                         selectedDominoIdx = -1;
-                        dominoEndChoice.style.display = 'none';
+                        if (dominoEndChoice) dominoEndChoice.style.display = 'none';
+                        if (dominoControls) dominoControls.style.display = 'flex';
                     }
                 }
             }
@@ -1752,6 +1763,23 @@ private:
                     const bx = 22 + col * (bTileW + 8);
                     const by = 56 + row * (bTileH + 16);
 
+                    // Visual corner track connector between rows
+                    if (row > 0 && colInRow === 0) {
+                        ctx.strokeStyle = '#1e3a2f';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        const prevCenterY = by - 16 - bTileH / 2;
+                        const currCenterY = by + bTileH / 2;
+                        const midY = (prevCenterY + currCenterY) / 2;
+                        const radius = (currCenterY - prevCenterY) / 2;
+                        if (isEvenRow) {
+                            ctx.arc(bx + 2, midY, radius, Math.PI / 2, 3 * Math.PI / 2, false);
+                        } else {
+                            ctx.arc(bx + bTileW - 2, midY, radius, -Math.PI / 2, Math.PI / 2, false);
+                        }
+                        ctx.stroke();
+                    }
+
                     // Ivory Tile Body
                     ctx.fillStyle = '#fffbeb';
                     ctx.beginPath();
@@ -1769,9 +1797,11 @@ private:
                     ctx.lineTo(bx + bTileW / 2, by + bTileH - 2);
                     ctx.stroke();
 
-                    // Pips
-                    drawDominoPips(ctx, t[0], bx, by, bTileW / 2, bTileH);
-                    drawDominoPips(ctx, t[1], bx + bTileW / 2, by, bTileW / 2, bTileH);
+                    // Pips: respect row direction (even rows left->right, odd rows right->left)
+                    const pipsLeft = isEvenRow ? t[0] : t[1];
+                    const pipsRight = isEvenRow ? t[1] : t[0];
+                    drawDominoPips(ctx, pipsLeft, bx, by, bTileW / 2, bTileH);
+                    drawDominoPips(ctx, pipsRight, bx + bTileW / 2, by, bTileW / 2, bTileH);
 
                     // Highlight open ends
                     if (i === 0) {
@@ -1879,6 +1909,13 @@ private:
                 if (dominoControls) dominoControls.style.display = (selectedDominoIdx >= 0) ? 'none' : 'flex';
                 if (dominoEndChoice) dominoEndChoice.style.display = (selectedDominoIdx >= 0) ? 'flex' : 'none';
 
+                if (btnPlaceLeft && state.left_end !== -1) {
+                    btnPlaceLeft.textContent = `Place Left (${state.left_end})`;
+                }
+                if (btnPlaceRight && state.right_end !== -1) {
+                    btnPlaceRight.textContent = `Place Right (${state.right_end})`;
+                }
+
                 if (isMyTurn) {
                     if (hasPlayableTile) {
                         hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : "Your Turn";
@@ -1941,7 +1978,8 @@ private:
                 }
             }
         }
-
+)rawliteral";
+    static constexpr const char* INDEX_HTML_PART9 = R"rawliteral(
         function spawnVictoryCelebration() {
             const colors = ['#38bdf8', '#4ade80', '#fbbf24', '#ec4899', '#f1f5f9'];
             for (let i = 0; i < 40; i++) {
