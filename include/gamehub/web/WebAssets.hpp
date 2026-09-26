@@ -376,8 +376,8 @@ private:
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="7" r="1.3" fill="currentColor"/><circle cx="15" cy="7" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.3" fill="currentColor"/></svg>
                         </div>
                         <div class="game-text">
-                            <span class="game-title">Draw Dominoes</span>
-                            <span class="game-desc">Double-Six vs Strategic AI Bot</span>
+                            <span class="game-title">Block Dominoes</span>
+                            <span class="game-desc">Double-Six Classic Block vs Strategic AI Bot</span>
                         </div>
                     </div>
                     <span class="game-tag">vs Bot</span>
@@ -470,8 +470,8 @@ private:
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="9" cy="7" r="1.3" fill="currentColor"/><circle cx="15" cy="7" r="1.3" fill="currentColor"/><circle cx="12" cy="17" r="1.3" fill="currentColor"/></svg>
                         </div>
                         <div class="game-text">
-                            <span class="game-title">2-3P Dominoes</span>
-                            <span class="game-desc">Draw Dominoes arena with up to 3 players</span>
+                            <span class="game-title">2-3P Block Dominoes</span>
+                            <span class="game-desc">Classic Block Dominoes arena with up to 3 players</span>
                         </div>
                     </div>
                     <span class="game-tag">2-3 Players</span>
@@ -546,6 +546,7 @@ private:
             <div id="domino-controls" class="domino-controls-bar">
                 <button id="btn-domino-draw" class="btn-solid domino-btn">Draw Tile (<span id="boneyard-count">14</span>)</button>
                 <button id="btn-domino-pass" class="btn-secondary domino-btn">Pass Turn</button>
+                <button id="btn-domino-mode" class="btn-secondary domino-btn" style="font-size:0.75rem; padding:6px 10px; min-width:85px;">Rule: Block</button>
             </div>
             <div id="domino-end-choice" class="domino-end-choice">
                 <button id="btn-place-left" class="btn-solid domino-btn" style="background:#0284c7;">Place Left End</button>
@@ -700,6 +701,7 @@ private:
         const dominoEndChoice = document.getElementById('domino-end-choice');
         const btnDominoDraw = document.getElementById('btn-domino-draw');
         const btnDominoPass = document.getElementById('btn-domino-pass');
+        const btnDominoMode = document.getElementById('btn-domino-mode');
         const btnPlaceLeft = document.getElementById('btn-place-left');
         const btnPlaceRight = document.getElementById('btn-place-right');
         const boneyardCountSpan = document.getElementById('boneyard-count');
@@ -861,8 +863,8 @@ private:
                 case 'pong_duel': return 'Pong Duel';
                 case 'tron_duel': return 'Tron Light Cycles';
                 case 'battleship_pvp': return 'Battleship Fleet';
-                case 'domino_pvp': return '2-3P Dominoes';
-                case 'domino_solo': return 'Draw Dominoes';
+                case 'domino_pvp': return '2-3P Block Dominoes';
+                case 'domino_solo': return 'Block Dominoes';
                 default: return 'Custom Game';
             }
         }
@@ -1063,6 +1065,17 @@ private:
                 ws.send(JSON.stringify({ cmd: 'pass' }));
             }
         });
+
+        if (btnDominoMode) {
+            btnDominoMode.addEventListener('click', () => {
+                sound.click();
+                haptic(15);
+                if (ws && ws.readyState === WebSocket.OPEN && lastState) {
+                    const nextMode = (lastState.block_mode !== false) ? 'draw' : 'block';
+                    ws.send(JSON.stringify({ cmd: 'mode', mode: nextMode }));
+                }
+            });
+        }
 
         btnPlaceLeft.addEventListener('click', () => {
             if (selectedDominoIdx >= 0 && ws && ws.readyState === WebSocket.OPEN) {
@@ -1724,10 +1737,11 @@ private:
             }
             ctx.fillText(oppStr, 14, 24);
 
-            // Boneyard badge
+            // Reserve / Boneyard badge
             ctx.textAlign = 'right';
             ctx.fillStyle = '#38bdf8';
-            ctx.fillText(`Pioche: ${state.boneyard_count || 0}`, canvas.width - 14, 24);
+            const boneyardLabel = (state.block_mode !== false) ? `Reserve: ${state.boneyard_count || 0}` : `Pioche: ${state.boneyard_count || 0}`;
+            ctx.fillText(boneyardLabel, canvas.width - 14, 24);
 
             // --- Open End Indicators in Middle ---
             ctx.font = '700 11px system-ui, sans-serif';
@@ -1929,7 +1943,9 @@ private:
                     if (hasPlayableTile) {
                         hudStatus.textContent = (selectedDominoIdx >= 0) ? "Select End (Left / Right)" : (actionPrefix + "Your Turn");
                     } else {
-                        if ((state.boneyard_count || 0) > 0) {
+                        if (state.block_mode !== false) {
+                            hudStatus.textContent = actionPrefix + "No valid moves! Tap Pass Turn";
+                        } else if ((state.boneyard_count || 0) > 0) {
                             hudStatus.textContent = actionPrefix + "No valid move! Draw or Pass";
                         } else {
                             hudStatus.textContent = actionPrefix + "Blocked! Passing turn...";
@@ -1948,18 +1964,27 @@ private:
                 boneyardCountSpan.textContent = state.boneyard_count || 0;
             }
 
+            if (btnDominoMode) {
+                btnDominoMode.textContent = (state.block_mode !== false) ? "Rule: Block" : "Rule: Draw";
+            }
+
             if (btnDominoDraw) {
-                const canDraw = isMyTurn && ((state.boneyard_count || 0) > 0);
-                btnDominoDraw.disabled = !canDraw;
-                btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.4';
-                if (isMyTurn && !hasPlayableTile && canDraw) {
-                    btnDominoDraw.style.background = '#0284c7';
-                    btnDominoDraw.style.color = '#ffffff';
-                    btnDominoDraw.style.fontWeight = '700';
+                if (state.block_mode !== false) {
+                    btnDominoDraw.style.display = 'none';
                 } else {
-                    btnDominoDraw.style.background = '';
-                    btnDominoDraw.style.color = '';
-                    btnDominoDraw.style.fontWeight = '';
+                    btnDominoDraw.style.display = 'inline-block';
+                    const canDraw = isMyTurn && ((state.boneyard_count || 0) > 0);
+                    btnDominoDraw.disabled = !canDraw;
+                    btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.4';
+                    if (isMyTurn && !hasPlayableTile && canDraw) {
+                        btnDominoDraw.style.background = '#0284c7';
+                        btnDominoDraw.style.color = '#ffffff';
+                        btnDominoDraw.style.fontWeight = '700';
+                    } else {
+                        btnDominoDraw.style.background = '';
+                        btnDominoDraw.style.color = '';
+                        btnDominoDraw.style.fontWeight = '';
+                    }
                 }
             }
 
@@ -1978,8 +2003,9 @@ private:
                 }
             }
 
-            // Auto-pass if completely blocked with empty boneyard
-            if (isMyTurn && !hasPlayableTile && (state.boneyard_count || 0) === 0) {
+            // Auto-pass if completely blocked or in Block mode without moves
+            const shouldAutoPass = isMyTurn && !hasPlayableTile && (state.block_mode !== false || (state.boneyard_count || 0) === 0);
+            if (shouldAutoPass) {
                 if (!window._dominoAutoPassTimer) {
                     window._dominoAutoPassTimer = setTimeout(() => {
                         window._dominoAutoPassTimer = null;
@@ -1987,7 +2013,7 @@ private:
                             sound.move();
                             ws.send(JSON.stringify({ cmd: 'pass' }));
                         }
-                    }, 800);
+                    }, 1000);
                 }
             } else {
                 if (window._dominoAutoPassTimer) {

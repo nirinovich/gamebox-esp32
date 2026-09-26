@@ -6,8 +6,8 @@
 namespace gamehub {
 namespace core {
 
-DominoGame::DominoGame(bool isSolo, int numPlayers)
-    : m_isSolo(isSolo), m_numPlayers(std::clamp(numPlayers, 2, 3)) {
+DominoGame::DominoGame(bool isSolo, int numPlayers, bool isBlockMode)
+    : m_isSolo(isSolo), m_numPlayers(std::clamp(numPlayers, 2, 3)), m_isBlockMode(isBlockMode) {
     init();
 }
 
@@ -151,7 +151,7 @@ bool DominoGame::playTile(int pidx, int tileIdx, const std::string& endChoice) {
 }
 
 bool DominoGame::drawTile(int pidx) {
-    if (m_boneyard.empty()) return false;
+    if (m_isBlockMode || m_boneyard.empty()) return false;
     m_hands[pidx].push_back(m_boneyard.back());
     m_boneyard.pop_back();
     m_consecutivePasses = 0;
@@ -225,7 +225,7 @@ void DominoGame::executeBotTurns() {
                     m_lastAction = botName + " played [" + std::to_string(played.left) + "|" + std::to_string(played.right) + "]";
                 }
                 break;
-            } else if (!m_boneyard.empty()) {
+            } else if (!m_isBlockMode && !m_boneyard.empty()) {
                 drawTile(bidx);
                 drawnCount++;
             } else {
@@ -267,7 +267,7 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
             }
         }
     } else if (input.find("\"draw\"") != std::string::npos || input.find("\"cmd\":\"draw\"") != std::string::npos) {
-        if (drawTile(pidx)) {
+        if (!m_isBlockMode && drawTile(pidx)) {
             m_lastAction = "You drew a tile";
         }
     } else if (input.find("\"pass\"") != std::string::npos || input.find("\"cmd\":\"pass\"") != std::string::npos) {
@@ -275,6 +275,14 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
         m_lastAction = "You passed turn";
         if (m_isSolo && !m_finished && m_turn != 1) {
             executeBotTurns();
+        }
+    } else if (input.find("\"mode\"") != std::string::npos || input.find("\"set_mode\"") != std::string::npos) {
+        if (input.find("\"block\"") != std::string::npos) {
+            m_isBlockMode = true;
+            m_lastAction = "Mode set to Block Dominoes";
+        } else if (input.find("\"draw\"") != std::string::npos) {
+            m_isBlockMode = false;
+            m_lastAction = "Mode set to Draw Dominoes";
         }
     }
 }
@@ -284,6 +292,7 @@ std::string DominoGame::serializeState() const {
     oss << "{\"type\":\"state\",\"game\":\"domino\""
         << ",\"turn\":" << m_turn
         << ",\"num_players\":" << m_numPlayers
+        << ",\"block_mode\":" << (m_isBlockMode ? "true" : "false")
         << ",\"finished\":" << (m_finished ? "true" : "false")
         << ",\"winner\":" << m_winner
         << ",\"left_end\":" << getLeftEnd()

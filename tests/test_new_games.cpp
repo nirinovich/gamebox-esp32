@@ -133,12 +133,20 @@ int main() {
         assert(s3.find("\"p3_count\":7") != std::string::npos);
         assert(s3.find("\"boneyard_count\":7") != std::string::npos); // 28 - 21 = 7
 
-        // Draw tile from boneyard
+        // Block mode prohibits drawing
+        domino3.handleInput(1, "{\"cmd\":\"draw\"}");
+        std::string s3_nodraw = domino3.serializeState();
+        assert(s3_nodraw.find("\"p1_count\":7") != std::string::npos);
+        assert(s3_nodraw.find("\"block_mode\":true") != std::string::npos);
+
+        // Switch to Draw mode and verify drawing from boneyard
+        domino3.setBlockMode(false);
         domino3.handleInput(1, "{\"cmd\":\"draw\"}");
         std::string s3_drawn = domino3.serializeState();
         assert(s3_drawn.find("\"p1_count\":8") != std::string::npos);
         assert(s3_drawn.find("\"boneyard_count\":6") != std::string::npos);
-        std::cout << "    Domino 3P dealing and Boneyard drawing verified." << std::endl;
+        assert(s3_drawn.find("\"block_mode\":false") != std::string::npos);
+        std::cout << "    Domino Block mode (no-draw) and Draw mode variants verified." << std::endl;
 
         // Solo Mode with Strategic Minimax Bot
         gamehub::core::DominoGame dominoSolo(true, 2);

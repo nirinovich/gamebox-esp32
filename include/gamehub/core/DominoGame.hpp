@@ -19,7 +19,7 @@ struct DominoTile {
 
 class DominoGame : public Game {
 public:
-    explicit DominoGame(bool isSolo = false, int numPlayers = 2);
+    explicit DominoGame(bool isSolo = false, int numPlayers = 2, bool isBlockMode = true);
     ~DominoGame() override = default;
 
     void init() override;
@@ -35,6 +35,8 @@ public:
     int getRightEnd() const;
     bool canPlayerPlay(int pidx) const;
     size_t getBoneyardCount() const { return m_boneyard.size(); }
+    bool isBlockMode() const { return m_isBlockMode; }
+    void setBlockMode(bool block) { m_isBlockMode = block; }
 
 private:
     bool playTile(int pidx, int tileIdx, const std::string& end);
@@ -45,6 +47,7 @@ private:
 
     bool m_isSolo{false};
     int m_numPlayers{2};
+    bool m_isBlockMode{true};
     int m_turn{1};
     bool m_finished{false};
     int m_winner{0};
