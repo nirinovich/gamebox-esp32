@@ -1,10 +1,11 @@
-﻿#include <gamehub/core/TronGame.hpp>
+#include <gamehub/core/TronGame.hpp>
 #include <sstream>
+#include <queue>
 
 namespace gamehub {
 namespace core {
 
-TronGame::TronGame() {
+TronGame::TronGame(bool isSolo) : m_isSolo(isSolo) {
     init();
 }
 
@@ -26,11 +27,75 @@ bool TronGame::outOfBounds(int x, int y) const {
     return x < 0 || x >= GRID || y < 0 || y >= GRID;
 }
 
+int TronGame::calculateFloodFill(int startX, int startY) const {
+    if (outOfBounds(startX, startY) || m_grid[startX][startY] != 0) return 0;
+
+    std::vector<std::vector<bool>> visited(GRID, std::vector<bool>(GRID, false));
+    std::queue<std::pair<int, int>> q;
+    q.push({startX, startY});
+    visited[startX][startY] = true;
+    int reachable = 0;
+    const int MAX_SEARCH = 150; // Bound search for embedded efficiency
+
+    static const int DIRS[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+
+    while (!q.empty() && reachable < MAX_SEARCH) {
+        auto [cx, cy] = q.front();
+        q.pop();
+        reachable++;
+
+        for (int d = 0; d < 4; ++d) {
+            int nx = cx + DIRS[d][0];
+            int ny = cy + DIRS[d][1];
+            if (!outOfBounds(nx, ny) && m_grid[nx][ny] == 0 && !visited[nx][ny]) {
+                visited[nx][ny] = true;
+                q.push({nx, ny});
+            }
+        }
+    }
+    return reachable;
+}
+
+void TronGame::computeBotMove() {
+    static const int CANDIDATES[4][2] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+    int bestScore = -1;
+    int bestDx = m_p2.nextDx;
+    int bestDy = m_p2.nextDy;
+
+    for (int c = 0; c < 4; ++c) {
+        int cdx = CANDIDATES[c][0];
+        int cdy = CANDIDATES[c][1];
+
+        // Disallow 180-degree reversal
+        if (cdx == -m_p2.dx && cdy == -m_p2.dy) continue;
+
+        int nx = m_p2.x + cdx;
+        int ny = m_p2.y + cdy;
+
+        if (outOfBounds(nx, ny) || m_grid[nx][ny] != 0) continue;
+
+        int space = calculateFloodFill(nx, ny);
+        if (space > bestScore) {
+            bestScore = space;
+            bestDx = cdx;
+            bestDy = cdy;
+        }
+    }
+
+    m_p2.nextDx = bestDx;
+    m_p2.nextDy = bestDy;
+}
+
 void TronGame::update(float dt) {
     if (m_finished) return;
     m_tickAccum += dt;
     if (m_tickAccum < TICK_INTERVAL) return;
     m_tickAccum -= TICK_INTERVAL;
+
+    // In solo mode, compute bot move before advancing
+    if (m_isSolo) {
+        computeBotMove();
+    }
 
     // Commit queued direction
     m_p1.dx = m_p1.nextDx; m_p1.dy = m_p1.nextDy;
@@ -69,11 +134,11 @@ void TronGame::handleInput(PlayerId player, const std::string& input) {
     if (dx == 0 && dy == 0) return;
 
     if (player == 1) {
-        // Disallow 180-degree reversal
-        if (dx == -m_p1.dx && dy == -m_p1.dy) return;
+        // Disallow 180-degree reversal against queued direction
+        if (dx == -m_p1.nextDx && dy == -m_p1.nextDy) return;
         m_p1.nextDx = dx; m_p1.nextDy = dy;
     } else if (player == 2) {
-        if (dx == -m_p2.dx && dy == -m_p2.dy) return;
+        if (dx == -m_p2.nextDx && dy == -m_p2.nextDy) return;
         m_p2.nextDx = dx; m_p2.nextDy = dy;
     }
 }

@@ -59,12 +59,20 @@ int main() {
         assert(state.find("\"game\":\"pong\"") != std::string::npos);
         assert(state.find("\"p1y\":") != std::string::npos);
         std::cout << "    Pong movement and physics verified." << std::endl;
+
+        // Solo Pong with Kinematic Trajectory Bot
+        gamehub::core::PongGame pong_solo(true);
+        pong_solo.init();
+        pong_solo.update(0.2f);
+        std::string sPongSolo = pong_solo.serializeState();
+        assert(sPongSolo.find("\"game\":\"pong\"") != std::string::npos);
+        std::cout << "    Pong Solo Kinematic Bot verified." << std::endl;
     }
 
     // --- 3. Tron Tests ---
     {
         std::cout << "  - Testing TronGame..." << std::endl;
-        gamehub::core::TronGame tron;
+        gamehub::core::TronGame tron(false);
         tron.init();
         assert(!tron.isFinished());
 
@@ -75,12 +83,22 @@ int main() {
         std::string state = tron.serializeState();
         assert(state.find("\"game\":\"tron\"") != std::string::npos);
         std::cout << "    Tron light cycle stepping verified." << std::endl;
+
+        // Solo Tron with Voronoi Flood-Fill Bot
+        gamehub::core::TronGame tron_solo(true);
+        tron_solo.init();
+        for (int i = 0; i < 5; ++i) {
+            tron_solo.update(0.1f);
+        }
+        std::string sTronSolo = tron_solo.serializeState();
+        assert(sTronSolo.find("\"game\":\"tron\"") != std::string::npos);
+        std::cout << "    Tron Solo Voronoi AI verified." << std::endl;
     }
 
     // --- 4. Battleship Tests ---
     {
         std::cout << "  - Testing BattleshipGame..." << std::endl;
-        gamehub::core::BattleshipGame bship;
+        gamehub::core::BattleshipGame bship(false);
         bship.init();
         assert(!bship.isFinished());
 
@@ -98,6 +116,25 @@ int main() {
         std::string battleState = bship.serializeState();
         assert(battleState.find("\"turn\":2") != std::string::npos);
         std::cout << "    Battleship fleet deployment and battle firing verified." << std::endl;
+
+        // Solo Battleship with Checkerboard Parity AI
+        gamehub::core::BattleshipGame bship_solo(true);
+        bship_solo.init();
+        // In solo mode, bot already deployed fleet
+        std::string sInit = bship_solo.serializeState();
+        assert(sInit.find("\"p2ready\":true") != std::string::npos);
+        // Human deploys
+        bship_solo.handleInput(1, "{\"cmd\":\"auto_place\"}");
+        assert(bship_solo.serializeState().find("\"phase\":\"battle\"") != std::string::npos);
+        // Human fires at 0, 0
+        bship_solo.handleInput(1, "{\"cmd\":\"fire\",\"row\":0,\"col\":0}");
+        // Turn is 2 (Bot's turn)
+        assert(bship_solo.serializeState().find("\"turn\":2") != std::string::npos);
+        // Step bot update
+        bship_solo.update(0.5f);
+        // Bot should have fired using parity hunt and returned turn to 1
+        assert(bship_solo.serializeState().find("\"turn\":1") != std::string::npos);
+        std::cout << "    Battleship Solo Parity AI execution verified." << std::endl;
     }
 
     // --- 5. Domino Tests ---

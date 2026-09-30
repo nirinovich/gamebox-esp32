@@ -6,6 +6,7 @@
 #include "GameTypes.hpp"
 #include "Game.hpp"
 #include "GameFactory.hpp"
+#include "RoomState.hpp"
 
 namespace gamehub {
 namespace core {
@@ -19,6 +20,7 @@ public:
     void tick(float dt);
     void handleInput(PlayerId id, const std::string& commandJson);
     std::string serializeState() const;
+    std::string serializeStateForPlayer(PlayerId id) const;
     bool isFinished() const;
     int getWinner() const;
 
@@ -32,6 +34,16 @@ public:
     size_t getPlayerCount() const { return m_players.size(); }
     size_t getMaxPlayers() const { return m_maxPlayers; }
     void setMaxPlayers(size_t max) { m_maxPlayers = max; }
+    const std::vector<PlayerId>& getPlayers() const { return m_players; }
+
+    // GoF State Pattern methods
+    RoomLifecycle getLifecycle() const;
+    const char* getStateName() const;
+    void transitionTo(std::unique_ptr<RoomState> newState);
+    bool canAcceptPlayer() const;
+    bool canStartGame() const;
+    bool canProcessInput() const;
+    bool shouldTick() const;
 
 private:
     std::string m_code;
@@ -40,6 +52,7 @@ private:
     size_t m_maxPlayers{2};
     std::unique_ptr<Game> m_game;
     std::vector<PlayerId> m_players;
+    std::unique_ptr<RoomState> m_state;
 };
 
 } // namespace core

@@ -14,6 +14,7 @@ public:
     virtual void update(float dt) = 0;
     virtual void handleInput(PlayerId id, const std::string& commandJson) = 0;
     virtual std::string serializeState() const = 0;
+    virtual std::string serializeStateForPlayer(PlayerId /*id*/) const { return serializeState(); }
     virtual bool isFinished() const = 0;
     virtual int getWinner() const = 0;
 };

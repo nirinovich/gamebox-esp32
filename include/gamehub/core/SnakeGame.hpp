@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Game.hpp"
-#include <vector>
+#include <deque>
 
 namespace gamehub {
 namespace core {
@@ -27,12 +27,12 @@ private:
     int m_gridWidth{20};
     int m_gridHeight{20};
 
-    std::vector<Point> m_snake1;
+    std::deque<Point> m_snake1;
     Direction m_dir1{Direction::RIGHT};
     Direction m_nextDir1{Direction::RIGHT};
     int m_score1{0};
 
-    std::vector<Point> m_snake2;
+    std::deque<Point> m_snake2;
     Direction m_dir2{Direction::LEFT};
     Direction m_nextDir2{Direction::LEFT};
     int m_score2{0};

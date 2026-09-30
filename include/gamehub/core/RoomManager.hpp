@@ -27,6 +27,7 @@ public:
 
     size_t getRoomCount() const { return m_rooms.size(); }
     size_t getMaxRooms() const { return m_maxRooms; }
+    const std::vector<std::unique_ptr<Room>>& getRooms() const { return m_rooms; }
 
 private:
     std::string generateUniqueCode();

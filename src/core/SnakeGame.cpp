@@ -175,7 +175,7 @@ void SnakeGame::update(float /*dt*/) {
     }
 
     // Move Snake 1
-    m_snake1.insert(m_snake1.begin(), newHead1);
+    m_snake1.push_front(newHead1);
     if (newHead1 == m_food) {
         m_score1 += 10;
         spawnFood();
@@ -185,7 +185,7 @@ void SnakeGame::update(float /*dt*/) {
 
     // Move Snake 2
     if (m_isDuel) {
-        m_snake2.insert(m_snake2.begin(), newHead2);
+        m_snake2.push_front(newHead2);
         if (newHead2 == m_food) {
             m_score2 += 10;
             spawnFood();

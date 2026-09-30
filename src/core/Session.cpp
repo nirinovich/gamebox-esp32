@@ -50,6 +50,18 @@ std::string Session::handleMessage(const std::string& rawMessage) {
             m_room = std::make_unique<Room>("SOLO_DOMINO", GameType::DOMINO_SOLO);
             m_room->init();
             return m_room->serializeState();
+        } else if (rawMessage.find("\"pong_solo\"") != std::string::npos) {
+            m_room = std::make_unique<Room>("SOLO_PONG", GameType::PONG_SOLO);
+            m_room->init();
+            return m_room->serializeState();
+        } else if (rawMessage.find("\"tron_solo\"") != std::string::npos) {
+            m_room = std::make_unique<Room>("SOLO_TRON", GameType::TRON_SOLO);
+            m_room->init();
+            return m_room->serializeState();
+        } else if (rawMessage.find("\"battleship_solo\"") != std::string::npos) {
+            m_room = std::make_unique<Room>("SOLO_BSHIP", GameType::BATTLESHIP_SOLO);
+            m_room->init();
+            return m_room->serializeState();
         }
     }
 

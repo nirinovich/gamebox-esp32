@@ -13,7 +13,7 @@ class WebAssets {
 public:
     static std::string getIndexHtml() {
         return std::string(INDEX_HTML_PART1) + INDEX_HTML_PART2 + INDEX_HTML_PART3 + 
-               INDEX_HTML_PART4 + INDEX_HTML_PART5 + INDEX_HTML_PART6 + INDEX_HTML_PART7 +
+               INDEX_HTML_PART4 + INDEX_HTML_PART5 + INDEX_HTML_PART5B + INDEX_HTML_PART6 + INDEX_HTML_PART7 +
                INDEX_HTML_PART8 + INDEX_HTML_PART9;
     }
 
@@ -296,6 +296,11 @@ private:
             <span>Gamebox</span>
         </div>
         <div class="header-controls">
+            <button id="btn-trophy" class="icon-btn" title="Hall of Fame">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-12 0V6a2 2 0 0 1 2-2z"/>
+                </svg>
+            </button>
             <button id="btn-sound" class="icon-btn" title="Toggle Sound">
                 <svg id="svg-sound-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
@@ -365,6 +370,45 @@ private:
                         <div class="game-text">
                             <span class="game-title">Connect Four</span>
                             <span class="game-desc">Drop discs to form four-in-a-row</span>
+                        </div>
+                    </div>
+                    <span class="game-tag">vs Bot</span>
+                </div>
+
+                <div class="game-item" id="card-solo-pong">
+                    <div class="game-info">
+                        <div class="game-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="4" y2="17"/><line x1="20" y1="7" x2="20" y2="17"/><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><rect x="9" y="11" width="2" height="2" fill="currentColor"/></svg>
+                        </div>
+                        <div class="game-text">
+                            <span class="game-title">Pong Arcade</span>
+                            <span class="game-desc">Bounce physics vs Kinematic Interceptor</span>
+                        </div>
+                    </div>
+                    <span class="game-tag">vs Bot</span>
+                </div>
+
+                <div class="game-item" id="card-solo-tron">
+                    <div class="game-info">
+                        <div class="game-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h8a2 2 0 0 0 2-2V7a2 2 0 0 1 2-2h6"/><circle cx="3" cy="19" r="2" fill="currentColor"/><circle cx="21" cy="5" r="2" fill="currentColor"/></svg>
+                        </div>
+                        <div class="game-text">
+                            <span class="game-title">Tron Light Cycles</span>
+                            <span class="game-desc">Light trail territory duel vs Voronoi Bot</span>
+                        </div>
+                    </div>
+                    <span class="game-tag">vs Bot</span>
+                </div>
+
+                <div class="game-item" id="card-solo-battleship">
+                    <div class="game-info">
+                        <div class="game-icon-box">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l3 5h14l3-5H2z"/><path d="M7 14V9h3v5m4 0V6h3v8"/><line x1="2" y1="19" x2="22" y2="19"/></svg>
+                        </div>
+                        <div class="game-text">
+                            <span class="game-title">Battleship Fleet</span>
+                            <span class="game-desc">Naval deployment vs Parity hunting Bot</span>
                         </div>
                     </div>
                     <span class="game-tag">vs Bot</span>
@@ -570,6 +614,24 @@ private:
 
             <div style="display:flex; justify-content:center; margin-top:2px;">
                 <button id="btn-forfeit" class="btn-secondary" style="font-size:0.78rem; padding:6px 14px;">Leave Match</button>
+            </div>
+        </div>
+
+        <!-- Hall of Fame / Leaderboard Modal (ADR 0012) -->
+        <div id="stats-drawer" class="modal-overlay" style="display:none; z-index:100; align-items:center; justify-content:center;">
+            <div style="background:var(--surface); border:1px solid var(--border-highlight); border-radius:var(--radius-lg); padding:16px; width:92%; max-width:380px; box-shadow:0 12px 30px rgba(0,0,0,0.7); display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:8px; color:var(--text);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bot-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-12 0V6a2 2 0 0 1 2-2z"/></svg>
+                        Hall of Fame
+                    </div>
+                    <button id="btn-close-stats" class="icon-btn" style="border:none; width:28px; height:28px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div id="stats-content" style="display:flex; flex-direction:column; gap:6px; font-size:0.85rem;">
+                </div>
+                <button id="btn-clear-stats" class="btn-secondary" style="font-size:0.75rem; padding:6px; margin-top:4px;">Reset Records</button>
             </div>
         </div>
     </div>
@@ -858,11 +920,17 @@ private:
         function getGameTitle(gameKey) {
             switch(gameKey) {
                 case 'snake_duel': return 'Snake Arena';
+                case 'snake_solo': return 'Snake Survival';
                 case 'ttt_pvp': return '2P Tic-Tac-Toe';
+                case 'ttt_solo': return 'Tic-Tac-Toe';
                 case 'connect4_pvp': return 'Connect Four';
+                case 'connect4_solo': return 'Connect Four';
                 case 'pong_duel': return 'Pong Duel';
+                case 'pong_solo': return 'Pong Arcade';
                 case 'tron_duel': return 'Tron Light Cycles';
+                case 'tron_solo': return 'Tron Light Cycles';
                 case 'battleship_pvp': return 'Battleship Fleet';
+                case 'battleship_solo': return 'Battleship Fleet';
                 case 'domino_pvp': return '2-3P Block Dominoes';
                 case 'domino_solo': return 'Block Dominoes';
                 default: return 'Custom Game';
@@ -954,15 +1022,16 @@ private:
             if (dominoControls) dominoControls.style.display = 'none';
             if (dominoEndChoice) dominoEndChoice.style.display = 'none';
 
-            if (gType === 'snake_solo' || gType === 'snake_duel' || gType === 'tron_duel' || gType === 'pong_duel') {
+            if (gType === 'snake_solo' || gType === 'snake_duel' || gType === 'tron_duel' || gType === 'tron_solo' || gType === 'pong_duel' || gType === 'pong_solo') {
                 if (touchControls) touchControls.style.display = 'grid';
-            } else if (gType === 'battleship_pvp') {
+            } else if (gType === 'battleship_pvp' || gType === 'battleship_solo') {
                 if (battleshipControls) battleshipControls.style.display = 'flex';
             } else if (gType && (gType === 'domino_solo' || gType === 'domino_pvp' || gType === 'domino')) {
                 if (dominoControls) dominoControls.style.display = 'flex';
             }
         }
-
+)rawliteral";
+    static constexpr const char* INDEX_HTML_PART5B = R"rawliteral(
         // --- Solo Game Triggers ---
         document.getElementById('card-solo-snake').addEventListener('click', () => {
             sound.click();
@@ -1009,6 +1078,53 @@ private:
             setupGameView('connect4_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'connect4_solo' }));
+        });
+
+        document.getElementById('card-solo-pong').addEventListener('click', () => {
+            sound.click();
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'leave' }));
+            resetClientGameState();
+            activeGameType = 'pong_solo';
+            myPlayerNum = 1;
+            hudP1Name.textContent = nicknameInput.value;
+            hudP2Name.textContent = "AI Interceptor";
+            hudP2Marker.className = 'bot-dot';
+            hudP2Marker.style.display = 'inline-block';
+            setupGameView('pong_solo');
+            switchView('game');
+            ws.send(JSON.stringify({ cmd: 'start', game: 'pong_solo' }));
+            startGameLoop();
+        });
+
+        document.getElementById('card-solo-tron').addEventListener('click', () => {
+            sound.click();
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'leave' }));
+            resetClientGameState();
+            activeGameType = 'tron_solo';
+            myPlayerNum = 1;
+            hudP1Name.textContent = nicknameInput.value;
+            hudP2Name.textContent = "Voronoi Bot";
+            hudP2Marker.className = 'bot-dot';
+            hudP2Marker.style.display = 'inline-block';
+            setupGameView('tron_solo');
+            switchView('game');
+            ws.send(JSON.stringify({ cmd: 'start', game: 'tron_solo' }));
+            startGameLoop();
+        });
+
+        document.getElementById('card-solo-battleship').addEventListener('click', () => {
+            sound.click();
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'leave' }));
+            resetClientGameState();
+            activeGameType = 'battleship_solo';
+            myPlayerNum = 1;
+            hudP1Name.textContent = nicknameInput.value;
+            hudP2Name.textContent = "Naval Bot";
+            hudP2Marker.className = 'bot-dot';
+            hudP2Marker.style.display = 'inline-block';
+            setupGameView('battleship_solo');
+            switchView('game');
+            ws.send(JSON.stringify({ cmd: 'start', game: 'battleship_solo' }));
         });
 
         document.getElementById('card-solo-domino').addEventListener('click', () => {
@@ -1132,6 +1248,14 @@ private:
                 ws.send(JSON.stringify({ cmd: 'start', game: 'connect4_solo' }));
             } else if (activeGameType === 'domino_solo') {
                 ws.send(JSON.stringify({ cmd: 'start', game: 'domino_solo' }));
+            } else if (activeGameType === 'pong_solo') {
+                ws.send(JSON.stringify({ cmd: 'start', game: 'pong_solo' }));
+                startGameLoop();
+            } else if (activeGameType === 'tron_solo') {
+                ws.send(JSON.stringify({ cmd: 'start', game: 'tron_solo' }));
+                startGameLoop();
+            } else if (activeGameType === 'battleship_solo') {
+                ws.send(JSON.stringify({ cmd: 'start', game: 'battleship_solo' }));
             } else {
                 if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'leave' }));
                 switchView('lobby');
@@ -1141,7 +1265,7 @@ private:
         function startGameLoop() {
             clearInterval(gameLoop);
             gameLoop = setInterval(() => {
-                if (ws && ws.readyState === WebSocket.OPEN && activeGameType === 'snake_solo') {
+                if (ws && ws.readyState === WebSocket.OPEN && (activeGameType === 'snake_solo' || activeGameType === 'pong_solo' || activeGameType === 'tron_solo')) {
                     ws.send(JSON.stringify({ cmd: 'tick' }));
                 }
             }, 66);
@@ -1158,12 +1282,21 @@ private:
 )rawliteral";
     static constexpr const char* INDEX_HTML_PART6 = R"rawliteral(
         // D-Pad and Keyboard Listeners
+        const stopMoving = (e) => {
+            if (activeGameType && activeGameType.indexOf('pong') !== -1) {
+                sendDir('STOP');
+            }
+        };
+
         document.querySelectorAll('.dpad-btn').forEach(btn => {
             const dir = btn.getAttribute('data-dir');
             btn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 sendDir(dir);
             });
+            btn.addEventListener('pointerup', stopMoving);
+            btn.addEventListener('pointercancel', stopMoving);
+            btn.addEventListener('pointerleave', stopMoving);
         });
 
         window.addEventListener('keydown', (e) => {
@@ -1175,6 +1308,14 @@ private:
             if (dir) {
                 e.preventDefault();
                 sendDir(dir);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (activeGameType && activeGameType.indexOf('pong') !== -1) {
+                if (['ArrowUp', 'ArrowDown', 'w', 'W', 's', 'S'].includes(e.key)) {
+                    sendDir('STOP');
+                }
             }
         });
 
@@ -2065,6 +2206,13 @@ private:
             modalTitle.style.color = isWin ? '#4ade80' : (isDraw ? '#f59e0b' : '#f87171');
             modalSub.textContent = sub;
 
+            // Record win in Hall of Fame (ADR 0012)
+            if (isWin) {
+                const winKey = `gamebox_wins_${state.game}`;
+                const curWins = parseInt(localStorage.getItem(winKey) || '0', 10);
+                localStorage.setItem(winKey, curWins + 1);
+            }
+
             // Render SVG Icon & Victory Juice
             if (isWin) {
                 spawnVictoryCelebration();
@@ -2086,6 +2234,66 @@ private:
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>`;
             }
+        }
+
+        // --- Hall of Fame Leaderboard & Stats Drawer (ADR 0012) ---
+        const btnTrophy = document.getElementById('btn-trophy');
+        const statsDrawer = document.getElementById('stats-drawer');
+        const btnCloseStats = document.getElementById('btn-close-stats');
+        const btnClearStats = document.getElementById('btn-clear-stats');
+        const statsContent = document.getElementById('stats-content');
+
+        function updateStatsModal() {
+            if (!statsContent) return;
+            const games = [
+                { id: 'snake', name: 'Snake Survival', highKey: 'gamebox_snake_high', highLabel: 'Best Score' },
+                { id: 'tictactoe', name: 'Tic-Tac-Toe', winKey: 'gamebox_wins_tictactoe' },
+                { id: 'connect4', name: 'Connect Four', winKey: 'gamebox_wins_connect4' },
+                { id: 'pong', name: 'Pong Arcade', winKey: 'gamebox_wins_pong' },
+                { id: 'tron', name: 'Tron Light Cycles', winKey: 'gamebox_wins_tron' },
+                { id: 'battleship', name: 'Battleship Fleet', winKey: 'gamebox_wins_battleship' },
+                { id: 'domino', name: 'Block Dominoes', winKey: 'gamebox_wins_domino' }
+            ];
+
+            let html = '';
+            games.forEach(g => {
+                let statText = '';
+                if (g.highKey) {
+                    const val = localStorage.getItem(g.highKey) || '0';
+                    statText = `${g.highLabel}: <b style="color:var(--p1-cyan);">${val}</b>`;
+                } else if (g.winKey) {
+                    const wins = localStorage.getItem(g.winKey) || '0';
+                    statText = `Wins: <b style="color:var(--success);">${wins}</b>`;
+                }
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm);">
+                        <span style="font-weight:600; color:var(--text);">${g.name}</span>
+                        <span>${statText}</span>
+                    </div>
+                `;
+            });
+            statsContent.innerHTML = html;
+        }
+
+        if (btnTrophy) {
+            btnTrophy.addEventListener('click', () => {
+                sound.click();
+                updateStatsModal();
+                statsDrawer.style.display = 'flex';
+            });
+        }
+        if (btnCloseStats) {
+            btnCloseStats.addEventListener('click', () => {
+                sound.click();
+                statsDrawer.style.display = 'none';
+            });
+        }
+        if (btnClearStats) {
+            btnClearStats.addEventListener('click', () => {
+                sound.click();
+                ['gamebox_snake_high', 'gamebox_wins_tictactoe', 'gamebox_wins_connect4', 'gamebox_wins_pong', 'gamebox_wins_tron', 'gamebox_wins_battleship', 'gamebox_wins_domino'].forEach(k => localStorage.removeItem(k));
+                updateStatsModal();
+            });
         }
 
         connect();

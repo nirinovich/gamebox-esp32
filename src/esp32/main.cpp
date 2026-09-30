@@ -5,14 +5,9 @@
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
 #include <gamehub/web/WebAssets.hpp>
-#include <gamehub/core/Session.hpp>
-#include <gamehub/core/RoomManager.hpp>
-#include <gamehub/core/DominoGame.hpp>
-#include <unordered_map>
+#include <gamehub/core/HostEngine.hpp>
+#include <gamehub/core/INetworkAdapter.hpp>
 #include <memory>
-#include <mutex>
-#include <sstream>
-#include <vector>
 
 static const char* AP_SSID = "Gamebox";
 static const byte DNS_PORT = 53;
@@ -21,217 +16,34 @@ DNSServer dnsServer;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-gamehub::core::RoomManager roomManager(4);
-std::unordered_map<uint32_t, std::unique_ptr<gamehub::core::Session>> sessions;
-std::unordered_map<uint32_t, uint32_t> sessionPlayerMap;
-std::unordered_map<std::string, std::vector<uint32_t>> roomPlayers;
-std::mutex engineMutex;
+class ESP32NetworkAdapter : public gamehub::core::INetworkAdapter {
+public:
+    explicit ESP32NetworkAdapter(AsyncWebSocket& websocket) : m_ws(websocket) {}
+    void sendToClient(uint32_t sessionId, const std::string& message) override {
+        m_ws.text(sessionId, message.c_str());
+    }
+    void broadcast(const std::string& message) override {
+        m_ws.textAll(message.c_str());
+    }
+private:
+    AsyncWebSocket& m_ws;
+};
+
+ESP32NetworkAdapter netAdapter(ws);
+gamehub::core::HostEngine engine(&netAdapter, 4);
 
 TaskHandle_t gameTaskHandle = NULL;
 
-static std::string extractJsonString(const std::string& json, const std::string& key) {
-    std::string needle = "\"" + key + "\":";
-    auto pos = json.find(needle);
-    if (pos == std::string::npos) return "";
-    auto start = json.find("\"", pos + needle.size());
-    if (start == std::string::npos) return "";
-    auto end = json.find("\"", start + 1);
-    if (end == std::string::npos) return "";
-    return json.substr(start + 1, end - start - 1);
-}
-
-void broadcastToRoom(const std::string& code, const std::string& message) {
-    auto it = roomPlayers.find(code);
-    if (it != roomPlayers.end()) {
-        for (uint32_t sidPlayer : it->second) {
-            if (sidPlayer != 0) ws.text(sidPlayer, message.c_str());
-        }
-    }
-}
-
-static void detachPlayerFromRoom(uint32_t sid) {
-    gamehub::core::Room* room = roomManager.findRoomByPlayer(sid);
-    if (room) {
-        std::string code = room->getCode();
-        auto it = roomPlayers.find(code);
-        if (it != roomPlayers.end()) {
-            for (uint32_t other : it->second) {
-                if (other != 0 && other != sid) {
-                    ws.text(other, "{\"type\":\"opponent_left\"}");
-                }
-            }
-            roomPlayers.erase(it);
-        }
-        roomManager.handleDisconnect(sid);
-        ws.textAll(roomManager.serializeDirectory().c_str());
-    }
-    sessionPlayerMap.erase(sid);
-}
-
 void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
     if (type == WS_EVT_CONNECT) {
-        std::lock_guard<std::mutex> lock(engineMutex);
-        sessions[client->id()] = std::make_unique<gamehub::core::Session>(client->id());
-        client->text(roomManager.serializeDirectory().c_str());
+        engine.onClientConnect(client->id());
     } else if (type == WS_EVT_DISCONNECT) {
-        std::lock_guard<std::mutex> lock(engineMutex);
-        uint32_t sid = client->id();
-        sessions.erase(sid);
-        detachPlayerFromRoom(sid);
+        engine.onClientDisconnect(client->id());
     } else if (type == WS_EVT_DATA) {
         AwsFrameInfo* info = (AwsFrameInfo*)arg;
         if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
             std::string msg((char*)data, len);
-            std::lock_guard<std::mutex> lock(engineMutex);
-            uint32_t sid = client->id();
-
-            // 0. Query Live Room Directory
-            if (msg.find("\"cmd\":\"get_rooms\"") != std::string::npos) {
-                client->text(roomManager.serializeDirectory().c_str());
-                return;
-            }
-
-            // 1. Create Multiplayer Room (Auto-detach previous room)
-            if (msg.find("\"cmd\":\"create\"") != std::string::npos) {
-                detachPlayerFromRoom(sid);
-
-                gamehub::core::GameType gtype = gamehub::core::GameType::TICTACTOE_PVP;
-                size_t maxPlayers = 2;
-                if (msg.find("\"snake_duel\"") != std::string::npos) {
-                    gtype = gamehub::core::GameType::SNAKE_DUEL;
-                } else if (msg.find("\"connect4_pvp\"") != std::string::npos) {
-                    gtype = gamehub::core::GameType::CONNECT_FOUR_PVP;
-                } else if (msg.find("\"pong_duel\"") != std::string::npos) {
-                    gtype = gamehub::core::GameType::PONG_DUEL;
-                } else if (msg.find("\"tron_duel\"") != std::string::npos) {
-                    gtype = gamehub::core::GameType::TRON_DUEL;
-                } else if (msg.find("\"battleship_pvp\"") != std::string::npos) {
-                    gtype = gamehub::core::GameType::BATTLESHIP_PVP;
-                } else if (msg.find("\"domino_pvp\"") != std::string::npos) {
-                    gtype = gamehub::core::GameType::DOMINO_PVP;
-                    maxPlayers = (msg.find("\"players\":2") != std::string::npos || msg.find("\"max\":2") != std::string::npos) ? 2 : 3;
-                }
-
-                std::string hostName = extractJsonString(msg, "host");
-                if (hostName.empty()) hostName = "Player 1";
-
-                gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sid, hostName, maxPlayers);
-                if (!newRoom) {
-                    client->text("{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}");
-                    return;
-                }
-
-                sessionPlayerMap[sid] = 1;
-                roomPlayers[newRoom->getCode()] = {sid};
-
-                // Broadcast directory to all clients
-                ws.textAll(roomManager.serializeDirectory().c_str());
-
-                std::ostringstream oss;
-                oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1,\"host\":\"" << hostName << "\"}";
-                client->text(oss.str().c_str());
-                return;
-            }
-
-            // 2. Join Multiplayer Room (Auto-detach previous room)
-            if (msg.find("\"cmd\":\"join\"") != std::string::npos) {
-                detachPlayerFromRoom(sid);
-
-                std::string code = extractJsonString(msg, "code");
-                if (code.empty()) return;
-
-                gamehub::core::Room* room = roomManager.joinRoom(code, sid);
-                if (!room) {
-                    client->text("{\"type\":\"error\",\"msg\":\"Room not found or already full.\"}");
-                    return;
-                }
-
-                uint32_t pNum = static_cast<uint32_t>(room->getPlayerCount());
-                sessionPlayerMap[sid] = pNum;
-                roomPlayers[code].push_back(sid);
-
-                // Broadcast directory update
-                ws.textAll(roomManager.serializeDirectory().c_str());
-
-                std::ostringstream oss;
-                oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":" << pNum << ",\"host\":\"" << room->getHostName() << "\"}";
-                client->text(oss.str().c_str());
-
-                if (room->getPlayerCount() >= room->getMaxPlayers()) {
-                    auto* dg = dynamic_cast<gamehub::core::DominoGame*>(room->getGame());
-                    if (dg) {
-                        dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
-                    }
-                    std::string state = room->serializeState();
-                    for (uint32_t sidPlayer : roomPlayers[code]) {
-                        ws.text(sidPlayer, "{\"type\":\"room_ready\"}");
-                    }
-                    broadcastToRoom(code, state);
-                } else {
-                    std::ostringstream ossCount;
-                    ossCount << "{\"type\":\"room_waiting_update\",\"count\":" << room->getPlayerCount() << ",\"max\":" << room->getMaxPlayers() << "}";
-                    for (uint32_t sidPlayer : roomPlayers[code]) {
-                        ws.text(sidPlayer, ossCount.str().c_str());
-                    }
-                }
-                return;
-            }
-
-            // 2b. Start Room Early (Host starts 3P game with 2 players)
-            if (msg.find("\"cmd\":\"start_room\"") != std::string::npos) {
-                gamehub::core::Room* room = roomManager.findRoomByPlayer(sid);
-                if (room && room->getPlayerCount() >= 2 && !room->isFinished()) {
-                    auto* dg = dynamic_cast<gamehub::core::DominoGame*>(room->getGame());
-                    if (dg) {
-                        dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
-                    }
-                    std::string state = room->serializeState();
-                    for (uint32_t sidPlayer : roomPlayers[room->getCode()]) {
-                        ws.text(sidPlayer, "{\"type\":\"room_ready\"}");
-                    }
-                    broadcastToRoom(room->getCode(), state);
-                }
-                return;
-            }
-
-            // 3. Leave / Cancel Room
-            if (msg.find("\"cmd\":\"leave\"") != std::string::npos) {
-                detachPlayerFromRoom(sid);
-                client->text("{\"type\":\"left\"}");
-                return;
-            }
-
-            // 4. Start Solo Game (Auto-detach from any previous multiplayer room!)
-            if (msg.find("\"cmd\":\"start\"") != std::string::npos) {
-                detachPlayerFromRoom(sid);
-                auto it = sessions.find(sid);
-                if (it != sessions.end()) {
-                    std::string reply = it->second->handleMessage(msg);
-                    if (!reply.empty()) {
-                        client->text(reply.c_str());
-                    }
-                }
-                return;
-            }
-
-            // 5. Multiplayer Move & Input (only route if active and NOT finished!)
-            gamehub::core::Room* activeRoom = roomManager.findRoomByPlayer(sid);
-            if (activeRoom && activeRoom->getPlayerCount() >= 2 && !activeRoom->isFinished()) {
-                uint32_t playerNum = sessionPlayerMap[sid];
-                activeRoom->handleInput(playerNum, msg);
-                std::string state = activeRoom->serializeState();
-                broadcastToRoom(activeRoom->getCode(), state);
-                return;
-            }
-
-            // 6. Solo fallback
-            auto it = sessions.find(sid);
-            if (it != sessions.end()) {
-                std::string reply = it->second->handleMessage(msg);
-                if (!reply.empty()) {
-                    client->text(reply.c_str());
-                }
-            }
+            engine.onClientMessage(client->id(), msg);
         }
     }
 }
@@ -243,23 +55,7 @@ void GameEngineTask(void* parameter) {
 
     for (;;) {
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
-
-        std::lock_guard<std::mutex> lock(engineMutex);
-        for (auto& pair : roomPlayers) {
-            if (pair.second.size() >= 2) {
-                gamehub::core::Room* r = roomManager.findRoomByCode(pair.first);
-                if (r && !r->isFinished()) {
-                    auto gt = r->getGameType();
-                    if (gt == gamehub::core::GameType::SNAKE_DUEL ||
-                        gt == gamehub::core::GameType::PONG_DUEL ||
-                        gt == gamehub::core::GameType::TRON_DUEL) {
-                        r->tick(0.066f);
-                        std::string state = r->serializeState();
-                        broadcastToRoom(pair.first, state);
-                    }
-                }
-            }
-        }
+        engine.tick(0.066f);
     }
 }
 
