@@ -26,19 +26,20 @@ export function GameCanvas() {
   const room = activeRoom.value;
   const gameType = room?.gameType || 'ttt_solo';
 
-  // Keep global reference for Domino renderer pointer events and confetti
-  useEffect(() => {
-    (window as any).__lastGameState = gameState.value;
-  }, [gameState.value]);
+  const isFinished = gameState.value?.finished;
+  const winner = gameState.value?.winner;
+  const myPlayerNum = room?.playerNum || 1;
+  const wonRef = useRef(false);
 
+  // Victory particle burst
   useEffect(() => {
-    (window as any).__spawnConfetti = () => {
+    if (isFinished && winner === myPlayerNum && !wonRef.current) {
+      wonRef.current = true;
       particlesRef.current.confetti(200, 160, 65);
-    };
-    return () => {
-      delete (window as any).__spawnConfetti;
-    };
-  }, []);
+    } else if (!isFinished) {
+      wonRef.current = false;
+    }
+  }, [isFinished, winner, myPlayerNum]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -70,7 +71,11 @@ export function GameCanvas() {
       renderer = new TicTacToeRenderer();
     }
 
-    renderer.init(canvas, ctx, (action) => gameSocket.send(action));
+    const isSolo = room?.code === 'SOLO';
+    renderer.init(canvas, ctx, (action) => gameSocket.send(action), myPlayerNum);
+    if ('setIsSolo' in renderer && typeof (renderer as any).setIsSolo === 'function') {
+      (renderer as any).setIsSolo(isSolo);
+    }
     renderer.resize(400, 400);
     rendererRef.current = renderer;
 
@@ -153,7 +158,6 @@ export function GameCanvas() {
   const isBattleshipPlacement =
     gameType.includes('battleship') && gameState.value?.phase === 'placement';
 
-  const myPlayerNum = room?.playerNum || 1;
   const isMyTurn = gameState.value?.turn === myPlayerNum && !gameState.value?.finished;
   const myHand = (gameState.value?.hands && gameState.value.hands[myPlayerNum]) || [];
   const leftEnd = gameState.value?.left_end ?? -1;

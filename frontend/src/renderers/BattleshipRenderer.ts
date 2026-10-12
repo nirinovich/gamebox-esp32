@@ -1,9 +1,7 @@
 import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
-import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 import { ParticleEngine } from './ParticleEngine';
 import { CameraJuice } from './CameraJuice';
-import { activeRoom } from '../state/gameStore';
 
 export class BattleshipRenderer implements IGameRenderer {
   private width = 400;
@@ -11,18 +9,24 @@ export class BattleshipRenderer implements IGameRenderer {
   private prevEnemyGrid: number[] = [];
   private alertBanner = '';
   private alertTimer = 0;
-  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
+  private myPlayerNum = 1;
+  private dispatch: ActionDispatcher = () => {};
 
   constructor(
     private particles?: ParticleEngine,
     private juice?: CameraJuice
   ) {}
 
-  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher, playerNum?: number) {
+    if (playerNum) this.myPlayerNum = playerNum;
     if (dispatch) this.dispatch = dispatch;
     this.prevEnemyGrid = [];
     this.alertBanner = '';
     this.alertTimer = 0;
+  }
+
+  public setPlayerNum(playerNum: number) {
+    this.myPlayerNum = playerNum;
   }
 
   public setDispatcher(dispatch: ActionDispatcher) {
@@ -81,7 +85,7 @@ export class BattleshipRenderer implements IGameRenderer {
     ctx.stroke();
     ctx.restore();
 
-    const myPlayerNum = activeRoom.value?.playerNum || 1;
+    const myPlayerNum = this.myPlayerNum;
     const me = myPlayerNum === 1 ? state?.p1 : state?.p2;
 
     if (state?.phase === 'placement') {

@@ -1,5 +1,4 @@
 import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
-import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 import { CameraJuice } from './CameraJuice';
 
@@ -21,7 +20,7 @@ export class ConnectFourRenderer implements IGameRenderer {
   private prevBoard: number[] | null = null;
   private hoveredCol = -1;
   private juice: CameraJuice;
-  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
+  private dispatch: ActionDispatcher = () => {};
 
   constructor(juice: CameraJuice) {
     this.juice = juice;

@@ -1,6 +1,4 @@
 import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
-import { gameSocket } from '../services/GameSocket';
-import { activeRoom } from '../state/gameStore';
 import { sound, haptic } from '../audio/SoundEngine';
 
 interface TrailPoint {
@@ -16,14 +14,20 @@ export class PongRenderer implements IGameRenderer {
   private isDragging = false;
   private currentPaddleY = 200;
   private lastSentCmd = '';
-  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
+  private myPlayerNum = 1;
+  private dispatch: ActionDispatcher = () => {};
 
-  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher, playerNum?: number) {
+    if (playerNum) this.myPlayerNum = playerNum;
     if (dispatch) this.dispatch = dispatch;
     this.trails = [];
     this.isDragging = false;
     this.currentPaddleY = 200;
     this.lastSentCmd = '';
+  }
+
+  public setPlayerNum(playerNum: number) {
+    this.myPlayerNum = playerNum;
   }
 
   public setDispatcher(dispatch: ActionDispatcher) {
@@ -55,7 +59,7 @@ export class PongRenderer implements IGameRenderer {
     const p1y = state?.p1y || 200;
     const p2y = state?.p2y || 200;
 
-    const myPlayerNum = activeRoom.value?.playerNum || 1;
+    const myPlayerNum = this.myPlayerNum;
     this.currentPaddleY = myPlayerNum === 2 ? p2y : p1y;
 
     ctx.fillStyle = '#38bdf8';

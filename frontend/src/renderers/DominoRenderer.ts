@@ -1,6 +1,4 @@
 import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
-import { gameSocket } from '../services/GameSocket';
-import { activeRoom } from '../state/gameStore';
 import { sound, haptic } from '../audio/SoundEngine';
 
 export class DominoRenderer implements IGameRenderer {
@@ -9,13 +7,24 @@ export class DominoRenderer implements IGameRenderer {
   public selectedTileIdx = -1;
   public choiceNeeded = false;
   private lastState: any = null;
-  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
+  private myPlayerNum = 1;
+  private isSolo = false;
+  private dispatch: ActionDispatcher = () => {};
 
-  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher, playerNum?: number) {
+    if (playerNum) this.myPlayerNum = playerNum;
     if (dispatch) this.dispatch = dispatch;
     this.selectedTileIdx = -1;
     this.choiceNeeded = false;
     this.lastState = null;
+  }
+
+  public setPlayerNum(playerNum: number) {
+    this.myPlayerNum = playerNum;
+  }
+
+  public setIsSolo(isSolo: boolean) {
+    this.isSolo = isSolo;
   }
 
   public setDispatcher(dispatch: ActionDispatcher) {
@@ -29,7 +38,7 @@ export class DominoRenderer implements IGameRenderer {
 
   public render(state: any, ctx: CanvasRenderingContext2D) {
     this.lastState = state;
-    const myPlayerNum = activeRoom.value?.playerNum || 1;
+    const myPlayerNum = this.myPlayerNum;
 
     // Havana Emerald Felt Gaming Table Radial Gradient (Issue 07)
     const grad = ctx.createRadialGradient(200, 200, 20, 200, 200, 260);
@@ -48,7 +57,7 @@ export class DominoRenderer implements IGameRenderer {
     ctx.textAlign = 'left';
 
     let oppStr = '';
-    if (activeRoom.value?.code === 'SOLO') {
+    if (this.isSolo) {
       oppStr = `Bot: ${state?.p2_count || 0} tiles`;
     } else if (state?.num_players === 3) {
       oppStr = `P1: ${state?.p1_count} · P2: ${state?.p2_count} · P3: ${state?.p3_count}`;
@@ -267,8 +276,8 @@ export class DominoRenderer implements IGameRenderer {
 
   public handlePointerDown(x: number, y: number) {
     if (y < 300) return; // Only process hand clicks
-    const state = this.lastState || (typeof window !== 'undefined' ? (window as any).__lastGameState : null);
-    const myPlayerNum = activeRoom.value?.playerNum || 1;
+    const state = this.lastState;
+    const myPlayerNum = this.myPlayerNum;
     const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
     const count = myHand.length;
     if (count === 0) return;

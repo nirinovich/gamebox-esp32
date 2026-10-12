@@ -1,11 +1,10 @@
 import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
-import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 
 export class TicTacToeRenderer implements IGameRenderer {
   private width = 400;
   private height = 400;
-  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
+  private dispatch: ActionDispatcher = () => {};
 
   public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
     if (dispatch) this.dispatch = dispatch;

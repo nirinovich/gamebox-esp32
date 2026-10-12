@@ -1,5 +1,4 @@
 import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
-import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 
 export class TronRenderer implements IGameRenderer {
@@ -8,7 +7,7 @@ export class TronRenderer implements IGameRenderer {
   private touchStartX = 0;
   private touchStartY = 0;
   private swipeDone = false;
-  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
+  private dispatch: ActionDispatcher = () => {};
 
   public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
     if (dispatch) this.dispatch = dispatch;
