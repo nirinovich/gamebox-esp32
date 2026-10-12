@@ -95,3 +95,7 @@ _Avoid_: MatchCount, SetScore
 **Rematch**:
 The protocol transition allowing active players to reinitialize a Game inside the same Room without disconnecting or returning to the Lobby.
 _Avoid_: PlayAgain, ResetRoom
+
+**ClientShell**:
+The client-side reactive interface orchestrating navigation, Lobby, RoomDirectory, SeriesScore overlays, and Player identity around the VisualEngine.
+_Avoid_: UI, Frontend, WebApp

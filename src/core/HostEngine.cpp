@@ -177,9 +177,11 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
             m_network->sendToClient(sessionId, oss.str());
 
             if (room->getPlayerCount() >= room->getMaxPlayers()) {
-                auto* dg = dynamic_cast<DominoGame*>(room->getGame());
-                if (dg) {
-                    dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                if (room->getGameType() == GameType::DOMINO_SOLO || room->getGameType() == GameType::DOMINO_PVP) {
+                    auto* dg = static_cast<DominoGame*>(room->getGame());
+                    if (dg) {
+                        dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                    }
                 }
                 for (uint32_t sidPlayer : m_roomPlayers[code]) {
                     m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
@@ -201,9 +203,11 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         rawMessage.find("\"cmd\":\"start_early\"") != std::string::npos) {
         Room* room = m_roomManager.findRoomByPlayer(sessionId);
         if (room && room->getPlayerCount() >= 2 && !room->isFinished()) {
-            auto* dg = dynamic_cast<DominoGame*>(room->getGame());
-            if (dg) {
-                dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+            if (room->getGameType() == GameType::DOMINO_SOLO || room->getGameType() == GameType::DOMINO_PVP) {
+                auto* dg = static_cast<DominoGame*>(room->getGame());
+                if (dg) {
+                    dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
+                }
             }
             if (m_network) {
                 for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {

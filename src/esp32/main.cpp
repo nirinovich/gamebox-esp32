@@ -76,9 +76,23 @@ void setup() {
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    // 4. Captive Portal Auto-Popup Endpoints
+    // 4. Captive Portal Auto-Popup Endpoints (Stream chunked directly from flash without heap allocation)
     auto serveSPA = [](AsyncWebServerRequest* request) {
-        request->send(200, "text/html", gamehub::web::WebAssets::getIndexHtml().c_str());
+        request->sendChunked("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
+            const auto& parts = gamehub::web::WebAssets::getParts();
+            size_t partOffset = 0;
+            for (const char* part : parts) {
+                size_t partLen = strlen(part);
+                if (index < partOffset + partLen) {
+                    size_t startInPart = index - partOffset;
+                    size_t toCopy = std::min(maxLen, partLen - startInPart);
+                    memcpy(buffer, part + startInPart, toCopy);
+                    return toCopy;
+                }
+                partOffset += partLen;
+            }
+            return 0; // End of stream
+        });
     };
 
     server.on("/", HTTP_GET, serveSPA);

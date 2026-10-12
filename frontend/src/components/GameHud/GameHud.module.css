@@ -1,0 +1,105 @@
+.gameHud {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.hudPlayer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.hudP1 {
+  color: var(--p1-cyan);
+}
+
+.hudP2 {
+  color: var(--p2-pink);
+}
+
+.hudScore {
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: monospace;
+  background: #0b111e;
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.hudStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.statusText {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.seriesScore {
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: monospace;
+  color: var(--p1-cyan);
+  background: rgba(56, 189, 248, 0.1);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.dotCyan {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--p1-cyan);
+  box-shadow: 0 0 6px var(--p1-cyan);
+}
+
+.dotPink {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--p2-pink);
+  box-shadow: 0 0 6px var(--p2-pink);
+}
+
+.botDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bot-amber);
+  box-shadow: 0 0 6px var(--bot-amber);
+}
+
+.hudP3Wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+  color: #c084fc;
+  font-weight: 700;
+  margin-top: -4px;
+  margin-bottom: 6px;
+}
+
+.p3Dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c084fc;
+  box-shadow: 0 0 6px #c084fc;
+}
