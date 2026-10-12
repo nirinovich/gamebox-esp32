@@ -1,6 +1,7 @@
 #include <gamehub/core/BattleshipGame.hpp>
 #include <sstream>
 #include <cstring>
+#include <charconv>
 
 namespace gamehub {
 namespace core {
@@ -146,7 +147,9 @@ bool BattleshipGame::handlePlacement(int pidx, const std::string& input) {
         std::string needle = "\"" + key + "\":";
         auto pos = input.find(needle);
         if (pos == std::string::npos) return -1;
-        try { return std::stoi(input.substr(pos + needle.size())); } catch (...) { return -1; }
+        int val = -1;
+        auto [ptr, ec] = std::from_chars(input.data() + pos + needle.size(), input.data() + input.size(), val);
+        return (ec == std::errc{}) ? val : -1;
     };
     int row = getInt("row");
     int col = getInt("col");
@@ -202,7 +205,9 @@ bool BattleshipGame::handleFire(int pidx, const std::string& input) {
         std::string needle = "\"" + key + "\":";
         auto pos = input.find(needle);
         if (pos == std::string::npos) return -1;
-        try { return std::stoi(input.substr(pos + needle.size())); } catch (...) { return -1; }
+        int val = -1;
+        auto [ptr, ec] = std::from_chars(input.data() + pos + needle.size(), input.data() + input.size(), val);
+        return (ec == std::errc{}) ? val : -1;
     };
     int row = getInt("row");
     int col = getInt("col");

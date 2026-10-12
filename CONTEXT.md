@@ -75,3 +75,23 @@ _Avoid_: Talon, DrawPile, Deck
 **PipSum**:
 The cumulative point value of dot markings on tiles remaining in a Player hand when the Game is blocked.
 _Avoid_: HandValue, TileCount
+
+**VisualEngine**:
+The client-side 60 FPS presentation layer in WebAssets.hpp that renders authoritative domain states via Canvas 2D without microcontroller overhead.
+_Avoid_: Renderer, GraphicsCore
+
+**JuiceEngine**:
+The procedural sensory feedback coordinator managing particle emitters, camera shake matrices, and floating retro text popups.
+_Avoid_: VFX, FXManager
+
+**RetinaViewport**:
+The high-DPI canvas buffer scaled by clamped devicePixelRatio to ensure sharp vector lines on mobile OLED displays.
+_Avoid_: HiDPIScreen, ResolutionScaler
+
+**SeriesScore**:
+The persistent match win tally retained inside a Room across consecutive rematches.
+_Avoid_: MatchCount, SetScore
+
+**Rematch**:
+The protocol transition allowing active players to reinitialize a Game inside the same Room without disconnecting or returning to the Lobby.
+_Avoid_: PlayAgain, ResetRoom

@@ -2,6 +2,7 @@
 #include <sstream>
 #include <algorithm>
 #include <random>
+#include <charconv>
 
 namespace gamehub {
 namespace core {
@@ -252,7 +253,7 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
         auto idxPos = input.find("\"index\":");
         int tileIdx = -1;
         if (idxPos != std::string::npos) {
-            try { tileIdx = std::stoi(input.substr(idxPos + 8)); } catch(...) {}
+            std::from_chars(input.data() + idxPos + 8, input.data() + input.size(), tileIdx);
         }
         std::string endChoice = "right";
         if (input.find("\"left\"") != std::string::npos) endChoice = "left";
@@ -288,6 +289,10 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
 }
 
 std::string DominoGame::serializeState() const {
+    return serializeStateForPlayer(0);
+}
+
+std::string DominoGame::serializeStateForPlayer(PlayerId id) const {
     std::ostringstream oss;
     oss << "{\"type\":\"state\",\"game\":\"domino\""
         << ",\"turn\":" << m_turn
@@ -311,16 +316,28 @@ std::string DominoGame::serializeState() const {
     }
     oss << "]";
 
-    // Hands
+    // Hands: If match finished or id == 0, reveal all hands. Otherwise, ONLY reveal hand for player 'id'!
     oss << ",\"hands\":{";
-    for (int p = 0; p < m_numPlayers; ++p) {
-        if (p > 0) oss << ",";
-        oss << "\"" << (p + 1) << "\":[";
-        for (size_t i = 0; i < m_hands[p].size(); ++i) {
-            if (i > 0) oss << ",";
-            oss << "[" << m_hands[p][i].left << "," << m_hands[p][i].right << "]";
+    if (m_finished || id == 0) {
+        for (int p = 0; p < m_numPlayers; ++p) {
+            if (p > 0) oss << ",";
+            oss << "\"" << (p + 1) << "\":[";
+            for (size_t i = 0; i < m_hands[p].size(); ++i) {
+                if (i > 0) oss << ",";
+                oss << "[" << m_hands[p][i].left << "," << m_hands[p][i].right << "]";
+            }
+            oss << "]";
         }
-        oss << "]";
+    } else {
+        int p = static_cast<int>(id) - 1;
+        if (p >= 0 && p < m_numPlayers) {
+            oss << "\"" << (p + 1) << "\":[";
+            for (size_t i = 0; i < m_hands[p].size(); ++i) {
+                if (i > 0) oss << ",";
+                oss << "[" << m_hands[p][i].left << "," << m_hands[p][i].right << "]";
+            }
+            oss << "]";
+        }
     }
     oss << "}}";
 

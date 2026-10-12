@@ -12,9 +12,10 @@ namespace web {
 class WebAssets {
 public:
     static std::string getIndexHtml() {
-        return std::string(INDEX_HTML_PART1) + INDEX_HTML_PART2 + INDEX_HTML_PART3 + 
-               INDEX_HTML_PART4 + INDEX_HTML_PART5 + INDEX_HTML_PART5B + INDEX_HTML_PART6 + INDEX_HTML_PART7 +
-               INDEX_HTML_PART8 + INDEX_HTML_PART9;
+        return std::string(INDEX_HTML_PART1) + INDEX_HTML_PART2 + INDEX_HTML_PART2B + INDEX_HTML_PART3 + 
+               INDEX_HTML_PART3B + INDEX_HTML_PART4 + INDEX_HTML_PART4B + INDEX_HTML_PART5 + INDEX_HTML_PART5B + 
+               INDEX_HTML_PART5C + INDEX_HTML_PART6 + INDEX_HTML_PART6B + INDEX_HTML_PART7 + INDEX_HTML_PART8 + 
+               INDEX_HTML_PART9 + INDEX_HTML_PART10;
     }
 
 private:
@@ -27,9 +28,9 @@ private:
     <style>
         :root {
             --bg: #090d16;
-            --surface: #111827;
-            --surface-hover: #1f293d;
-            --surface-active: #27354f;
+            --surface: rgba(17, 24, 39, 0.82);
+            --surface-hover: rgba(31, 41, 61, 0.85);
+            --surface-active: rgba(39, 53, 79, 0.9);
             --border: #1e293b;
             --border-highlight: #334155;
             --p1-cyan: #38bdf8;
@@ -40,8 +41,8 @@ private:
             --text: #f1f5f9;
             --text-secondary: #94a3b8;
             --text-tertiary: #64748b;
-            --radius-lg: 12px;
-            --radius-md: 8px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
             --radius-sm: 6px;
             --ease: cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -65,9 +66,12 @@ private:
             align-items: center;
             padding: 10px 14px;
             background: var(--surface);
-            border: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: var(--radius-lg);
             margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
         }
         .logo-wrap { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.1rem; }
         .logo-icon { color: var(--p1-cyan); display: flex; align-items: center; }
@@ -157,7 +161,9 @@ private:
             font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);
             margin: 4px 0 0 2px; display: flex; justify-content: space-between; align-items: center;
         }
+)rawliteral";
 
+    static constexpr const char* INDEX_HTML_PART2 = R"rawliteral(
         /* Room Directory Feed */
         .directory-container {
             background: var(--surface); border: 1px solid var(--border);
@@ -170,7 +176,7 @@ private:
             padding: 9px 12px; border-radius: var(--radius-sm);
         }
         .room-meta { display: flex; flex-direction: column; gap: 2px; }
-        .room-name { font-weight: 700; font-size: 0.88rem; }
+        .room-name { font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; }
         .room-sub { font-size: 0.72rem; color: var(--text-tertiary); }
         .btn-solid {
             background: var(--p1-cyan); color: #090d16; border: none;
@@ -178,70 +184,83 @@ private:
             border-radius: var(--radius-sm); cursor: pointer; transition: opacity 140ms;
         }
         .btn-solid:hover { opacity: 0.92; }
-        .btn-solid:active { transform: scale(0.95); }
-        .empty-directory {
-            text-align: center; font-size: 0.78rem; color: var(--text-tertiary);
-            padding: 14px 8px;
+
+        /* Live Radar Beacon (ADR 0013) */
+        .radar-beacon {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            animation: radarPulse 1.8s infinite;
+            display: inline-block; margin-right: 6px; flex-shrink: 0;
+        }
+        @keyframes radarPulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
 
-        /* Waiting View */
+        /* Room Waiting Card */
         .waiting-box {
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-lg); padding: 32px 20px;
+            border-radius: var(--radius-lg); padding: 24px;
             display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px;
         }
         .radar-pulse {
-            width: 58px; height: 58px; border-radius: 50%;
+            width: 64px; height: 64px; border-radius: 50%;
             background: rgba(56, 189, 248, 0.08); border: 1px solid var(--p1-cyan);
-            position: relative; animation: pulseRadar 1.8s infinite ease-out;
             display: flex; align-items: center; justify-content: center;
         }
-        @keyframes pulseRadar {
-            0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.35); }
-            70% { transform: scale(1.04); box-shadow: 0 0 0 16px rgba(56, 189, 248, 0); }
-            100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        .room-code-tag {
+            font-size: 1.5rem; font-weight: 900; letter-spacing: 2px;
+            color: var(--p1-cyan); font-family: monospace;
+            background: #0b111e; padding: 6px 14px; border-radius: var(--radius-sm);
         }
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.12); color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.25); font-weight: 700;
-            padding: 8px 18px; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.82rem;
-            transition: background 140ms;
+        .btn-cancel {
+            background: transparent; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.8rem; cursor: pointer;
         }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-        .btn-danger:active { transform: scale(0.95); }
 
-        /* Game HUD */
+        /* Game HUD Header */
         .game-hud {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.85rem; font-weight: 700;
+            border-radius: var(--radius-md); padding: 8px 12px;
         }
-        .hud-player { display: flex; align-items: center; gap: 6px; }
-        .p1-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--p1-cyan); }
-        .p2-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--p2-pink); }
-        .bot-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bot-amber); }
+        .hud-player { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; }
+        .hud-p1 { color: var(--p1-cyan); }
+        .hud-p2 { color: var(--p2-pink); }
+        .hud-score {
+            font-size: 0.95rem; font-weight: 800; font-family: monospace;
+            background: #0b111e; padding: 2px 7px; border-radius: 4px;
+        }
+        .bot-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bot-amber); display: inline-block; }
 
+        /* Canvas & Viewport */
         #canvas-wrap {
             position: relative; width: 100%; max-width: 400px; aspect-ratio: 1/1;
+            background: #070b14; border: 1px solid var(--border-highlight);
             border-radius: var(--radius-lg); overflow: hidden;
-            border: 1px solid var(--border); background: #070b14;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            touch-action: none;
         }
-        #game-canvas { width: 100%; height: 100%; display: block; }
+        canvas#game-canvas { width: 100%; height: 100%; display: block; }
 
-        /* Virtual D-pad */
+        /* Virtual D-pad (60px Buttons & Proper Row 3 - Issue 01) */
         .dpad-container {
-            display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px);
-            gap: 6px; justify-content: center; margin-top: 4px;
+            display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px);
+            gap: 8px; justify-content: center; margin-top: 8px;
         }
         .dpad-btn {
-            background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border);
+            width: 60px; height: 60px;
+            background: rgba(17, 24, 39, 0.85); color: var(--text-secondary); border: 1px solid var(--border-highlight);
             border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
-            cursor: pointer; touch-action: manipulation; transition: background 100ms, color 100ms;
+            cursor: pointer; touch-action: manipulation; transition: background 80ms, color 80ms, transform 80ms, box-shadow 80ms;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-        .dpad-btn:active { background: var(--p1-cyan); color: #090d16; }
+        .dpad-btn:active { background: var(--p1-cyan); color: #090d16; transform: scale(0.92); box-shadow: 0 0 16px var(--p1-cyan); }
         .dpad-up { grid-column: 2; grid-row: 1; }
         .dpad-left { grid-column: 1; grid-row: 2; }
-        .dpad-down { grid-column: 2; grid-row: 2; }
+        .dpad-down { grid-column: 2; grid-row: 3; }
         .dpad-right { grid-column: 3; grid-row: 2; }
 
         @media (hover: hover) and (pointer: fine) {
@@ -280,10 +299,50 @@ private:
         .domino-btn {
             flex: 1; min-height: 40px; padding: 9px 14px; font-weight: 700; font-size: 0.88rem; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s ease;
         }
+
+        /* Bottom-Sheet Hall of Fame Drawer (Issue 08) */
+        .drawer-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            z-index: 1000; display: none; align-items: flex-end; justify-content: center;
+            opacity: 0; transition: opacity 200ms ease;
+        }
+        .drawer-overlay.active { display: flex; opacity: 1; }
+        .drawer-card {
+            background: rgba(17, 24, 39, 0.96); border: 1px solid var(--border-highlight);
+            border-radius: 20px 20px 0 0; width: 100%; max-width: 440px;
+            max-height: 85vh; overflow-y: auto; padding: 14px 18px 24px;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.8); transform: translateY(100%);
+            transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+        .drawer-overlay.active .drawer-card { transform: translateY(0); }
+        .drawer-handle {
+            width: 40px; height: 5px; border-radius: 3px; background: var(--text-tertiary);
+            margin: 0 auto 4px;
+        }
+        .tier-badge {
+            font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 9999px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .tier-bronze { background: rgba(205, 127, 50, 0.2); color: #cd7f32; border: 1px solid #cd7f32; }
+        .tier-silver { background: rgba(192, 192, 192, 0.2); color: #c0c0c0; border: 1px solid #c0c0c0; }
+        .tier-gold { background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid #ffd700; }
+        .tier-master { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #c084fc; box-shadow: 0 0 8px rgba(168, 85, 247, 0.4); }
+
+        /* CRT Scanline Filter Overlay (Issue 08) */
+        body.crt-active::after {
+            content: " "; display: block; position: fixed; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+            z-index: 9999; background-size: 100% 3px, 6px 100%;
+            pointer-events: none; opacity: 0.85;
+        }
     </style>
 </head>
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART2 = R"rawliteral(
+
+    static constexpr const char* INDEX_HTML_PART2B = R"rawliteral(
 <body>
     <header>
         <div class="logo-wrap">
@@ -296,6 +355,11 @@ private:
             <span>Gamebox</span>
         </div>
         <div class="header-controls">
+            <button id="btn-crt" class="icon-btn" title="Toggle CRT Retro Filter">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+            </button>
             <button id="btn-trophy" class="icon-btn" title="Hall of Fame">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-12 0V6a2 2 0 0 1 2-2z"/>
@@ -369,7 +433,7 @@ private:
                         </div>
                         <div class="game-text">
                             <span class="game-title">Connect Four</span>
-                            <span class="game-desc">Drop discs to form four-in-a-row</span>
+                            <span class="game-desc">Classic 4-in-a-row vertical gravity grid</span>
                         </div>
                     </div>
                     <span class="game-tag">vs Bot</span>
@@ -378,24 +442,24 @@ private:
                 <div class="game-item" id="card-solo-pong">
                     <div class="game-info">
                         <div class="game-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="4" y2="17"/><line x1="20" y1="7" x2="20" y2="17"/><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><rect x="9" y="11" width="2" height="2" fill="currentColor"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="3" y2="15"/><line x1="21" y1="9" x2="21" y2="15"/><circle cx="12" cy="12" r="2"/></svg>
                         </div>
                         <div class="game-text">
                             <span class="game-title">Pong Arcade</span>
-                            <span class="game-desc">Bounce physics vs Kinematic Interceptor</span>
+                            <span class="game-desc">Fast-paced 60 FPS physics paddle duel</span>
                         </div>
                     </div>
-                    <span class="game-tag">vs Bot</span>
+                    <span class="game-tag">vs AI</span>
                 </div>
 
                 <div class="game-item" id="card-solo-tron">
                     <div class="game-info">
                         <div class="game-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h8a2 2 0 0 0 2-2V7a2 2 0 0 1 2-2h6"/><circle cx="3" cy="19" r="2" fill="currentColor"/><circle cx="21" cy="5" r="2" fill="currentColor"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6 4 4 6-6"/><path d="M14 5h7v7"/></svg>
                         </div>
                         <div class="game-text">
                             <span class="game-title">Tron Light Cycles</span>
-                            <span class="game-desc">Light trail territory duel vs Voronoi Bot</span>
+                            <span class="game-desc">Outlive the Voronoi / BFS arena bot</span>
                         </div>
                     </div>
                     <span class="game-tag">vs Bot</span>
@@ -404,11 +468,11 @@ private:
                 <div class="game-item" id="card-solo-battleship">
                     <div class="game-info">
                         <div class="game-icon-box">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l3 5h14l3-5H2z"/><path d="M7 14V9h3v5m4 0V6h3v8"/><line x1="2" y1="19" x2="22" y2="19"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
                         </div>
                         <div class="game-text">
                             <span class="game-title">Battleship Fleet</span>
-                            <span class="game-desc">Naval deployment vs Parity hunting Bot</span>
+                            <span class="game-desc">Seek and destroy enemy fleet formations</span>
                         </div>
                     </div>
                     <span class="game-tag">vs Bot</span>
@@ -421,13 +485,15 @@ private:
                         </div>
                         <div class="game-text">
                             <span class="game-title">Block Dominoes</span>
-                            <span class="game-desc">Double-Six Classic Block vs Strategic AI Bot</span>
+                            <span class="game-desc">Classic 28-tile double-six domino match</span>
                         </div>
                     </div>
                     <span class="game-tag">vs Bot</span>
                 </div>
             </div>
+)rawliteral";
 
+    static constexpr const char* INDEX_HTML_PART3 = R"rawliteral(
             <!-- Multiplayer Games List -->
             <div id="list-mp" class="game-list" style="display:none;">
                 <div class="game-item" id="card-mp-snake">
@@ -437,7 +503,7 @@ private:
                         </div>
                         <div class="game-text">
                             <span class="game-title">Snake Arena</span>
-                            <span class="game-desc">Real-time head-to-head collision duel</span>
+                            <span class="game-desc">2-player simultaneous arena survival duel</span>
                         </div>
                     </div>
                     <span class="game-tag">2 Players</span>
@@ -450,7 +516,7 @@ private:
                         </div>
                         <div class="game-text">
                             <span class="game-title">2P Tic-Tac-Toe</span>
-                            <span class="game-desc">Turn-based 1v1 tactical match</span>
+                            <span class="game-desc">Online multiplayer turn-based showdown</span>
                         </div>
                     </div>
                     <span class="game-tag">2 Players</span>
@@ -462,8 +528,8 @@ private:
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/></svg>
                         </div>
                         <div class="game-text">
-                            <span class="game-title">2P Connect Four</span>
-                            <span class="game-desc">Vertical drop grid duel</span>
+                            <span class="game-title">Connect Four</span>
+                            <span class="game-desc">Turn-based 4-in-a-row vertical gravity duel</span>
                         </div>
                     </div>
                     <span class="game-tag">2 Players</span>
@@ -472,11 +538,11 @@ private:
                 <div class="game-item" id="card-mp-pong">
                     <div class="game-info">
                         <div class="game-icon-box duel">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="4" y2="17"/><line x1="20" y1="7" x2="20" y2="17"/><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><rect x="9" y="11" width="2" height="2" fill="currentColor"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="3" y2="15"/><line x1="21" y1="9" x2="21" y2="15"/><circle cx="12" cy="12" r="2"/></svg>
                         </div>
                         <div class="game-text">
                             <span class="game-title">Pong Duel</span>
-                            <span class="game-desc">Fast-paced dual paddle bounce battle</span>
+                            <span class="game-desc">Real-time authoritative paddle tennis match</span>
                         </div>
                     </div>
                     <span class="game-tag">2 Players</span>
@@ -485,11 +551,11 @@ private:
                 <div class="game-item" id="card-mp-tron">
                     <div class="game-info">
                         <div class="game-icon-box duel">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h8a2 2 0 0 0 2-2V7a2 2 0 0 1 2-2h6"/><circle cx="3" cy="19" r="2" fill="currentColor"/><circle cx="21" cy="5" r="2" fill="currentColor"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6 4 4 6-6"/><path d="M14 5h7v7"/></svg>
                         </div>
                         <div class="game-text">
                             <span class="game-title">Tron Light Cycles</span>
-                            <span class="game-desc">90-degree light trail wall trapper</span>
+                            <span class="game-desc">Cut off your opponent in real-time grid arena</span>
                         </div>
                     </div>
                     <span class="game-tag">2 Players</span>
@@ -498,11 +564,11 @@ private:
                 <div class="game-item" id="card-mp-battleship">
                     <div class="game-info">
                         <div class="game-icon-box duel">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l3 5h14l3-5H2z"/><path d="M7 14V9h3v5m4 0V6h3v8"/><line x1="2" y1="19" x2="22" y2="19"/></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
                         </div>
                         <div class="game-text">
                             <span class="game-title">Battleship Fleet</span>
-                            <span class="game-desc">Secret naval deployment & tactical firing</span>
+                            <span class="game-desc">Strategic fog-of-war naval warfare duel</span>
                         </div>
                     </div>
                     <span class="game-tag">2 Players</span>
@@ -521,8 +587,7 @@ private:
                     <span class="game-tag">2-3 Players</span>
                 </div>
             </div>
-)rawliteral";
-    static constexpr const char* INDEX_HTML_PART3 = R"rawliteral(
+
             <div class="section-title">
                 <span>Active Matches</span>
                 <span id="latency-val" style="font-size:0.72rem; color:var(--text-tertiary);">Ping: -- ms</span>
@@ -532,39 +597,47 @@ private:
                 <div class="empty-directory">No open matches. Select a multiplayer game to host!</div>
             </div>
         </div>
+)rawliteral";
 
+    static constexpr const char* INDEX_HTML_PART3B = R"rawliteral(
         <!-- 2. ROOM WAITING VIEW -->
         <div id="view-waiting" class="view">
             <div class="waiting-box">
                 <div class="radar-pulse">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--p1-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="2"></circle>
-                        <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                        <path d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"/>
                     </svg>
                 </div>
-                <h2 id="waiting-game-title" style="font-size:1.15rem; font-weight:800;">Waiting for Challenger</h2>
-                <p id="waiting-host-msg" style="color:var(--text-secondary); font-size:0.82rem;">Visible in the match feed. Anyone can join directly.</p>
-                <button id="btn-start-early" class="btn-solid" style="display:none; width:100%; margin-top:4px;">Start Match Now (2P)</button>
-                <button id="btn-cancel-room" class="btn-danger">Cancel Match</button>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <span id="waiting-game-title" style="font-weight:800; font-size:1.15rem;">Waiting Room</span>
+                    <span id="waiting-host-msg" style="font-size:0.8rem; color:var(--text-secondary);">Match is open in the lobby feed.</span>
+                </div>
+                <button id="btn-start-early" class="btn-solid" style="display:none; width:100%; padding:10px; font-size:0.9rem;">Start Match with Current Players</button>
+                <button id="btn-cancel-room" class="btn-cancel">Cancel & Leave</button>
             </div>
         </div>
 
-        <!-- 3. GAMEPLAY VIEW -->
+        <!-- 3. GAME RUNTIME VIEW -->
         <div id="view-game" class="view">
             <div class="game-hud">
-                <div class="hud-player">
-                    <span class="p1-dot"></span>
-                    <span id="hud-p1-name">P1</span>: <span id="hud-p1-score">0</span>
+                <div class="hud-player hud-p1">
+                    <span class="dot" style="background:var(--p1-cyan);"></span>
+                    <span id="hud-p1-name">P1</span>
+                    <span class="hud-score" id="hud-p1-score">0</span>
                 </div>
-                <div id="hud-status" style="color:var(--text-secondary); font-size:0.8rem; font-weight:600;">Match Live</div>
-                <div class="hud-player">
-                    <span id="hud-p2-marker" class="p2-dot"></span>
-                    <span id="hud-p2-name">P2</span>: <span id="hud-p2-score">0</span>
+                <div id="hud-status" style="font-size:0.78rem; font-weight:700; color:var(--text-secondary);">Match Active</div>
+                <div class="hud-player hud-p2">
+                    <span class="hud-score" id="hud-p2-score">0</span>
+                    <span id="hud-p2-name">P2</span>
+                    <span class="dot" id="hud-p2-marker" style="background:var(--p2-pink);"></span>
                 </div>
-                <div class="hud-player" id="hud-p3-wrap" style="display:none;">
-                    <span class="p3-dot"></span>
-                    <span id="hud-p3-name">P3</span>: <span id="hud-p3-score">0</span>
-                </div>
+            </div>
+
+            <!-- Domino 3rd Player HUD Bar -->
+            <div id="hud-p3-wrap" style="display:none; width:100%; justify-content:center; gap:8px; font-size:0.75rem; color:#c084fc; font-weight:700; margin-top:-6px;">
+                <span class="p3-dot"></span>
+                <span id="hud-p3-name">P3</span>: <span id="hud-p3-score">0</span>
             </div>
 
             <!-- Battleship Deployment Controls -->
@@ -617,9 +690,10 @@ private:
             </div>
         </div>
 
-        <!-- Hall of Fame / Leaderboard Modal (ADR 0012) -->
-        <div id="stats-drawer" class="modal-overlay" style="display:none; z-index:100; align-items:center; justify-content:center;">
-            <div style="background:var(--surface); border:1px solid var(--border-highlight); border-radius:var(--radius-lg); padding:16px; width:92%; max-width:380px; box-shadow:0 12px 30px rgba(0,0,0,0.7); display:flex; flex-direction:column; gap:12px;">
+        <!-- Hall of Fame Bottom-Sheet Drawer (Issue 08) -->
+        <div id="stats-drawer" class="drawer-overlay">
+            <div class="drawer-card">
+                <div class="drawer-handle"></div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div style="font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:8px; color:var(--text);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bot-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7v4h10v-4h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 4h12a2 2 0 0 1 2 2v3a6 6 0 0 1-12 0V6a2 2 0 0 1 2-2z"/></svg>
@@ -629,13 +703,13 @@ private:
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
-                <div id="stats-content" style="display:flex; flex-direction:column; gap:6px; font-size:0.85rem;">
-                </div>
-                <button id="btn-clear-stats" class="btn-secondary" style="font-size:0.75rem; padding:6px; margin-top:4px;">Reset Records</button>
+                <div id="stats-content" style="display:flex; flex-direction:column; gap:6px; font-size:0.85rem;"></div>
+                <button id="btn-clear-stats" class="btn-secondary" style="font-size:0.75rem; padding:8px; margin-top:4px;">Reset Records</button>
             </div>
         </div>
     </div>
 )rawliteral";
+
     static constexpr const char* INDEX_HTML_PART4 = R"rawliteral(
     <script>
         // --- Web Audio Procedural Chiptune Synthesizer ---
@@ -737,6 +811,125 @@ private:
             if (navigator.vibrate) try { navigator.vibrate(ms); } catch(e) {}
         }
 
+        // --- Universal Particle Engine (ADR 0013 / Issue 06) ---
+        class ParticleEngine {
+            constructor(canvas, ctx) {
+                this.canvas = canvas;
+                this.ctx = ctx;
+                this.particles = [];
+            }
+            confetti(x = 200, y = 200, count = 55) {
+                const colors = ['#38bdf8', '#ec4899', '#f59e0b', '#22c55e', '#a855f7', '#ffffff'];
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 2 + Math.random() * 5.5;
+                    this.particles.push({
+                        type: 'confetti', x, y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed - 2.5,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        size: 3 + Math.random() * 3.5,
+                        rot: Math.random() * 360, vRot: (Math.random() - 0.5) * 12,
+                        alpha: 1, decay: 0.012 + Math.random() * 0.012, gravity: 0.11
+                    });
+                }
+            }
+            sparks(x, y, count = 16, color = '#38bdf8') {
+                for (let i = 0; i < count; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 1.2 + Math.random() * 4.2;
+                    this.particles.push({
+                        type: 'spark', x, y,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                        color, size: 1.5 + Math.random() * 2,
+                        alpha: 1, decay: 0.03 + Math.random() * 0.035, gravity: 0.04
+                    });
+                }
+            }
+            ripple(x, y, color = '#38bdf8') {
+                this.particles.push({ type: 'ripple', x, y, radius: 2, maxRadius: 26, color, alpha: 1, decay: 0.035 });
+            }
+            explosion(x, y, color = '#ef4444') {
+                this.sparks(x, y, 20, '#f59e0b');
+                for (let i = 0; i < 10; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 0.5 + Math.random() * 2;
+                    this.particles.push({
+                        type: 'smoke', x, y,
+                        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 0.4,
+                        color, size: 4 + Math.random() * 5, alpha: 0.8, decay: 0.02 + Math.random() * 0.02
+                    });
+                }
+            }
+            updateAndRender() {
+                if (this.particles.length === 0) return;
+                const ctx = this.ctx;
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.alpha -= p.decay;
+                    if (p.alpha <= 0) { this.particles.splice(i, 1); continue; }
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    if (p.type === 'confetti') {
+                        p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.rot += p.vRot;
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180);
+                        ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                        ctx.restore();
+                    } else if (p.type === 'spark') {
+                        p.x += p.vx; p.y += p.vy; p.vy += p.gravity;
+                        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+                    } else if (p.type === 'ripple') {
+                        p.radius += 1.2; ctx.strokeStyle = p.color; ctx.lineWidth = 1.5;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.stroke();
+                    } else if (p.type === 'smoke') {
+                        p.x += p.vx; p.y += p.vy; p.size += 0.25;
+                        ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // --- Camera Juice (ADR 0013 / Issue 06) ---
+        class CameraJuice {
+            constructor() {
+                this.intensity = 0;
+                this.decay = 0.88;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            }
+            shake(tier = 4) {
+                if (this.reduced) return;
+                this.intensity = Math.min(this.intensity + tier, 18);
+            }
+            update() {
+                if (this.intensity > 0.1) {
+                    this.offsetX = (Math.random() - 0.5) * 2 * this.intensity;
+                    this.offsetY = (Math.random() - 0.5) * 2 * this.intensity;
+                    this.intensity *= this.decay;
+                } else {
+                    this.intensity = 0; this.offsetX = 0; this.offsetY = 0;
+                }
+            }
+            apply(ctx) {
+                if (this.intensity > 0) ctx.translate(this.offsetX, this.offsetY);
+            }
+        }
+
+        // --- Clamped 2x Retina Viewport (Issue 06) ---
+        function initHiDPICanvas(cvs, width = 400, height = 400) {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            cvs.width = width * dpr;
+            cvs.height = height * dpr;
+            cvs.style.width = width + 'px';
+            cvs.style.height = height + 'px';
+            const c = cvs.getContext('2d');
+            c.scale(dpr, dpr);
+            return c;
+        }
+)rawliteral";
+
+    static constexpr const char* INDEX_HTML_PART4B = R"rawliteral(
         // --- DOM Elements & Global State ---
         const viewLobby = document.getElementById('view-lobby');
         const viewWaiting = document.getElementById('view-waiting');
@@ -770,7 +963,10 @@ private:
         const btnStartEarly = document.getElementById('btn-start-early');
 
         const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = initHiDPICanvas(canvas, 400, 400);
+        const particleEngine = new ParticleEngine(canvas, ctx);
+        const cameraJuice = new CameraJuice();
+
         const modalGameOver = document.getElementById('modal-gameover');
         const modalTitle = document.getElementById('modal-title');
         const modalSub = document.getElementById('modal-sub');
@@ -798,8 +994,6 @@ private:
         let opponentName = "Opponent";
         let activeRoomCode = null;
         let lastState = null;
-        let particles = [];
-        let shakeFrames = 0;
         let selectedDominoIdx = -1;
 
         // Restore Nickname
@@ -815,11 +1009,9 @@ private:
         // Sound Toggle
         function updateSoundIcons() {
             if (sound.muted) {
-                svgSoundOn.style.display = 'none';
-                svgSoundOff.style.display = 'block';
+                svgSoundOn.style.display = 'none'; svgSoundOff.style.display = 'block';
             } else {
-                svgSoundOn.style.display = 'block';
-                svgSoundOff.style.display = 'none';
+                svgSoundOn.style.display = 'block'; svgSoundOff.style.display = 'none';
             }
         }
         updateSoundIcons();
@@ -832,26 +1024,24 @@ private:
         // Tabs
         tabBtnSolo.addEventListener('click', () => {
             sound.click();
-            tabBtnSolo.classList.add('active');
-            tabBtnMp.classList.remove('active');
-            listSolo.style.display = 'flex';
-            listMp.style.display = 'none';
+            tabBtnSolo.classList.add('active'); tabBtnMp.classList.remove('active');
+            listSolo.style.display = 'flex'; listMp.style.display = 'none';
         });
         tabBtnMp.addEventListener('click', () => {
             sound.click();
-            tabBtnMp.classList.add('active');
-            tabBtnSolo.classList.remove('active');
-            listMp.style.display = 'flex';
-            listSolo.style.display = 'none';
+            tabBtnMp.classList.add('active'); tabBtnSolo.classList.remove('active');
+            listMp.style.display = 'flex'; listSolo.style.display = 'none';
         });
 
         function resetClientGameState() {
             lastState = null;
             prevFinished = false;
             prevScore = 0;
-            particles = [];
-            shakeFrames = 0;
+            particleEngine.particles = [];
             selectedDominoIdx = -1;
+            c4DroppingChips = [];
+            c4PrevBoard = null;
+            pongTrails = [];
             if (window._dominoAutoPassTimer) {
                 clearTimeout(window._dominoAutoPassTimer);
                 window._dominoAutoPassTimer = null;
@@ -916,6 +1106,7 @@ private:
             }, 1000);
         }
 )rawliteral";
+
     static constexpr const char* INDEX_HTML_PART5 = R"rawliteral(
         function getGameTitle(gameKey) {
             switch(gameKey) {
@@ -933,7 +1124,7 @@ private:
                 case 'battleship_solo': return 'Battleship Fleet';
                 case 'domino_pvp': return '2-3P Block Dominoes';
                 case 'domino_solo': return 'Block Dominoes';
-                default: return 'Custom Game';
+                default: return 'Arcade Game';
             }
         }
 
@@ -966,7 +1157,13 @@ private:
                 if (isHost && data.count >= 2) {
                     btnStartEarly.style.display = 'block';
                 }
+            } else if (data.type === 'rematch_update') {
+                const reqCount = (data.requested && data.requested.length) || 1;
+                const total = data.needed || 2;
+                btnModalReplay.textContent = `Rematch (${reqCount}/${total})`;
             } else if (data.type === 'room_ready') {
+                modalGameOver.classList.remove('active');
+                btnModalReplay.textContent = "Play Again";
                 btnStartEarly.style.display = 'none';
                 setupGameView(activeGameType);
                 switchView('game');
@@ -978,10 +1175,15 @@ private:
                 if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'get_rooms' }));
             } else if (data.type === 'state') {
                 lastState = data;
+                if (!data.finished) {
+                    modalGameOver.classList.remove('active');
+                    btnModalReplay.textContent = "Play Again";
+                }
                 renderGameState(data);
             }
         }
 
+        // Live Radar Beacon in Directory Feed (Issue 08)
         function renderRoomDirectory(rooms) {
             roomDirectoryList.innerHTML = '';
             if (rooms.length === 0) {
@@ -993,7 +1195,7 @@ private:
                 item.className = 'room-item';
                 item.innerHTML = `
                     <div class="room-meta">
-                        <span class="room-name">${escapeHtml(r.host)} · ${getGameTitle(r.game)}</span>
+                        <span class="room-name"><span class="radar-beacon"></span>${escapeHtml(r.host)} · ${getGameTitle(r.game)}</span>
                         <span class="room-sub">${r.players || 1}/${r.max || 2} players · Click to join</span>
                     </div>
                     <button class="btn-solid" data-code="${r.code}">Join Match</button>
@@ -1013,24 +1215,41 @@ private:
         }
 
         function escapeHtml(str) {
-            return String(str).replace(/[&<>"']/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[s]);
+            return String(str || '').replace(/[&<>"']/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[s]));
         }
 
-        function setupGameView(gType) {
-            if (touchControls) touchControls.style.display = 'none';
-            if (battleshipControls) battleshipControls.style.display = 'none';
-            if (dominoControls) dominoControls.style.display = 'none';
-            if (dominoEndChoice) dominoEndChoice.style.display = 'none';
+        function setupGameView(gt) {
+            const isSolo = gt && gt.indexOf('_solo') !== -1;
+            battleshipControls.style.display = 'none';
+            dominoControls.style.display = 'none';
+            dominoEndChoice.style.display = 'none';
 
-            if (gType === 'snake_solo' || gType === 'snake_duel' || gType === 'tron_duel' || gType === 'tron_solo' || gType === 'pong_duel' || gType === 'pong_solo') {
-                if (touchControls) touchControls.style.display = 'grid';
-            } else if (gType === 'battleship_pvp' || gType === 'battleship_solo') {
-                if (battleshipControls) battleshipControls.style.display = 'flex';
-            } else if (gType && (gType === 'domino_solo' || gType === 'domino_pvp' || gType === 'domino')) {
-                if (dominoControls) dominoControls.style.display = 'flex';
+            if (gt && (gt.indexOf('snake') !== -1 || gt.indexOf('pong') !== -1 || gt.indexOf('tron') !== -1)) {
+                touchControls.style.display = 'grid';
+            } else {
+                touchControls.style.display = 'none';
+            }
+
+            if (isSolo) {
+                hudP1Name.textContent = nicknameInput.value;
+                if (gt === 'snake_solo') {
+                    hudP2Name.textContent = "Record";
+                    hudP2Marker.style.display = 'none';
+                    hudP2Score.textContent = localStorage.getItem('gamebox_snake_high') || '0';
+                } else {
+                    hudP2Name.textContent = "Bot";
+                    hudP2Marker.className = 'bot-dot';
+                    hudP2Marker.style.display = 'inline-block';
+                }
+            } else {
+                hudP2Marker.className = 'dot';
+                hudP2Marker.style.display = 'inline-block';
             }
         }
 )rawliteral";
+
     static constexpr const char* INDEX_HTML_PART5B = R"rawliteral(
         // --- Solo Game Triggers ---
         document.getElementById('card-solo-snake').addEventListener('click', () => {
@@ -1039,11 +1258,6 @@ private:
             resetClientGameState();
             activeGameType = 'snake_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "Record";
-            hudP2Marker.style.display = 'none';
-            const bestScore = parseInt(localStorage.getItem('gamebox_snake_high') || '0', 10);
-            hudP2Score.textContent = bestScore;
             setupGameView('snake_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'snake_solo' }));
@@ -1056,10 +1270,6 @@ private:
             resetClientGameState();
             activeGameType = 'ttt_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value + " (X)";
-            hudP2Name.textContent = "Minimax (O)";
-            hudP2Marker.className = 'bot-dot';
-            hudP2Marker.style.display = 'inline-block';
             setupGameView('ttt_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'ttt_solo' }));
@@ -1071,10 +1281,6 @@ private:
             resetClientGameState();
             activeGameType = 'connect4_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "Bot";
-            hudP2Marker.className = 'bot-dot';
-            hudP2Marker.style.display = 'inline-block';
             setupGameView('connect4_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'connect4_solo' }));
@@ -1086,10 +1292,6 @@ private:
             resetClientGameState();
             activeGameType = 'pong_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "AI Interceptor";
-            hudP2Marker.className = 'bot-dot';
-            hudP2Marker.style.display = 'inline-block';
             setupGameView('pong_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'pong_solo' }));
@@ -1102,10 +1304,6 @@ private:
             resetClientGameState();
             activeGameType = 'tron_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "Voronoi Bot";
-            hudP2Marker.className = 'bot-dot';
-            hudP2Marker.style.display = 'inline-block';
             setupGameView('tron_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'tron_solo' }));
@@ -1118,10 +1316,6 @@ private:
             resetClientGameState();
             activeGameType = 'battleship_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "Naval Bot";
-            hudP2Marker.className = 'bot-dot';
-            hudP2Marker.style.display = 'inline-block';
             setupGameView('battleship_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'battleship_solo' }));
@@ -1133,10 +1327,6 @@ private:
             resetClientGameState();
             activeGameType = 'domino_solo';
             myPlayerNum = 1;
-            hudP1Name.textContent = nicknameInput.value;
-            hudP2Name.textContent = "Bot";
-            hudP2Marker.className = 'bot-dot';
-            hudP2Marker.style.display = 'inline-block';
             setupGameView('domino_solo');
             switchView('game');
             ws.send(JSON.stringify({ cmd: 'start', game: 'domino_solo' }));
@@ -1161,31 +1351,22 @@ private:
 
         btnStartEarly.addEventListener('click', () => {
             sound.click();
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ cmd: 'start_room' }));
-            }
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'start_room' }));
         });
 
         btnDominoDraw.addEventListener('click', () => {
-            sound.click();
-            haptic(15);
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ cmd: 'draw' }));
-            }
+            sound.click(); haptic(15);
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'draw' }));
         });
 
         btnDominoPass.addEventListener('click', () => {
-            sound.move();
-            haptic(15);
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ cmd: 'pass' }));
-            }
+            sound.move(); haptic(15);
+            if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'pass' }));
         });
 
         if (btnDominoMode) {
             btnDominoMode.addEventListener('click', () => {
-                sound.click();
-                haptic(15);
+                sound.click(); haptic(15);
                 if (ws && ws.readyState === WebSocket.OPEN && lastState) {
                     const nextMode = (lastState.block_mode !== false) ? 'draw' : 'block';
                     ws.send(JSON.stringify({ cmd: 'mode', mode: nextMode }));
@@ -1235,8 +1416,18 @@ private:
             if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ cmd: 'get_rooms' }));
         });
 
+        // Rematch & Replay Handling (ADR 0013 / Issue 02)
         btnModalReplay.addEventListener('click', () => {
             sound.click();
+            if (activeGameType && activeGameType.indexOf('_solo') === -1 && activeRoomCode) {
+                btnModalReplay.textContent = "Rematch Requested...";
+                btnModalReplay.disabled = true;
+                setTimeout(() => { btnModalReplay.disabled = false; }, 1200);
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ cmd: 'rematch' }));
+                }
+                return;
+            }
             stopGameLoop();
             resetClientGameState();
             if (activeGameType === 'snake_solo') {
@@ -1280,9 +1471,10 @@ private:
             }
         }
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART6 = R"rawliteral(
+
+    static constexpr const char* INDEX_HTML_PART5C = R"rawliteral(
         // D-Pad and Keyboard Listeners
-        const stopMoving = (e) => {
+        const stopMoving = () => {
             if (activeGameType && activeGameType.indexOf('pong') !== -1) {
                 sendDir('STOP');
             }
@@ -1319,6 +1511,66 @@ private:
             }
         });
 
+        // Pong Touch Drag & Tron/Snake Swipe Gestures (Issue 01)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let swipeDone = false;
+        let isPongDragging = false;
+
+        canvas.addEventListener('pointerdown', (e) => {
+            touchStartX = e.clientX;
+            touchStartY = e.clientY;
+            swipeDone = false;
+            if (activeGameType && activeGameType.indexOf('pong') !== -1) {
+                isPongDragging = true;
+                handlePongPointerMove(e);
+            }
+        });
+
+        function handlePongPointerMove(e) {
+            if (!isPongDragging || !lastState) return;
+            const rect = canvas.getBoundingClientRect();
+            const y = (e.clientY - rect.top) * (400 / rect.height);
+            const myPaddleY = (myPlayerNum === 2) ? (lastState.p2y || 200) : (lastState.p1y || 200);
+            if (y < myPaddleY - 10) sendDir('UP');
+            else if (y > myPaddleY + 10) sendDir('DOWN');
+            else sendDir('STOP');
+        }
+
+        canvas.addEventListener('pointermove', (e) => {
+            if (isPongDragging) {
+                handlePongPointerMove(e);
+                return;
+            }
+            if (activeGameType && (activeGameType.indexOf('snake') !== -1 || activeGameType.indexOf('tron') !== -1)) {
+                if (swipeDone) return;
+                const dx = e.clientX - touchStartX;
+                const dy = e.clientY - touchStartY;
+                if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        sendDir(dx > 0 ? 'RIGHT' : 'LEFT');
+                    } else {
+                        sendDir(dy > 0 ? 'DOWN' : 'UP');
+                    }
+                    swipeDone = true;
+                    touchStartX = e.clientX;
+                    touchStartY = e.clientY;
+                }
+            }
+        });
+
+        const endTouchGestures = () => {
+            if (isPongDragging) {
+                isPongDragging = false;
+                sendDir('STOP');
+            }
+        };
+        canvas.addEventListener('pointerup', endTouchGestures);
+        canvas.addEventListener('pointercancel', endTouchGestures);
+        canvas.addEventListener('pointerleave', endTouchGestures);
+)rawliteral";
+
+    static constexpr const char* INDEX_HTML_PART6 = R"rawliteral(
         // Battleship Auto-Deploy button
         btnDeployFleet.addEventListener('click', () => {
             sound.click();
@@ -1332,14 +1584,12 @@ private:
         canvas.addEventListener('click', (e) => {
             if (!lastState || lastState.finished) return;
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+            const x = (e.clientX - rect.left) * (400 / rect.width);
+            const y = (e.clientY - rect.top) * (400 / rect.height);
 
             // 1. Tic-Tac-Toe
             if (lastState.game === 'tictactoe') {
-                const cellSize = canvas.width / 3;
+                const cellSize = 400 / 3;
                 const col = Math.floor(x / cellSize);
                 const row = Math.floor(y / cellSize);
                 if (col >= 0 && col < 3 && row >= 0 && row < 3) {
@@ -1351,7 +1601,7 @@ private:
             }
             // 2. Connect Four
             else if (lastState.game === 'connect4') {
-                const colWidth = canvas.width / 7;
+                const colWidth = 400 / 7;
                 const col = Math.floor(x / colWidth);
                 if (col >= 0 && col < 7) {
                     sound.click();
@@ -1362,7 +1612,7 @@ private:
             // 3. Battleship (firing on enemy grid)
             else if (lastState.game === 'battleship' && lastState.phase === 'battle') {
                 if (lastState.turn === myPlayerNum) {
-                    const cellSize = canvas.width / 10;
+                    const cellSize = 40;
                     const col = Math.floor(x / cellSize);
                     const row = Math.floor(y / cellSize);
                     if (col >= 0 && col < 10 && row >= 0 && row < 10) {
@@ -1378,9 +1628,9 @@ private:
                     const myHand = (lastState.hands && lastState.hands[myPlayerNum]) || [];
                     const handCount = myHand.length;
                     if (handCount > 0 && y >= 300 && y <= 395) {
-                        const tileW = Math.min(42, Math.max(20, Math.floor((canvas.width - 20) / handCount)));
+                        const tileW = Math.min(42, Math.max(20, Math.floor(380 / handCount)));
                         const totalW = handCount * tileW;
-                        const startX = Math.max(10, Math.floor((canvas.width - totalW) / 2));
+                        const startX = Math.max(10, Math.floor((400 - totalW) / 2));
                         if (x >= startX && x <= startX + totalW) {
                             const idx = Math.floor((x - startX) / tileW);
                             if (idx >= 0 && idx < handCount) {
@@ -1388,8 +1638,7 @@ private:
                                 const lEnd = lastState.left_end;
                                 const rEnd = lastState.right_end;
                                 if (lEnd === -1 && rEnd === -1) {
-                                    sound.place();
-                                    haptic(20);
+                                    sound.place(); haptic(20);
                                     ws.send(JSON.stringify({ cmd: 'play', index: idx, end: 'right' }));
                                 } else {
                                     const mLeft = (tile[0] === lEnd || tile[1] === lEnd);
@@ -1399,14 +1648,12 @@ private:
                                         dominoEndChoice.style.display = 'flex';
                                         sound.click();
                                     } else if (mLeft) {
-                                        sound.place();
-                                        haptic(20);
+                                        sound.place(); haptic(20);
                                         ws.send(JSON.stringify({ cmd: 'play', index: idx, end: 'left' }));
                                         selectedDominoIdx = -1;
                                         dominoEndChoice.style.display = 'none';
                                     } else if (mRight) {
-                                        sound.place();
-                                        haptic(20);
+                                        sound.place(); haptic(20);
                                         ws.send(JSON.stringify({ cmd: 'play', index: idx, end: 'right' }));
                                         selectedDominoIdx = -1;
                                         dominoEndChoice.style.display = 'none';
@@ -1417,16 +1664,13 @@ private:
                             }
                         }
                     } else if (selectedDominoIdx >= 0 && y >= 50 && y < 300) {
-                        sound.place();
-                        haptic(20);
+                        sound.place(); haptic(20);
                         const bLen = (lastState.board && lastState.board.length) || 1;
                         const rRow = Math.floor((bLen - 1) / 7);
                         const rColInRow = (bLen - 1) % 7;
                         const rCol = (rRow % 2 === 0) ? rColInRow : (6 - rColInRow);
-                        const x0 = 41;
-                        const y0 = 67;
-                        const x1 = 22 + rCol * 46 + 19;
-                        const y1 = 56 + rRow * 38 + 11;
+                        const x0 = 41; const y0 = 67;
+                        const x1 = 22 + rCol * 46 + 19; const y1 = 56 + rRow * 38 + 11;
                         const d0 = (x - x0)*(x - x0) + (y - y0)*(y - y0);
                         const d1 = (x - x1)*(x - x1) + (y - y1)*(y - y1);
                         const end = (d0 <= d1) ? 'left' : 'right';
@@ -1439,31 +1683,13 @@ private:
             }
         });
 
-        // --- Particles & Canvas Juice ---
-        function spawnParticles(x, y, color, count = 12) {
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 1 + Math.random() * 4;
-                particles.push({
-                    x, y,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed,
-                    life: 1.0,
-                    decay: 0.03 + Math.random() * 0.04,
-                    color
-                });
-            }
-        }
-
         let prevScore = 0;
         let prevFinished = false;
 
         function renderGameState(state) {
+            cameraJuice.update();
             ctx.save();
-            if (shakeFrames > 0) {
-                ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
-                shakeFrames--;
-            }
+            cameraJuice.apply(ctx);
 
             if (state.game === 'snake') {
                 renderSnakeGame(state);
@@ -1483,6 +1709,8 @@ private:
                 }
                 renderDominoGame(state);
             }
+
+            particleEngine.updateAndRender();
             ctx.restore();
 
             // Audio cues & High score check
@@ -1501,10 +1729,11 @@ private:
             prevScore = state.score || 0;
 
             if (state.finished && !prevFinished) {
-                shakeFrames = 6;
+                cameraJuice.shake(12);
                 haptic(40);
                 if (state.winner === myPlayerNum || (state.game === 'snake' && !state.duel)) {
                     sound.victory();
+                    particleEngine.confetti(200, 200, 60);
                 } else if (state.winner === -1) {
                     sound.bounce();
                 } else {
@@ -1514,7 +1743,7 @@ private:
                 // Win/Loss stats tracking
                 try {
                     const stats = JSON.parse(localStorage.getItem('gamebox_stats') || '{}');
-                    const gk = state.game + (state.duel ? '_duel' : (activeGameType && activeGameType.includes('pvp') ? '_pvp' : '_solo'));
+                    const gk = state.game;
                     if (!stats[gk]) stats[gk] = { w: 0, l: 0 };
                     if (state.winner === myPlayerNum || (state.game === 'snake' && !state.duel)) {
                         stats[gk].w++;
@@ -1527,46 +1756,43 @@ private:
             prevFinished = state.finished;
         }
 )rawliteral";
-    static constexpr const char* INDEX_HTML_PART7 = R"rawliteral(
-        // --- 1. Snake Renderer ---
+
+    static constexpr const char* INDEX_HTML_PART6B = R"rawliteral(
+        // --- 1. Snake Renderer (Directional Robotic Eyes & Glowing Apple - Issue 07) ---
         function renderSnakeGame(state) {
             const grid = 20;
-            const sz = canvas.width / grid;
+            const sz = 400 / grid;
             ctx.fillStyle = '#070b14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 400);
 
             // Subtle grid lines
             ctx.strokeStyle = '#111827';
             ctx.lineWidth = 1;
             for (let i = 0; i <= grid; i++) {
-                ctx.beginPath(); ctx.moveTo(i * sz, 0); ctx.lineTo(i * sz, canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i * sz); ctx.lineTo(canvas.width, i * sz); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i * sz, 0); ctx.lineTo(i * sz, 400); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * sz); ctx.lineTo(400, i * sz); ctx.stroke();
             }
 
-            // Food with pulse
+            // Food with pulse & bloom core
             if (state.food) {
                 const fx = state.food[0] * sz + sz / 2;
                 const fy = state.food[1] * sz + sz / 2;
-                const pulse = 1 + Math.sin(Date.now() / 150) * 0.12;
+                const pulse = 1 + Math.sin(Date.now() / 150) * 0.15;
+                ctx.save();
+                ctx.shadowBlur = 12; ctx.shadowColor = '#ef4444';
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath();
                 ctx.arc(fx, fy, (sz / 2 - 2) * pulse, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.fillStyle = '#fca5a5';
+                ctx.beginPath();
+                ctx.arc(fx - 1, fy - 1, (sz / 4) * pulse, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
             }
 
             if (state.body && state.body.length > 0) renderSnakeBody(state.body, '#38bdf8', '#0284c7', sz);
             if (state.body2 && state.body2.length > 0) renderSnakeBody(state.body2, '#ec4899', '#be185d', sz);
-
-            // Particles
-            particles.forEach((p, idx) => {
-                p.x += p.vx; p.y += p.vy; p.life -= p.decay;
-                if (p.life <= 0) particles.splice(idx, 1);
-                else {
-                    ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI * 2); ctx.fill();
-                    ctx.globalAlpha = 1.0;
-                }
-            });
 
             hudP1Score.textContent = state.score || 0;
             if (state.duel) {
@@ -1587,20 +1813,39 @@ private:
                 ctx.beginPath();
                 ctx.roundRect ? ctx.roundRect(rx, ry, rsz, rsz, 4) : ctx.rect(rx, ry, rsz, rsz);
                 ctx.fill();
+
+                // Directional Robotic Eyes on Head
+                if (idx === 0) {
+                    const hx = rx + rsz / 2;
+                    const hy = ry + rsz / 2;
+                    let dx = 1, dy = 0;
+                    if (body.length > 1) {
+                        dx = seg[0] - body[1][0];
+                        dy = seg[1] - body[1][1];
+                    }
+                    const eyeOff = 4;
+                    const perpX = -dy * 3;
+                    const perpY = dx * 3;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(hx + dx * eyeOff + perpX, hy + dy * eyeOff + perpY, 2, 0, Math.PI * 2);
+                    ctx.arc(hx + dx * eyeOff - perpX, hy + dy * eyeOff - perpY, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
         }
 
-        // --- 2. Tic-Tac-Toe Renderer ---
+        // --- 2. Tic-Tac-Toe Renderer (Laser Strike on Win - Issue 07) ---
         function renderTicTacToeGame(state) {
-            const sz = canvas.width / 3;
+            const sz = 400 / 3;
             ctx.fillStyle = '#070b14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 400);
 
             ctx.strokeStyle = '#1e293b';
             ctx.lineWidth = 3;
             for (let i = 1; i < 3; i++) {
-                ctx.beginPath(); ctx.moveTo(i * sz, 24); ctx.lineTo(i * sz, canvas.height - 24); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(24, i * sz); ctx.lineTo(canvas.width - 24, i * sz); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i * sz, 24); ctx.lineTo(i * sz, 400 - 24); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(24, i * sz); ctx.lineTo(400 - 24, i * sz); ctx.stroke();
             }
 
             if (state.board) {
@@ -1610,20 +1855,51 @@ private:
                     const cx = col * sz + sz / 2;
                     const cy = row * sz + sz / 2;
                     if (val === 1) {
+                        ctx.save();
                         ctx.strokeStyle = '#38bdf8';
+                        ctx.shadowBlur = 8; ctx.shadowColor = '#38bdf8';
                         ctx.lineWidth = 6;
                         ctx.beginPath();
                         ctx.moveTo(cx - 28, cy - 28); ctx.lineTo(cx + 28, cy + 28);
                         ctx.moveTo(cx + 28, cy - 28); ctx.lineTo(cx - 28, cy + 28);
                         ctx.stroke();
+                        ctx.restore();
                     } else if (val === 2) {
+                        ctx.save();
                         ctx.strokeStyle = '#ec4899';
+                        ctx.shadowBlur = 8; ctx.shadowColor = '#ec4899';
                         ctx.lineWidth = 6;
                         ctx.beginPath();
                         ctx.arc(cx, cy, 30, 0, Math.PI * 2);
                         ctx.stroke();
+                        ctx.restore();
                     }
                 });
+
+                // Laser Beam across Winning Mark (Issue 07)
+                if (state.finished && state.winner > 0) {
+                    const b = state.board;
+                    const wins = [
+                        [0,1,2],[3,4,5],[6,7,8], // rows
+                        [0,3,6],[1,4,7],[2,5,8], // cols
+                        [0,4,8],[2,4,6]          // diags
+                    ];
+                    for (const [p0, p1, p2] of wins) {
+                        if (b[p0] === state.winner && b[p1] === state.winner && b[p2] === state.winner) {
+                            const x0 = (p0 % 3) * sz + sz / 2; const y0 = Math.floor(p0 / 3) * sz + sz / 2;
+                            const x2 = (p2 % 3) * sz + sz / 2; const y2 = Math.floor(p2 / 3) * sz + sz / 2;
+                            ctx.save();
+                            ctx.strokeStyle = state.winner === 1 ? '#38bdf8' : '#ec4899';
+                            ctx.shadowBlur = 18; ctx.shadowColor = ctx.strokeStyle;
+                            ctx.lineWidth = 8;
+                            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x2, y2); ctx.stroke();
+                            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+                            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x2, y2); ctx.stroke();
+                            ctx.restore();
+                            break;
+                        }
+                    }
+                }
             }
 
             if (!state.finished) {
@@ -1632,16 +1908,38 @@ private:
                 showModal(state);
             }
         }
+)rawliteral";
 
-        // --- 3. Connect Four Renderer ---
+    static constexpr const char* INDEX_HTML_PART7 = R"rawliteral(
+        // --- 3. Connect Four Renderer (Elastic Chip Bounce Animation - Issue 07) ---
+        let c4DroppingChips = [];
+        let c4PrevBoard = null;
+
         function renderConnectFourGame(state) {
             const cols = 7;
             const rows = 6;
-            const cw = canvas.width / cols;
-            const ch = canvas.height / rows;
+            const cw = 400 / cols;
+            const ch = 400 / rows;
 
             ctx.fillStyle = '#0b1329';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 400);
+
+            // Detect new falling chips
+            if (state.board && c4PrevBoard && c4PrevBoard.length === state.board.length) {
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const idx = r * cols + c;
+                        if (c4PrevBoard[idx] === 0 && state.board[idx] !== 0) {
+                            c4DroppingChips.push({
+                                col: c, targetY: r * ch + ch / 2, currentY: -ch,
+                                vy: 0, gravity: 1.8, bounce: 0.35, val: state.board[idx],
+                                targetRow: r
+                            });
+                        }
+                    }
+                }
+            }
+            c4PrevBoard = state.board ? [...state.board] : null;
 
             if (state.board) {
                 for (let r = 0; r < rows; r++) {
@@ -1657,13 +1955,9 @@ private:
                         ctx.arc(cx, cy, radius, 0, Math.PI * 2);
                         ctx.fill();
 
-                        if (val === 1) {
-                            ctx.fillStyle = '#38bdf8';
-                            ctx.beginPath();
-                            ctx.arc(cx, cy, radius - 2, 0, Math.PI * 2);
-                            ctx.fill();
-                        } else if (val === 2) {
-                            ctx.fillStyle = '#ec4899';
+                        const isAnimating = c4DroppingChips.some(d => d.col === c && d.targetRow === r);
+                        if (!isAnimating && val > 0) {
+                            ctx.fillStyle = val === 1 ? '#38bdf8' : '#ec4899';
                             ctx.beginPath();
                             ctx.arc(cx, cy, radius - 2, 0, Math.PI * 2);
                             ctx.fill();
@@ -1672,23 +1966,47 @@ private:
                 }
             }
 
+            // Animate Dropping Chips
+            for (let i = c4DroppingChips.length - 1; i >= 0; i--) {
+                const d = c4DroppingChips[i];
+                d.vy += d.gravity;
+                d.currentY += d.vy;
+                if (d.currentY >= d.targetY) {
+                    d.currentY = d.targetY;
+                    d.vy = -d.vy * d.bounce;
+                    if (Math.abs(d.vy) < 1.2) {
+                        c4DroppingChips.splice(i, 1);
+                        cameraJuice.shake(2);
+                        continue;
+                    }
+                }
+                const cx = d.col * cw + cw / 2;
+                const radius = Math.min(cw, ch) * 0.38;
+                ctx.fillStyle = d.val === 1 ? '#38bdf8' : '#ec4899';
+                ctx.beginPath();
+                ctx.arc(cx, d.currentY, radius - 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
             if (!state.finished) {
-                hudStatus.textContent = state.turn === myPlayerNum ? "Your Turn (Click Column)" : "Opponent Turn";
+                hudStatus.textContent = state.turn === myPlayerNum ? "Your Turn (Tap Column)" : "Opponent Turn";
             } else {
                 showModal(state);
             }
         }
 
-        // --- 4. Pong Renderer ---
+        // --- 4. Pong Renderer (Phosphor Comet Motion Trail & Sparks - Issue 07) ---
+        let pongTrails = [];
+
         function renderPongGame(state) {
             ctx.fillStyle = '#070b14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 400);
 
             // Center dashed court line
             ctx.strokeStyle = '#1e293b';
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 6]);
-            ctx.beginPath(); ctx.moveTo(canvas.width / 2, 0); ctx.lineTo(canvas.width / 2, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(200, 0); ctx.lineTo(200, 400); ctx.stroke();
             ctx.setLineDash([]);
 
             // Paddles
@@ -1698,13 +2016,31 @@ private:
             ctx.fillRect(padW, (state.p1y || 200) - padH / 2, padW, padH);
 
             ctx.fillStyle = '#ec4899';
-            ctx.fillRect(canvas.width - padW * 2, (state.p2y || 200) - padH / 2, padW, padH);
+            ctx.fillRect(400 - padW * 2, (state.p2y || 200) - padH / 2, padW, padH);
 
-            // Ball
+            // Ball Phosphor Comet Trails (Issue 07)
+            const bx = state.bx || 200;
+            const by = state.by || 200;
+            pongTrails.push({ x: bx, y: by, alpha: 0.8 });
+            if (pongTrails.length > 7) pongTrails.shift();
+
+            for (let i = 0; i < pongTrails.length - 1; i++) {
+                const t = pongTrails[i];
+                t.alpha *= 0.82;
+                ctx.fillStyle = `rgba(56, 189, 248, ${t.alpha * 0.4})`;
+                ctx.beginPath();
+                ctx.arc(t.x, t.y, 6 * t.alpha, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Ball Core
+            ctx.save();
             ctx.fillStyle = '#f1f5f9';
+            ctx.shadowBlur = 10; ctx.shadowColor = '#38bdf8';
             ctx.beginPath();
-            ctx.arc(state.bx || 200, state.by || 200, 8, 0, Math.PI * 2);
+            ctx.arc(bx, by, 8, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
 
             hudP1Score.textContent = state.score1 || 0;
             hudP2Score.textContent = state.score2 || 0;
@@ -1713,13 +2049,13 @@ private:
             if (state.finished) showModal(state);
         }
 
-        // --- 5. Tron Light Cycles Renderer ---
+        // --- 5. Tron Light Cycles Renderer (Neon Bloom & Shockwaves - Issue 07) ---
         function renderTronGame(state) {
             const grid = 30;
-            const sz = canvas.width / grid;
+            const sz = 400 / grid;
 
             ctx.fillStyle = '#070b14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 400);
 
             if (state.grid) {
                 for (let y = 0; y < grid; y++) {
@@ -1736,33 +2072,52 @@ private:
                 }
             }
 
-            // Draw player heads with brighter tint
+            // Draw player heads with brighter tint and headlights
             if (state.p1 && state.p1.alive) {
+                ctx.save();
+                ctx.shadowBlur = 10; ctx.shadowColor = '#38bdf8';
                 ctx.fillStyle = '#38bdf8';
                 ctx.fillRect(state.p1.x * sz, state.p1.y * sz, sz, sz);
+                ctx.restore();
             }
             if (state.p2 && state.p2.alive) {
+                ctx.save();
+                ctx.shadowBlur = 10; ctx.shadowColor = '#ec4899';
                 ctx.fillStyle = '#ec4899';
                 ctx.fillRect(state.p2.x * sz, state.p2.y * sz, sz, sz);
+                ctx.restore();
             }
 
             hudStatus.textContent = "Avoid Wall Collision";
             if (state.finished) showModal(state);
         }
+)rawliteral";
 
-        // --- 6. Battleship Renderer ---
+    static constexpr const char* INDEX_HTML_PART8 = R"rawliteral(
+        // --- 6. Battleship Renderer (360 Sonar Radar Sweep & Ripples - Issue 07) ---
         function renderBattleshipGame(state) {
-            const sz = canvas.width / 10;
+            const sz = 40;
             ctx.fillStyle = '#070b14';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, 400, 400);
 
             // Sonar grid lines
             ctx.strokeStyle = '#111e33';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 10; i++) {
-                ctx.beginPath(); ctx.moveTo(i * sz, 0); ctx.lineTo(i * sz, canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, i * sz); ctx.lineTo(canvas.width, i * sz); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i * sz, 0); ctx.lineTo(i * sz, 400); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i * sz); ctx.lineTo(400, i * sz); ctx.stroke();
             }
+
+            // Continuous 360 Sonar Radar Sweep Line (Issue 07)
+            const sweepAngle = (Date.now() / 1400) % (Math.PI * 2);
+            ctx.save();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(200, 200);
+            ctx.lineTo(200 + Math.cos(sweepAngle) * 280, 200 + Math.sin(sweepAngle) * 280);
+            ctx.stroke();
+            ctx.restore();
 
             const me = myPlayerNum === 1 ? state.p1 : state.p2;
 
@@ -1771,7 +2126,6 @@ private:
                 hudStatus.textContent = (myPlayerNum === 1 ? state.p1ready : state.p2ready) ?
                     "Fleet Deployed! Waiting for opponent..." : "Tap 'Deploy Fleet' to Arrange";
 
-                // Draw own ships
                 if (me && me.own) {
                     me.own.forEach((cell, idx) => {
                         const r = Math.floor(idx / 10);
@@ -1786,7 +2140,6 @@ private:
                 battleshipControls.style.display = 'none';
                 hudStatus.textContent = state.turn === myPlayerNum ? "Your Turn: Tap Sector to Fire" : "Opponent Aiming...";
 
-                // Draw enemy grid targeting view
                 if (me && me.enemy) {
                     me.enemy.forEach((cell, idx) => {
                         const r = Math.floor(idx / 10);
@@ -1811,9 +2164,8 @@ private:
 
             if (state.finished) showModal(state);
         }
-)rawliteral";
-    static constexpr const char* INDEX_HTML_PART8 = R"rawliteral(
-        // --- 7. Domino Renderer & Helpers ---
+
+        // --- 7. Domino Renderer & Helpers (Emerald Felt Table & 3D Ivory Tiles - Issue 07) ---
         function drawDominoPips(c, val, x, y, w, h) {
             if (val <= 0) return;
             const r = Math.max(1.6, Math.min(2.8, w * 0.08));
@@ -1833,35 +2185,26 @@ private:
                 c.fill();
             };
 
-            if (val === 1) {
-                dot(c2, r2);
-            } else if (val === 2) {
-                dot(c1, r1); dot(c3, r3);
-            } else if (val === 3) {
-                dot(c1, r1); dot(c2, r2); dot(c3, r3);
-            } else if (val === 4) {
-                dot(c1, r1); dot(c3, r1);
-                dot(c1, r3); dot(c3, r3);
-            } else if (val === 5) {
-                dot(c1, r1); dot(c3, r1);
-                dot(c2, r2);
-                dot(c1, r3); dot(c3, r3);
-            } else if (val === 6) {
-                dot(c1, r1); dot(c3, r1);
-                dot(c1, r2); dot(c3, r2);
-                dot(c1, r3); dot(c3, r3);
-            }
+            if (val === 1) { dot(c2, r2); }
+            else if (val === 2) { dot(c1, r1); dot(c3, r3); }
+            else if (val === 3) { dot(c1, r1); dot(c2, r2); dot(c3, r3); }
+            else if (val === 4) { dot(c1, r1); dot(c3, r1); dot(c1, r3); dot(c3, r3); }
+            else if (val === 5) { dot(c1, r1); dot(c3, r1); dot(c2, r2); dot(c1, r3); dot(c3, r3); }
+            else if (val === 6) { dot(c1, r1); dot(c3, r1); dot(c1, r2); dot(c3, r2); dot(c1, r3); dot(c3, r3); }
         }
 
         function renderDominoGame(state) {
-            // Felt gaming green table
-            ctx.fillStyle = '#0b241b';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Havana Emerald Felt Gaming Table Radial Gradient (Issue 07)
+            const grad = ctx.createRadialGradient(200, 200, 20, 200, 200, 260);
+            grad.addColorStop(0, '#0f382a');
+            grad.addColorStop(1, '#051811');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 400, 400);
 
             // Subtle table border
             ctx.strokeStyle = '#143c2e';
             ctx.lineWidth = 2;
-            ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+            ctx.strokeRect(6, 6, 388, 388);
 
             // --- Top Bar: Opponents Hand Info ---
             ctx.fillStyle = '#94a3b8';
@@ -1882,7 +2225,7 @@ private:
             ctx.textAlign = 'right';
             ctx.fillStyle = '#38bdf8';
             const boneyardLabel = (state.block_mode !== false) ? `Reserve: ${state.boneyard_count || 0}` : `Pioche: ${state.boneyard_count || 0}`;
-            ctx.fillText(boneyardLabel, canvas.width - 14, 24);
+            ctx.fillText(boneyardLabel, 386, 24);
 
             // --- Open End Indicators in Middle ---
             ctx.font = '700 11px system-ui, sans-serif';
@@ -1894,23 +2237,23 @@ private:
             ctx.textAlign = 'right';
             if (state.right_end !== -1) {
                 ctx.fillStyle = '#fbbf24';
-                ctx.fillText(`Right: ${state.right_end} ►`, canvas.width - 14, 42);
+                ctx.fillText(`Right: ${state.right_end} ►`, 386, 42);
             }
 
             if (state.last_action) {
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#94a3b8';
                 ctx.font = '600 10px system-ui, sans-serif';
-                ctx.fillText(state.last_action, canvas.width / 2, 42);
+                ctx.fillText(state.last_action, 200, 42);
             }
 
-            // --- Middle Board Domino Chain ---
+            // --- Middle Board Domino Chain with 3D Ivory Tiles ---
             const board = state.board || [];
             if (board.length === 0) {
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#64748b';
                 ctx.font = '500 13px system-ui, sans-serif';
-                ctx.fillText("Board is open. Tap any tile in your hand to lead!", canvas.width / 2, 160);
+                ctx.fillText("Board is open. Tap any tile in your hand to lead!", 200, 160);
             } else {
                 const maxPerRow = 7;
                 const bTileW = 38;
@@ -1925,7 +2268,7 @@ private:
                     const bx = 22 + col * (bTileW + 8);
                     const by = 56 + row * (bTileH + 16);
 
-                    // Visual corner track connector between rows
+                    // Visual corner track connector
                     if (row > 0 && colInRow === 0) {
                         ctx.strokeStyle = '#1e3a2f';
                         ctx.lineWidth = 2.5;
@@ -1942,11 +2285,15 @@ private:
                         ctx.stroke();
                     }
 
-                    // Ivory Tile Body
+                    // 3D Ivory Tile Body (Soft Drop Shadow - Issue 07)
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+                    ctx.shadowBlur = 5; ctx.shadowOffsetY = 2;
                     ctx.fillStyle = '#fffbeb';
                     ctx.beginPath();
                     ctx.roundRect ? ctx.roundRect(bx, by, bTileW, bTileH, 4) : ctx.rect(bx, by, bTileW, bTileH);
                     ctx.fill();
+                    ctx.restore();
 
                     ctx.strokeStyle = '#334155';
                     ctx.lineWidth = 1.2;
@@ -1959,21 +2306,22 @@ private:
                     ctx.lineTo(bx + bTileW / 2, by + bTileH - 2);
                     ctx.stroke();
 
-                    // Pips: respect row direction (even rows left->right, odd rows right->left)
+                    // Pips
                     const pipsLeft = isEvenRow ? t[0] : t[1];
                     const pipsRight = isEvenRow ? t[1] : t[0];
                     drawDominoPips(ctx, pipsLeft, bx, by, bTileW / 2, bTileH);
                     drawDominoPips(ctx, pipsRight, bx + bTileW / 2, by, bTileW / 2, bTileH);
 
-                    // Highlight open ends
+                    // Pulsing Open End Halo (Issue 07)
+                    const haloPulse = 0.5 + 0.5 * Math.sin(Date.now() / 200);
                     if (i === 0) {
-                        ctx.strokeStyle = '#38bdf8';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(bx - 1, by - 1, bTileW + 2, bTileH + 2);
+                        ctx.strokeStyle = `rgba(56, 189, 248, ${0.6 + haloPulse * 0.4})`;
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeRect(bx - 2, by - 2, bTileW + 4, bTileH + 4);
                     } else if (i === board.length - 1) {
-                        ctx.strokeStyle = '#fbbf24';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(bx - 1, by - 1, bTileW + 2, bTileH + 2);
+                        ctx.strokeStyle = `rgba(251, 191, 36, ${0.6 + haloPulse * 0.4})`;
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeRect(bx - 2, by - 2, bTileW + 4, bTileH + 4);
                     }
                 });
             }
@@ -1983,9 +2331,10 @@ private:
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(10, 290);
-            ctx.lineTo(canvas.width - 10, 290);
+            ctx.lineTo(390, 290);
             ctx.stroke();
 )rawliteral";
+
     static constexpr const char* INDEX_HTML_PART9 = R"rawliteral(
             // --- Bottom Area: Player's Hand ---
             const myHand = (state.hands && state.hands[myPlayerNum]) || [];
@@ -1997,10 +2346,10 @@ private:
             ctx.fillText(`Your Hand (${count} domino${count > 1 ? 'es' : ''}):`, 14, 306);
 
             if (count > 0) {
-                const tileW = Math.min(42, Math.max(20, Math.floor((canvas.width - 24) / count)));
+                const tileW = Math.min(42, Math.max(20, Math.floor(376 / count)));
                 const tileH = 68;
                 const totalW = count * tileW;
-                const startX = Math.max(12, Math.floor((canvas.width - totalW) / 2));
+                const startX = Math.max(12, Math.floor((400 - totalW) / 2));
                 const isMyTurn = (state.turn === myPlayerNum && !state.finished);
 
                 myHand.forEach((t, i) => {
@@ -2013,11 +2362,15 @@ private:
                                     (t[0] === state.left_end || t[1] === state.left_end ||
                                      t[0] === state.right_end || t[1] === state.right_end);
 
-                    // Ivory Body
+                    // 3D Ivory Body with Drop Shadow
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+                    ctx.shadowBlur = 6; ctx.shadowOffsetY = 3;
                     ctx.fillStyle = isSelected ? '#ffffff' : '#fffbeb';
                     ctx.beginPath();
                     ctx.roundRect ? ctx.roundRect(tx + 2, ty, tileW - 4, tileH, 5) : ctx.rect(tx + 2, ty, tileW - 4, tileH);
                     ctx.fill();
+                    ctx.restore();
 
                     // Highlight border
                     if (isSelected) {
@@ -2117,15 +2470,6 @@ private:
                     const canDraw = isMyTurn && ((state.boneyard_count || 0) > 0);
                     btnDominoDraw.disabled = !canDraw;
                     btnDominoDraw.style.opacity = canDraw ? '1.0' : '0.4';
-                    if (isMyTurn && !hasPlayableTile && canDraw) {
-                        btnDominoDraw.style.background = '#0284c7';
-                        btnDominoDraw.style.color = '#ffffff';
-                        btnDominoDraw.style.fontWeight = '700';
-                    } else {
-                        btnDominoDraw.style.background = '';
-                        btnDominoDraw.style.color = '';
-                        btnDominoDraw.style.fontWeight = '';
-                    }
                 }
             }
 
@@ -2133,18 +2477,9 @@ private:
                 const canPass = isMyTurn && !hasPlayableTile;
                 btnDominoPass.disabled = !canPass;
                 btnDominoPass.style.opacity = canPass ? '1.0' : '0.4';
-                if (canPass) {
-                    btnDominoPass.style.background = '#0284c7';
-                    btnDominoPass.style.color = '#ffffff';
-                    btnDominoPass.style.fontWeight = '700';
-                } else {
-                    btnDominoPass.style.background = '';
-                    btnDominoPass.style.color = '';
-                    btnDominoPass.style.fontWeight = '';
-                }
             }
 
-            // Auto-pass if completely blocked or in Block mode without moves
+            // Auto-pass if blocked or in Block mode without moves
             const shouldAutoPass = isMyTurn && !hasPlayableTile && (state.block_mode !== false || (state.boneyard_count || 0) === 0);
             if (shouldAutoPass) {
                 if (!window._dominoAutoPassTimer) {
@@ -2165,13 +2500,10 @@ private:
         }
 
         function spawnVictoryCelebration() {
-            const colors = ['#38bdf8', '#4ade80', '#fbbf24', '#ec4899', '#f1f5f9'];
-            for (let i = 0; i < 40; i++) {
-                spawnParticles(canvas.width / 2, canvas.height / 2, colors[Math.floor(Math.random() * colors.length)], 1);
-            }
+            particleEngine.confetti(200, 200, 65);
         }
 
-        // --- Modal Dialog (No Emojis, Pure SVG) ---
+        // --- Modal Dialog with Rematch & Series Score (ADR 0013 / Issue 02) ---
         function showModal(state) {
             modalGameOver.classList.add('active');
             let isWin = (state.winner === myPlayerNum) || (state.game === 'snake' && !state.duel);
@@ -2202,18 +2534,27 @@ private:
                 }
             }
 
+            if (state.series_p1 !== undefined) {
+                sub += ` · Series: P1 ${state.series_p1} - ${state.series_p2} P2 (Match ${state.series_match || 1})`;
+            }
+
+            if (activeGameType && activeGameType.indexOf('_solo') === -1 && activeRoomCode) {
+                btnModalReplay.textContent = "Rematch";
+            } else {
+                btnModalReplay.textContent = "Play Again";
+            }
+
             modalTitle.textContent = title;
             modalTitle.style.color = isWin ? '#4ade80' : (isDraw ? '#f59e0b' : '#f87171');
             modalSub.textContent = sub;
 
-            // Record win in Hall of Fame (ADR 0012)
             if (isWin) {
                 const winKey = `gamebox_wins_${state.game}`;
                 const curWins = parseInt(localStorage.getItem(winKey) || '0', 10);
                 localStorage.setItem(winKey, curWins + 1);
             }
 
-            // Render SVG Icon & Victory Juice
+            // Render Pure SVG Icon
             if (isWin) {
                 spawnVictoryCelebration();
                 modalIconContainer.innerHTML = `
@@ -2235,13 +2576,41 @@ private:
                     </svg>`;
             }
         }
+)rawliteral";
 
-        // --- Hall of Fame Leaderboard & Stats Drawer (ADR 0012) ---
+    static constexpr const char* INDEX_HTML_PART10 = R"rawliteral(
+        // --- Hall of Fame Leaderboard & Bottom-Sheet Drawer (Issue 08) ---
         const btnTrophy = document.getElementById('btn-trophy');
         const statsDrawer = document.getElementById('stats-drawer');
         const btnCloseStats = document.getElementById('btn-close-stats');
         const btnClearStats = document.getElementById('btn-clear-stats');
         const statsContent = document.getElementById('stats-content');
+        const btnCrt = document.getElementById('btn-crt');
+
+        // CRT Filter Toggle
+        if (localStorage.getItem('gamebox_crt') === 'true') {
+            document.body.classList.add('crt-active');
+        }
+        if (btnCrt) {
+            btnCrt.addEventListener('click', () => {
+                sound.click();
+                const active = document.body.classList.toggle('crt-active');
+                localStorage.setItem('gamebox_crt', active);
+            });
+        }
+
+        function getTierBadge(wins, isSnake = false) {
+            if (isSnake) {
+                if (wins >= 50) return '<span class="tier-badge tier-master">Master</span>';
+                if (wins >= 25) return '<span class="tier-badge tier-gold">Gold</span>';
+                if (wins >= 10) return '<span class="tier-badge tier-silver">Silver</span>';
+                return '<span class="tier-badge tier-bronze">Bronze</span>';
+            }
+            if (wins >= 15) return '<span class="tier-badge tier-master">Master</span>';
+            if (wins >= 7) return '<span class="tier-badge tier-gold">Gold</span>';
+            if (wins >= 3) return '<span class="tier-badge tier-silver">Silver</span>';
+            return '<span class="tier-badge tier-bronze">Bronze</span>';
+        }
 
         function updateStatsModal() {
             if (!statsContent) return;
@@ -2255,19 +2624,28 @@ private:
                 { id: 'domino', name: 'Block Dominoes', winKey: 'gamebox_wins_domino' }
             ];
 
+            let statsObj = {};
+            try { statsObj = JSON.parse(localStorage.getItem('gamebox_stats') || '{}'); } catch(e) {}
+
             let html = '';
             games.forEach(g => {
                 let statText = '';
+                let tierHtml = '';
                 if (g.highKey) {
-                    const val = localStorage.getItem(g.highKey) || '0';
+                    const val = parseInt(localStorage.getItem(g.highKey) || '0', 10);
+                    tierHtml = getTierBadge(val, true);
                     statText = `${g.highLabel}: <b style="color:var(--p1-cyan);">${val}</b>`;
                 } else if (g.winKey) {
-                    const wins = localStorage.getItem(g.winKey) || '0';
+                    const wins = parseInt(localStorage.getItem(g.winKey) || '0', 10);
+                    tierHtml = getTierBadge(wins, false);
                     statText = `Wins: <b style="color:var(--success);">${wins}</b>`;
                 }
                 html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm);">
-                        <span style="font-weight:600; color:var(--text);">${g.name}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm);">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            ${tierHtml}
+                            <span style="font-weight:600; color:var(--text);">${g.name}</span>
+                        </div>
                         <span>${statText}</span>
                     </div>
                 `;
@@ -2279,24 +2657,54 @@ private:
             btnTrophy.addEventListener('click', () => {
                 sound.click();
                 updateStatsModal();
-                statsDrawer.style.display = 'flex';
+                statsDrawer.classList.add('active');
             });
         }
         if (btnCloseStats) {
             btnCloseStats.addEventListener('click', () => {
                 sound.click();
-                statsDrawer.style.display = 'none';
+                statsDrawer.classList.remove('active');
             });
         }
-        if (btnClearStats) {
-            btnClearStats.addEventListener('click', () => {
-                sound.click();
-                ['gamebox_snake_high', 'gamebox_wins_tictactoe', 'gamebox_wins_connect4', 'gamebox_wins_pong', 'gamebox_wins_tron', 'gamebox_wins_battleship', 'gamebox_wins_domino'].forEach(k => localStorage.removeItem(k));
-                updateStatsModal();
+        if (statsDrawer) {
+            statsDrawer.addEventListener('click', (e) => {
+                if (e.target === statsDrawer) statsDrawer.classList.remove('active');
             });
         }
 
-        connect();
+        // Two-Step Reset Confirmation (Issue 08)
+        let resetConfirming = false;
+        let resetTimer = null;
+        if (btnClearStats) {
+            btnClearStats.addEventListener('click', () => {
+                sound.click();
+                if (!resetConfirming) {
+                    resetConfirming = true;
+                    btnClearStats.textContent = "Confirm Reset Records?";
+                    btnClearStats.style.background = "var(--danger)";
+                    btnClearStats.style.color = "#ffffff";
+                    resetTimer = setTimeout(() => {
+                        resetConfirming = false;
+                        btnClearStats.textContent = "Reset Records";
+                        btnClearStats.style.background = "";
+                        btnClearStats.style.color = "";
+                    }, 3500);
+                } else {
+                    clearTimeout(resetTimer);
+                    resetConfirming = false;
+                    btnClearStats.textContent = "Reset Records";
+                    btnClearStats.style.background = "";
+                    btnClearStats.style.color = "";
+                    ['gamebox_snake_high', 'gamebox_wins_tictactoe', 'gamebox_wins_connect4', 'gamebox_wins_pong', 'gamebox_wins_tron', 'gamebox_wins_battleship', 'gamebox_wins_domino', 'gamebox_stats'].forEach(k => localStorage.removeItem(k));
+                    updateStatsModal();
+                }
+            });
+        }
+
+        // Startup Connection
+        window.addEventListener('load', () => {
+            connect();
+        });
     </script>
 </body>
 </html>

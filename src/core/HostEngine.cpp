@@ -223,6 +223,31 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         return resp;
     }
 
+    // 3b. Rematch in Multiplayer Room
+    if (rawMessage.find("\"cmd\":\"rematch\"") != std::string::npos) {
+        Room* room = m_roomManager.findRoomByPlayer(sessionId);
+        if (room && room->isFinished()) {
+            uint32_t pNum = m_sessionPlayerMap[sessionId];
+            room->requestRematch(pNum);
+
+            if (room->isRematchReady()) {
+                room->resetForRematch();
+                for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {
+                    if (m_network) m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
+                }
+                broadcastStateToRoom(room);
+            } else {
+                std::ostringstream oss;
+                oss << "{\"type\":\"rematch_update\",\"requested\":" << room->getRematchRequestCount()
+                    << ",\"total\":" << room->getPlayerCount() << "}";
+                for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {
+                    if (m_network) m_network->sendToClient(sidPlayer, oss.str());
+                }
+            }
+        }
+        return "";
+    }
+
     // 4. Start Solo Game (Auto-detach from any multiplayer room)
     if (rawMessage.find("\"cmd\":\"start\"") != std::string::npos) {
         detachPlayerFromRoom(sessionId);

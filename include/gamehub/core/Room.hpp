@@ -44,6 +44,14 @@ public:
     bool canStartGame() const;
     bool canProcessInput() const;
     bool shouldTick() const;
+    // Rematch & Series Score
+    void requestRematch(PlayerId id);
+    bool isRematchReady() const;
+    void resetForRematch();
+    size_t getRematchRequestCount() const { return m_rematchRequests.size(); }
+    int getP1SeriesWins() const { return m_p1SeriesWins; }
+    int getP2SeriesWins() const { return m_p2SeriesWins; }
+    int getSeriesMatchCount() const { return m_seriesMatchCount; }
 
 private:
     std::string m_code;
@@ -53,6 +61,10 @@ private:
     std::unique_ptr<Game> m_game;
     std::vector<PlayerId> m_players;
     std::unique_ptr<RoomState> m_state;
+    int m_p1SeriesWins{0};
+    int m_p2SeriesWins{0};
+    int m_seriesMatchCount{0};
+    std::vector<PlayerId> m_rematchRequests;
 };
 
 } // namespace core

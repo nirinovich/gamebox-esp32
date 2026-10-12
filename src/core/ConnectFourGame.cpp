@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <limits>
 #include <cstdlib>
+#include <charconv>
 
 namespace gamehub {
 namespace core {
@@ -80,7 +81,8 @@ void ConnectFourGame::handleInput(PlayerId player, const std::string& input) {
     auto pos = input.find("\"col\":");
     if (pos == std::string::npos) return;
     int col = -1;
-    try { col = std::stoi(input.substr(pos + 6)); } catch (...) { return; }
+    auto [ptr, ec] = std::from_chars(input.data() + pos + 6, input.data() + input.size(), col);
+    if (ec != std::errc{}) return;
     if ((int)player == m_turn) {
         if (dropPiece(col, m_turn)) {
             if (m_vsBot && !m_finished && m_turn == 2) {

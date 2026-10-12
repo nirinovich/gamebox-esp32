@@ -4,20 +4,30 @@ An authoritative, headless game engine implemented in modern C++17 for the ESP32
 
 Clients connect with any standard mobile or desktop web browser—no app installation required.
 
+## 📥 Getting the Code
+
+Clone the repository to your local machine:
+```bash
+git clone https://github.com/nirinovich/gamebox-esp32.git
+cd gamebox-esp32
+```
+
 ---
 
 ## 🚀 How to Launch
 
-You can run this project in two ways:
+You can run this project in three ways:
 1. **Desktop Mode** (recommended for quick testing, development, and grading without hardware)
 2. **ESP32 Hardware Mode** (flashing directly to an ESP32-S3 board)
 3. **Wokwi Simulator** (virtual simulation in VS Code or CLI)
+
+> **Note on Web Assets:** All web portal frontend files (HTML/JS/CSS) are compiled directly into the binary as C++ string constants. No separate SPIFFS or LittleFS filesystem flashing is needed.
 
 ---
 
 ### Option 1: Desktop Runner (No Hardware Required)
 
-The core game engine is platform-agnostic and includes a native desktop server with an embedded web panel.
+The core game engine is platform-agnostic and includes a native desktop server with an embedded web panel. No third-party package managers or external libraries are required—standard system libraries (`ws2_32` on Windows, `pthread` on Linux/macOS) are linked automatically.
 
 #### Requirements
 - CMake 3.16+

@@ -26,6 +26,7 @@ public:
     void update(float dt) override;
     void handleInput(PlayerId player, const std::string& input) override;
     std::string serializeState() const override;
+    std::string serializeStateForPlayer(PlayerId id) const override;
     bool isFinished() const override { return m_finished; }
     int getWinner() const override { return m_winner; }
 

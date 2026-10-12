@@ -1,4 +1,5 @@
 #include <iostream>
+#undef NDEBUG
 #include <cassert>
 #include <vector>
 #include <string>
@@ -227,6 +228,83 @@ int main() {
         std::cout << "    Solo Battleship game execution verified." << std::endl;
     }
 
+    // --- 9. Domino Fog-of-War Network Security ---
+    {
+        std::cout << "  - Testing Domino Fog-of-War hand security..." << std::endl;
+        mockNet.clear();
+        engine.onClientConnect(401);
+        engine.onClientConnect(402);
+
+        engine.onClientMessage(401, "{\"cmd\":\"create\",\"game\":\"domino_pvp\",\"max\":2,\"host\":\"BonePlayer1\"}");
+        std::string domCode = mockNet.getLastMessageFor(401).substr(mockNet.getLastMessageFor(401).find("\"code\":\"") + 8, 4);
+
+        engine.onClientMessage(402, "{\"cmd\":\"join\",\"code\":\"" + domCode + "\"}");
+
+        std::string p1State = mockNet.getLastMessageFor(401);
+        std::string p2State = mockNet.getLastMessageFor(402);
+
+        assert(p1State.find("\"game\":\"domino\"") != std::string::npos);
+        assert(p2State.find("\"game\":\"domino\"") != std::string::npos);
+
+        // Security assertion: In P1's state, P1 hand must exist, but "hands":{"2": MUST NOT exist while match is ongoing!
+        assert(p1State.find("\"hands\":{\"1\":") != std::string::npos);
+        assert(p1State.find("\"2\":[") == std::string::npos);
+
+        // In P2's state, P2 hand must exist, but "hands":{"1": MUST NOT exist!
+        assert(p2State.find("\"hands\":{\"2\":") != std::string::npos);
+        assert(p2State.find("\"1\":[") == std::string::npos);
+
+        std::cout << "    Domino Fog-of-War verified: Opponent hands hidden." << std::endl;
+        engine.onClientDisconnect(401);
+        engine.onClientDisconnect(402);
+    }
+
+    // --- 10. Authoritative Rematch & Series Score ---
+    {
+        std::cout << "  - Testing Authoritative Rematch & Series Score..." << std::endl;
+        mockNet.clear();
+        engine.onClientConnect(501);
+        engine.onClientConnect(502);
+
+        engine.onClientMessage(501, "{\"cmd\":\"create\",\"game\":\"tictactoe_pvp\",\"host\":\"XPlayer\"}");
+        std::string tttCode = mockNet.getLastMessageFor(501).substr(mockNet.getLastMessageFor(501).find("\"code\":\"") + 8, 4);
+        engine.onClientMessage(502, "{\"cmd\":\"join\",\"code\":\"" + tttCode + "\"}");
+
+        // Quick win for P1 (moves: 0, 3, 1, 4, 2 -> P1 wins top row)
+        engine.onClientMessage(501, "{\"cmd\":\"move\",\"cell\":0}");
+        engine.onClientMessage(502, "{\"cmd\":\"move\",\"cell\":3}");
+        engine.onClientMessage(501, "{\"cmd\":\"move\",\"cell\":1}");
+        engine.onClientMessage(502, "{\"cmd\":\"move\",\"cell\":4}");
+        engine.onClientMessage(501, "{\"cmd\":\"move\",\"cell\":2}");
+
+        std::string finishedState = mockNet.getLastMessageFor(501);
+        assert(finishedState.find("\"finished\":true") != std::string::npos);
+        assert(finishedState.find("\"winner\":1") != std::string::npos);
+
+        // P1 requests rematch
+        mockNet.clear();
+        engine.onClientMessage(501, "{\"cmd\":\"rematch\"}");
+        assert(mockNet.hasMessageFor(501, "\"type\":\"rematch_update\""));
+        assert(mockNet.hasMessageFor(502, "\"type\":\"rematch_update\""));
+
+        // P2 accepts rematch
+        mockNet.clear();
+        engine.onClientMessage(502, "{\"cmd\":\"rematch\"}");
+
+        // Now room restarts! "room_ready" sent, state reset to finished=false, and series_score included
+        assert(mockNet.hasMessageFor(501, "\"type\":\"room_ready\""));
+        assert(mockNet.hasMessageFor(502, "\"type\":\"room_ready\""));
+
+        std::string restartedState = mockNet.getLastMessageFor(501);
+        assert(restartedState.find("\"finished\":false") != std::string::npos);
+        assert(restartedState.find("\"series_p1\":1") != std::string::npos);
+
+        std::cout << "    Rematch & Series Score verified." << std::endl;
+        engine.onClientDisconnect(501);
+        engine.onClientDisconnect(502);
+    }
+
     std::cout << "[SUCCESS] All HostEngine tests passed!" << std::endl;
     return 0;
 }
+

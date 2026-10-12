@@ -10,14 +10,14 @@ TronGame::TronGame(bool isSolo) : m_isSolo(isSolo) {
 }
 
 void TronGame::init() {
-    m_grid.assign(GRID, std::vector<int>(GRID, 0));
+    m_grid.fill(0);
     // P1 starts left-centre heading right
     m_p1 = {2, GRID/2, 1, 0, 1, 0, true};
     // P2 starts right-centre heading left
     m_p2 = {GRID-3, GRID/2, -1, 0, -1, 0, true};
     // Stamp initial positions
-    m_grid[m_p1.x][m_p1.y] = 1;
-    m_grid[m_p2.x][m_p2.y] = 2;
+    setCell(m_p1.x, m_p1.y, 1);
+    setCell(m_p2.x, m_p2.y, 2);
     m_finished = false;
     m_winner = 0;
     m_tickAccum = 0.f;
@@ -28,12 +28,12 @@ bool TronGame::outOfBounds(int x, int y) const {
 }
 
 int TronGame::calculateFloodFill(int startX, int startY) const {
-    if (outOfBounds(startX, startY) || m_grid[startX][startY] != 0) return 0;
+    if (outOfBounds(startX, startY) || cell(startX, startY) != 0) return 0;
 
-    std::vector<std::vector<bool>> visited(GRID, std::vector<bool>(GRID, false));
+    std::array<bool, GRID * GRID> visited{};
     std::queue<std::pair<int, int>> q;
     q.push({startX, startY});
-    visited[startX][startY] = true;
+    visited[startX * GRID + startY] = true;
     int reachable = 0;
     const int MAX_SEARCH = 150; // Bound search for embedded efficiency
 
@@ -47,8 +47,8 @@ int TronGame::calculateFloodFill(int startX, int startY) const {
         for (int d = 0; d < 4; ++d) {
             int nx = cx + DIRS[d][0];
             int ny = cy + DIRS[d][1];
-            if (!outOfBounds(nx, ny) && m_grid[nx][ny] == 0 && !visited[nx][ny]) {
-                visited[nx][ny] = true;
+            if (!outOfBounds(nx, ny) && cell(nx, ny) == 0 && !visited[nx * GRID + ny]) {
+                visited[nx * GRID + ny] = true;
                 q.push({nx, ny});
             }
         }
@@ -72,7 +72,7 @@ void TronGame::computeBotMove() {
         int nx = m_p2.x + cdx;
         int ny = m_p2.y + cdy;
 
-        if (outOfBounds(nx, ny) || m_grid[nx][ny] != 0) continue;
+        if (outOfBounds(nx, ny) || cell(nx, ny) != 0) continue;
 
         int space = calculateFloodFill(nx, ny);
         if (space > bestScore) {
@@ -105,13 +105,13 @@ void TronGame::update(float dt) {
     int nx1 = m_p1.x + m_p1.dx, ny1 = m_p1.y + m_p1.dy;
     int nx2 = m_p2.x + m_p2.dx, ny2 = m_p2.y + m_p2.dy;
 
-    bool dead1 = outOfBounds(nx1, ny1) || m_grid[nx1][ny1] != 0;
-    bool dead2 = outOfBounds(nx2, ny2) || m_grid[nx2][ny2] != 0;
+    bool dead1 = outOfBounds(nx1, ny1) || cell(nx1, ny1) != 0;
+    bool dead2 = outOfBounds(nx2, ny2) || cell(nx2, ny2) != 0;
     // Head-on collision
     if (nx1 == nx2 && ny1 == ny2) { dead1 = true; dead2 = true; }
 
-    if (!dead1) { m_p1.x = nx1; m_p1.y = ny1; m_grid[nx1][ny1] = 1; }
-    if (!dead2) { m_p2.x = nx2; m_p2.y = ny2; m_grid[nx2][ny2] = 2; }
+    if (!dead1) { m_p1.x = nx1; m_p1.y = ny1; setCell(nx1, ny1, 1); }
+    if (!dead2) { m_p2.x = nx2; m_p2.y = ny2; setCell(nx2, ny2, 2); }
 
     m_p1.alive = !dead1;
     m_p2.alive = !dead2;
@@ -155,7 +155,7 @@ std::string TronGame::serializeState() const {
     for (int y = 0; y < GRID; ++y) {
         for (int x = 0; x < GRID; ++x) {
             if (y > 0 || x > 0) oss << ",";
-            oss << m_grid[x][y];
+            oss << static_cast<int>(cell(x, y));
         }
     }
     oss << "]}";

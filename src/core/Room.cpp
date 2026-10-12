@@ -1,5 +1,6 @@
 #include <gamehub/core/Room.hpp>
 #include <algorithm>
+#include <sstream>
 
 namespace gamehub {
 namespace core {
@@ -70,14 +71,32 @@ void Room::handleInput(PlayerId id, const std::string& commandJson) {
 
 std::string Room::serializeState() const {
     if (m_game) {
-        return m_game->serializeState();
+        std::string s = m_game->serializeState();
+        if (s.size() > 1 && s.back() == '}') {
+            s.pop_back();
+            std::ostringstream oss;
+            oss << ",\"series_p1\":" << m_p1SeriesWins
+                << ",\"series_p2\":" << m_p2SeriesWins
+                << ",\"series_match\":" << m_seriesMatchCount << "}";
+            s += oss.str();
+        }
+        return s;
     }
     return "{}";
 }
 
 std::string Room::serializeStateForPlayer(PlayerId id) const {
     if (m_game) {
-        return m_game->serializeStateForPlayer(id);
+        std::string s = m_game->serializeStateForPlayer(id);
+        if (s.size() > 1 && s.back() == '}') {
+            s.pop_back();
+            std::ostringstream oss;
+            oss << ",\"series_p1\":" << m_p1SeriesWins
+                << ",\"series_p2\":" << m_p2SeriesWins
+                << ",\"series_match\":" << m_seriesMatchCount << "}";
+            s += oss.str();
+        }
+        return s;
     }
     return "{}";
 }
@@ -106,5 +125,27 @@ void Room::removePlayer(PlayerId id) {
     }
 }
 
+void Room::requestRematch(PlayerId id) {
+    if (std::find(m_rematchRequests.begin(), m_rematchRequests.end(), id) == m_rematchRequests.end()) {
+        m_rematchRequests.push_back(id);
+    }
+}
+
+bool Room::isRematchReady() const {
+    return !m_players.empty() && m_rematchRequests.size() >= m_players.size();
+}
+
+void Room::resetForRematch() {
+    if (getWinner() == 1) m_p1SeriesWins++;
+    else if (getWinner() == 2) m_p2SeriesWins++;
+    m_seriesMatchCount++;
+    m_rematchRequests.clear();
+    if (m_game) {
+        m_game->init();
+    }
+    transitionTo(std::make_unique<ActiveRoomState>());
+}
+
 } // namespace core
 } // namespace gamehub
+
