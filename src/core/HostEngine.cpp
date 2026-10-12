@@ -30,8 +30,8 @@ void HostEngine::onClientConnect(uint32_t sessionId) {
 
 void HostEngine::onClientDisconnect(uint32_t sessionId) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_sessions.erase(sessionId);
     detachPlayerFromRoom(sessionId);
+    m_sessions.erase(sessionId);
 }
 
 void HostEngine::detachPlayerFromRoom(uint32_t sessionId) {

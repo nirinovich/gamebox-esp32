@@ -26,9 +26,6 @@ export function GameOverModal() {
         } else if (winner === playerNum) {
           outcome = 'WIN';
           sound.victory();
-          if (typeof window !== 'undefined' && (window as any).__spawnConfetti) {
-            (window as any).__spawnConfetti();
-          }
         } else {
           outcome = 'LOSS';
           sound.defeat();
@@ -109,7 +106,7 @@ export function GameOverModal() {
   };
 
   const rematchLabel = isSolo
-    ? 'Play Again'
+    ? 'Rematch'
     : room.rematchCount
     ? `Rematch (${room.rematchCount}/${room.rematchNeeded || 2})`
     : 'Request Rematch';
