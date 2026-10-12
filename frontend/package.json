@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node ../scripts/generate_web_assets.mjs",
+    "build": "tsc && vite build && python ../scripts/generate_web_assets.py",
     "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
     "@preact/signals": "^2.0.1",
+    "lucide-preact": "^1.55.0",
     "preact": "^10.26.4"
   },
   "devDependencies": {

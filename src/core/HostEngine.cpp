@@ -117,28 +117,25 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
         GameType gtype = GameType::TICTACTOE_PVP;
         size_t maxPlayers = 2;
-        std::string gname = "ttt_pvp";
 
         if (rawMessage.find("\"snake_duel\"") != std::string::npos) {
             gtype = GameType::SNAKE_DUEL;
-            gname = "snake_duel";
         } else if (rawMessage.find("\"connect4_pvp\"") != std::string::npos) {
             gtype = GameType::CONNECT_FOUR_PVP;
-            gname = "connect4_pvp";
         } else if (rawMessage.find("\"pong_duel\"") != std::string::npos) {
             gtype = GameType::PONG_DUEL;
-            gname = "pong_duel";
         } else if (rawMessage.find("\"tron_duel\"") != std::string::npos) {
             gtype = GameType::TRON_DUEL;
-            gname = "tron_duel";
         } else if (rawMessage.find("\"battleship_pvp\"") != std::string::npos) {
             gtype = GameType::BATTLESHIP_PVP;
-            gname = "battleship_pvp";
+        } else if (rawMessage.find("\"domino_duel\"") != std::string::npos) {
+            gtype = GameType::DOMINO_PVP;
+            maxPlayers = 2;
         } else if (rawMessage.find("\"domino_pvp\"") != std::string::npos) {
             gtype = GameType::DOMINO_PVP;
-            gname = "domino_pvp";
             maxPlayers = (rawMessage.find("\"players\":2") != std::string::npos || rawMessage.find("\"max\":2") != std::string::npos) ? 2 : 3;
         }
+        std::string gname = gameTypeToString(gtype);
 
         std::string hostName = extractJsonString(rawMessage, "host");
         if (hostName.empty()) hostName = extractJsonString(rawMessage, "name");
@@ -185,17 +182,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         m_sessionPlayerMap[sessionId] = pNum;
         m_roomPlayers[code].push_back(sessionId);
 
-        std::string gname = "ttt_pvp";
-        switch (room->getGameType()) {
-            case GameType::SNAKE_DUEL: gname = "snake_duel"; break;
-            case GameType::TICTACTOE_PVP: gname = "ttt_pvp"; break;
-            case GameType::CONNECT_FOUR_PVP: gname = "connect4_pvp"; break;
-            case GameType::PONG_DUEL: gname = "pong_duel"; break;
-            case GameType::TRON_DUEL: gname = "tron_duel"; break;
-            case GameType::BATTLESHIP_PVP: gname = "battleship_pvp"; break;
-            case GameType::DOMINO_PVP: gname = "domino_pvp"; break;
-            default: break;
-        }
+        std::string gname = gameTypeToString(room->getGameType());
 
         if (m_network) {
             m_network->broadcast(m_roomManager.serializeDirectory());
@@ -208,11 +195,8 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
             m_network->sendToClient(sessionId, oss.str());
 
             if (room->getPlayerCount() >= room->getMaxPlayers()) {
-                if (room->getGameType() == GameType::DOMINO_SOLO || room->getGameType() == GameType::DOMINO_PVP) {
-                    auto* dg = static_cast<DominoGame*>(room->getGame());
-                    if (dg) {
-                        dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
-                    }
+                if (room->getGame()) {
+                    room->getGame()->setPlayerCount(static_cast<int>(room->getPlayerCount()));
                 }
                 for (uint32_t sidPlayer : m_roomPlayers[code]) {
                     m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
@@ -234,12 +218,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         rawMessage.find("\"cmd\":\"start_early\"") != std::string::npos) {
         Room* room = m_roomManager.findRoomByPlayer(sessionId);
         if (room && room->getPlayerCount() >= 2 && !room->isFinished()) {
-            if (room->getGameType() == GameType::DOMINO_SOLO || room->getGameType() == GameType::DOMINO_PVP) {
-                auto* dg = static_cast<DominoGame*>(room->getGame());
-                if (dg) {
-                    dg->setNumPlayers(static_cast<int>(room->getPlayerCount()));
-                }
-            }
+            room->startEarly();
             if (m_network) {
                 for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {
                     m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
@@ -284,29 +263,61 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
     }
 
     // 4. Start Solo Game (Auto-detach from any multiplayer room)
-    if (rawMessage.find("\"cmd\":\"start\"") != std::string::npos) {
+    if (rawMessage.find("\"cmd\":\"start\"") != std::string::npos ||
+        rawMessage.find("\"start\"") != std::string::npos) {
         detachPlayerFromRoom(sessionId);
+
+        GameType gtype = GameType::SNAKE_SOLO;
+        if (rawMessage.find("\"ttt_solo\"") != std::string::npos) {
+            gtype = GameType::TICTACTOE_SOLO;
+        } else if (rawMessage.find("\"connect4_solo\"") != std::string::npos) {
+            gtype = GameType::CONNECT_FOUR_SOLO;
+        } else if (rawMessage.find("\"domino_solo\"") != std::string::npos) {
+            gtype = GameType::DOMINO_SOLO;
+        } else if (rawMessage.find("\"pong_solo\"") != std::string::npos) {
+            gtype = GameType::PONG_SOLO;
+        } else if (rawMessage.find("\"tron_solo\"") != std::string::npos) {
+            gtype = GameType::TRON_SOLO;
+        } else if (rawMessage.find("\"battleship_solo\"") != std::string::npos) {
+            gtype = GameType::BATTLESHIP_SOLO;
+        }
+
+        Room* room = m_roomManager.createSoloRoom(gtype, sessionId);
         auto itS = m_sessions.find(sessionId);
         if (itS == m_sessions.end()) {
             itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId)).first;
         }
-        std::string reply = itS->second->handleMessage(rawMessage);
+        itS->second->setRoom(room);
+        m_sessionPlayerMap[sessionId] = 1;
+
+        std::string reply = room ? room->serializeState() : "{\"type\":\"error\",\"msg\":\"Room capacity reached\"}";
         if (m_network && !reply.empty()) {
             m_network->sendToClient(sessionId, reply);
         }
         return reply;
     }
 
-    // 5. In-Game Actions in Multiplayer Room (only route if active and NOT finished)
+    // 5. In-Game Actions in Active Room (Multiplayer or Solo)
     Room* activeRoom = m_roomManager.findRoomByPlayer(sessionId);
-    if (activeRoom && activeRoom->getPlayerCount() >= 2 && !activeRoom->isFinished()) {
-        uint32_t playerNum = m_sessionPlayerMap[sessionId];
+    if (activeRoom && !activeRoom->isFinished()) {
+        uint32_t playerNum = 1;
+        auto itP = m_sessionPlayerMap.find(sessionId);
+        if (itP != m_sessionPlayerMap.end()) {
+            playerNum = itP->second;
+        }
+
         activeRoom->handleInput(playerNum, rawMessage);
-        broadcastStateToRoom(activeRoom);
-        return "";
+        if (activeRoom->getMaxPlayers() > 1) {
+            broadcastStateToRoom(activeRoom);
+            return "";
+        } else {
+            std::string reply = activeRoom->serializeState();
+            if (m_network) m_network->sendToClient(sessionId, reply);
+            return reply;
+        }
     }
 
-    // 6. Fallback to Session handling (Solo games, ping, custom inputs)
+    // 6. Fallback to Session handling (ping, custom messages)
     auto itS = m_sessions.find(sessionId);
     if (itS == m_sessions.end()) {
         itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId)).first;
@@ -321,37 +332,22 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 void HostEngine::tick(float dt) {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    // 1. Tick active multiplayer rooms
-    for (const auto& pair : m_roomPlayers) {
-        if (pair.second.size() >= 2) {
-            Room* r = m_roomManager.findRoomByCode(pair.first);
-            if (r && !r->isFinished()) {
-                auto gt = r->getGameType();
-                if (gt == GameType::SNAKE_DUEL ||
-                    gt == GameType::PONG_DUEL ||
-                    gt == GameType::TRON_DUEL) {
-                    r->tick(dt);
-                    broadcastStateToRoom(r);
-                }
-            }
-        }
-    }
+    // Unified ticking loop across all active rooms in RoomManager
+    for (const auto& roomPtr : m_roomManager.getRooms()) {
+        Room* r = roomPtr.get();
+        if (!r || r->isFinished() || !r->shouldTick()) continue;
 
-    // 2. Tick active solo real-time games
-    for (auto& pair : m_sessions) {
-        uint32_t sid = pair.first;
-        Session* session = pair.second.get();
-        if (session) {
-            Room* r = session->getActiveRoom();
-            if (r && !r->isFinished()) {
-                auto gt = r->getGameType();
-                if (gt == GameType::SNAKE_SOLO ||
-                    gt == GameType::PONG_SOLO ||
-                    gt == GameType::TRON_SOLO) {
-                    r->tick(dt);
-                    if (m_network) {
-                        m_network->sendToClient(sid, r->serializeState());
-                    }
+        auto gt = r->getGameType();
+        bool isRealTime = (gt == GameType::SNAKE_DUEL || gt == GameType::PONG_DUEL || gt == GameType::TRON_DUEL ||
+                           gt == GameType::SNAKE_SOLO || gt == GameType::PONG_SOLO || gt == GameType::TRON_SOLO);
+
+        if (isRealTime) {
+            r->tick(dt);
+            if (r->getMaxPlayers() > 1) {
+                broadcastStateToRoom(r);
+            } else if (!r->getPlayers().empty()) {
+                if (m_network) {
+                    m_network->sendToClient(r->getPlayers()[0], r->serializeState());
                 }
             }
         }

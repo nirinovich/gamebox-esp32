@@ -1,5 +1,6 @@
-import { IGameRenderer } from './IGameRenderer';
+import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
 import { gameSocket } from '../services/GameSocket';
+import { activeRoom } from '../state/gameStore';
 import { sound, haptic } from '../audio/SoundEngine';
 
 interface TrailPoint {
@@ -13,10 +14,20 @@ export class PongRenderer implements IGameRenderer {
   private height = 400;
   private trails: TrailPoint[] = [];
   private isDragging = false;
+  private currentPaddleY = 200;
+  private lastSentCmd = '';
+  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
 
-  public init() {
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+    if (dispatch) this.dispatch = dispatch;
     this.trails = [];
     this.isDragging = false;
+    this.currentPaddleY = 200;
+    this.lastSentCmd = '';
+  }
+
+  public setDispatcher(dispatch: ActionDispatcher) {
+    this.dispatch = dispatch;
   }
 
   public resize(width: number, height: number) {
@@ -41,11 +52,17 @@ export class PongRenderer implements IGameRenderer {
     // Paddles
     const padW = 10;
     const padH = 60;
+    const p1y = state?.p1y || 200;
+    const p2y = state?.p2y || 200;
+
+    const myPlayerNum = activeRoom.value?.playerNum || 1;
+    this.currentPaddleY = myPlayerNum === 2 ? p2y : p1y;
+
     ctx.fillStyle = '#38bdf8';
-    ctx.fillRect(padW, (state?.p1y || 200) - padH / 2, padW, padH);
+    ctx.fillRect(padW, p1y - padH / 2, padW, padH);
 
     ctx.fillStyle = '#ec4899';
-    ctx.fillRect(this.width - padW * 2, (state?.p2y || 200) - padH / 2, padW, padH);
+    ctx.fillRect(this.width - padW * 2, p2y - padH / 2, padW, padH);
 
     // Ball Phosphor Comet Trails (Issue 07)
     const bx = state?.bx || 200;
@@ -87,22 +104,30 @@ export class PongRenderer implements IGameRenderer {
   public handlePointerUp(_x: number, _y: number) {
     if (this.isDragging) {
       this.isDragging = false;
-      gameSocket.send({ cmd: 'dir', val: 'STOP' });
+      this.lastSentCmd = 'STOP';
+      this.dispatch({ cmd: 'dir', val: 'STOP' });
     }
   }
 
   private processPaddleMovement(y: number) {
-    const paddleTarget = y;
-    // Direct vertical drag
-    if (paddleTarget < 200 - 15) {
-      gameSocket.send({ cmd: 'dir', val: 'UP' });
-    } else if (paddleTarget > 200 + 15) {
-      gameSocket.send({ cmd: 'dir', val: 'DOWN' });
+    const targetY = Math.max(30, Math.min(370, y));
+    const deadzone = 14;
+    let nextCmd = 'STOP';
+
+    if (targetY < this.currentPaddleY - deadzone) {
+      nextCmd = 'UP';
+    } else if (targetY > this.currentPaddleY + deadzone) {
+      nextCmd = 'DOWN';
     } else {
-      gameSocket.send({ cmd: 'dir', val: 'STOP' });
+      nextCmd = 'STOP';
     }
-    haptic(10);
-    sound.move();
+
+    if (nextCmd !== this.lastSentCmd) {
+      this.lastSentCmd = nextCmd;
+      this.dispatch({ cmd: 'dir', val: nextCmd });
+      haptic(10);
+      sound.move();
+    }
   }
 
   public destroy() {

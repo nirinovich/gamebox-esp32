@@ -99,3 +99,12 @@ _Avoid_: PlayAgain, ResetRoom
 **ClientShell**:
 The client-side reactive interface orchestrating navigation, Lobby, RoomDirectory, SeriesScore overlays, and Player identity around the VisualEngine.
 _Avoid_: UI, Frontend, WebApp
+
+**GameplayCore**:
+The zero-heap-allocation C++ value types, compile-time grids, and stream serialization utilities shared across all authoritative Host game implementations.
+_Avoid_: EngineUtils, CommonLib, GameHelpers
+
+**CanvasGridLayer**:
+The client-side 2D presentation component managing cell dimensioning, coordinate mapping, neon line borders, and pointer hit-detection on the Canvas.
+_Avoid_: BoardRenderer, GridComponent, ScreenGrid
+

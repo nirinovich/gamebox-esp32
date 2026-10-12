@@ -26,5 +26,21 @@ public:
     virtual bool isAutonomous() const { return false; }
 };
 
+/**
+ * @brief Canonical HumanController representation per CONTEXT.md
+ */
+class HumanPlayerController {
+public:
+    static constexpr bool isAutonomous() { return false; }
+};
+
+/**
+ * @brief Canonical BotController representation per CONTEXT.md
+ */
+class BotPlayerController {
+public:
+    static constexpr bool isAutonomous() { return true; }
+};
+
 } // namespace core
 } // namespace gamehub

@@ -13,7 +13,9 @@ DominoGame::DominoGame(bool isSolo, int numPlayers, bool isBlockMode)
 }
 
 void DominoGame::setNumPlayers(int n) {
-    m_numPlayers = std::clamp(n, 2, 3);
+    int clamped = std::clamp(n, 2, 3);
+    if (clamped == m_numPlayers) return;
+    m_numPlayers = clamped;
     init();
 }
 
@@ -174,7 +176,7 @@ void DominoGame::passTurn(int pidx) {
 void DominoGame::checkBlockedWin() {
     m_finished = true;
     int minPips = 999;
-    int winningPlayer = -1; // -1 = draw
+    int winningPlayer = 0; // 0 = draw
 
     for (int p = 0; p < m_numPlayers; ++p) {
         int sum = 0;
@@ -183,7 +185,7 @@ void DominoGame::checkBlockedWin() {
             minPips = sum;
             winningPlayer = p + 1;
         } else if (sum == minPips) {
-            winningPlayer = -1; // Tie on pips
+            winningPlayer = 0; // Tie on pips
         }
     }
     m_winner = winningPlayer;

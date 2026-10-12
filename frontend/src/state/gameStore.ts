@@ -15,7 +15,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Classic arcade snake with robotic glowing eyes & embers',
     tag: 'Solo AI',
-    icon: '🐍',
+    icon: 'snake_solo',
     isDuel: false
   },
   {
@@ -24,7 +24,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'DUEL',
     description: '2P Competitive snake head-to-head collision duel',
     tag: '2P Duel',
-    icon: '⚔️',
+    icon: 'snake_duel',
     isDuel: true
   },
   {
@@ -33,7 +33,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Challenge the Minimax algorithmic AI engine',
     tag: 'Solo AI',
-    icon: '⭕',
+    icon: 'ttt_solo',
     isDuel: false
   },
   {
@@ -42,7 +42,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'DUEL',
     description: 'Turn-based tactical duel with overdrive laser lines',
     tag: '2P Duel',
-    icon: '❌',
+    icon: 'ttt_pvp',
     isDuel: true
   },
   {
@@ -51,7 +51,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Gravity disc drops with physical elastic bounce',
     tag: 'Solo AI',
-    icon: '🔴',
+    icon: 'connect4_solo',
     isDuel: false
   },
   {
@@ -60,7 +60,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'DUEL',
     description: 'Vertical four-in-a-row column targeting showdown',
     tag: '2P Duel',
-    icon: '🟡',
+    icon: 'connect4_pvp',
     isDuel: true
   },
   {
@@ -69,7 +69,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Phosphor comet trails & paddle collision sparks vs AI',
     tag: 'Solo AI',
-    icon: '🏓',
+    icon: 'pong_solo',
     isDuel: false
   },
   {
@@ -78,7 +78,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'DUEL',
     description: 'High-speed vertical drag paddle volley match',
     tag: '2P Duel',
-    icon: '⚡',
+    icon: 'pong_duel',
     isDuel: true
   },
   {
@@ -87,7 +87,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Neon bloom light cycle trails vs Voronoi bot',
     tag: 'Solo AI',
-    icon: '🏍️',
+    icon: 'tron_solo',
     isDuel: false
   },
   {
@@ -96,7 +96,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'DUEL',
     description: 'Fast-paced grid trapping synthwave duel',
     tag: '2P Duel',
-    icon: '🌌',
+    icon: 'tron_duel',
     isDuel: true
   },
   {
@@ -105,7 +105,7 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Naval grid warfare with 360-degree sonar sweep',
     tag: 'Solo AI',
-    icon: '🚢',
+    icon: 'battleship_solo',
     isDuel: false
   },
   {
@@ -114,7 +114,16 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'DUEL',
     description: 'Blind targeting naval duel with torpedo fire VFX',
     tag: '2P Duel',
-    icon: '🎯',
+    icon: 'battleship_pvp',
+    isDuel: true
+  },
+  {
+    key: 'domino_duel',
+    title: 'Domino Duel',
+    category: 'DUEL',
+    description: 'Head-to-head double-six domino match with Boneyard & Fog of War',
+    tag: '2P Duel',
+    icon: 'domino_solo',
     isDuel: true
   },
   {
@@ -123,16 +132,16 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     category: 'SOLO',
     description: 'Double-six draw dominoes on emerald felt table vs Bot',
     tag: 'Solo AI',
-    icon: '🀄',
+    icon: 'domino_solo',
     isDuel: false
   },
   {
     key: 'domino_pvp',
-    title: '2-3P Dominoes',
+    title: '3P Party Dominoes',
     category: 'PARTY',
-    description: 'Social parlor dominoes with Boneyard & Fog of War',
+    description: '3-Player social parlor dominoes with Boneyard & Fog of War',
     tag: 'Party 3P',
-    icon: '🎲',
+    icon: 'domino_pvp',
     isDuel: false
   }
 ];

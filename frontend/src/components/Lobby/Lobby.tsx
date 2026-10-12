@@ -6,6 +6,7 @@ import {
 } from '../../state/gameStore';
 import { gameSocket } from '../../services/GameSocket';
 import { GameCategory, GameMetadata, RoomDirectoryEntry } from '../../types/protocol';
+import { Icon } from '../common/Icon';
 import styles from './Lobby.module.css';
 
 export function Lobby() {
@@ -117,7 +118,7 @@ export function Lobby() {
           >
             <div className={styles.gameInfo}>
               <div className={`${styles.gameIconBox} ${game.isDuel ? styles.gameIconBoxDuel : ''}`}>
-                {game.icon}
+                <Icon name={game.icon} size={20} />
               </div>
               <div className={styles.gameText}>
                 <span className={styles.gameTitle}>{game.title}</span>

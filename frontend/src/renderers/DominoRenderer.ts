@@ -1,4 +1,4 @@
-import { IGameRenderer } from './IGameRenderer';
+import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
 import { gameSocket } from '../services/GameSocket';
 import { activeRoom } from '../state/gameStore';
 import { sound, haptic } from '../audio/SoundEngine';
@@ -8,10 +8,18 @@ export class DominoRenderer implements IGameRenderer {
   private height = 400;
   public selectedTileIdx = -1;
   public choiceNeeded = false;
+  private lastState: any = null;
+  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
 
-  public init() {
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+    if (dispatch) this.dispatch = dispatch;
     this.selectedTileIdx = -1;
     this.choiceNeeded = false;
+    this.lastState = null;
+  }
+
+  public setDispatcher(dispatch: ActionDispatcher) {
+    this.dispatch = dispatch;
   }
 
   public resize(width: number, height: number) {
@@ -20,6 +28,7 @@ export class DominoRenderer implements IGameRenderer {
   }
 
   public render(state: any, ctx: CanvasRenderingContext2D) {
+    this.lastState = state;
     const myPlayerNum = activeRoom.value?.playerNum || 1;
 
     // Havana Emerald Felt Gaming Table Radial Gradient (Issue 07)
@@ -258,7 +267,7 @@ export class DominoRenderer implements IGameRenderer {
 
   public handlePointerDown(x: number, y: number) {
     if (y < 300) return; // Only process hand clicks
-    const state = (window as any).__lastGameState;
+    const state = this.lastState || (typeof window !== 'undefined' ? (window as any).__lastGameState : null);
     const myPlayerNum = activeRoom.value?.playerNum || 1;
     const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
     const count = myHand.length;
@@ -279,7 +288,7 @@ export class DominoRenderer implements IGameRenderer {
 
       if (lEnd === undefined || lEnd === -1) {
         // First tile on board
-        gameSocket.send({ cmd: 'play', index: idx, end: 'left' });
+        this.dispatch({ cmd: 'play', index: idx, end: 'left' });
         this.selectedTileIdx = -1;
       } else {
         const mLeft = tile[0] === lEnd || tile[1] === lEnd;
@@ -290,10 +299,10 @@ export class DominoRenderer implements IGameRenderer {
           this.selectedTileIdx = idx;
           this.choiceNeeded = true;
         } else if (mLeft) {
-          gameSocket.send({ cmd: 'play', index: idx, end: 'left' });
+          this.dispatch({ cmd: 'play', index: idx, end: 'left' });
           this.selectedTileIdx = -1;
         } else if (mRight) {
-          gameSocket.send({ cmd: 'play', index: idx, end: 'right' });
+          this.dispatch({ cmd: 'play', index: idx, end: 'right' });
           this.selectedTileIdx = -1;
         }
       }

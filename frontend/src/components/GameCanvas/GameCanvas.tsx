@@ -26,10 +26,19 @@ export function GameCanvas() {
   const room = activeRoom.value;
   const gameType = room?.gameType || 'ttt_solo';
 
-  // Keep global reference for Domino renderer pointer events
+  // Keep global reference for Domino renderer pointer events and confetti
   useEffect(() => {
     (window as any).__lastGameState = gameState.value;
   }, [gameState.value]);
+
+  useEffect(() => {
+    (window as any).__spawnConfetti = () => {
+      particlesRef.current.confetti(200, 160, 65);
+    };
+    return () => {
+      delete (window as any).__spawnConfetti;
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -61,7 +70,7 @@ export function GameCanvas() {
       renderer = new TicTacToeRenderer();
     }
 
-    renderer.init(canvas, ctx);
+    renderer.init(canvas, ctx, (action) => gameSocket.send(action));
     renderer.resize(400, 400);
     rendererRef.current = renderer;
 
@@ -144,6 +153,17 @@ export function GameCanvas() {
   const isBattleshipPlacement =
     gameType.includes('battleship') && gameState.value?.phase === 'placement';
 
+  const myPlayerNum = room?.playerNum || 1;
+  const isMyTurn = gameState.value?.turn === myPlayerNum && !gameState.value?.finished;
+  const myHand = (gameState.value?.hands && gameState.value.hands[myPlayerNum]) || [];
+  const leftEnd = gameState.value?.left_end ?? -1;
+  const rightEnd = gameState.value?.right_end ?? -1;
+  const hasLegalMove = myHand.some((t: number[]) =>
+    leftEnd === -1 || t[0] === leftEnd || t[1] === leftEnd || t[0] === rightEnd || t[1] === rightEnd
+  );
+  const boneyardCount = gameState.value?.boneyard_count ?? 14;
+  const shouldHighlightDraw = isMyTurn && !hasLegalMove && boneyardCount > 0;
+
   return (
     <div style={{ width: '100%' }}>
       <div className={styles.canvasWrap}>
@@ -176,11 +196,11 @@ export function GameCanvas() {
       {isDomino && (
         <div className={styles.extraControls} style={{ marginTop: '8px' }}>
           <button
-            className={styles.btnSolid}
+            className={`${styles.btnSolid} ${shouldHighlightDraw ? styles.btnHighlightPulse : ''}`}
             style={{ flex: 1 }}
             onClick={() => gameSocket.send({ cmd: 'draw' })}
           >
-            Draw Tile ({gameState.value?.boneyard_count ?? 14})
+            Draw Tile ({boneyardCount})
           </button>
           <button
             className={styles.btnSolid}

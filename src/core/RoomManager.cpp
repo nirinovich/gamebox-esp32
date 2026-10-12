@@ -42,6 +42,25 @@ Room* RoomManager::createRoom(GameType type, PlayerId hostId, const std::string&
     return ptr;
 }
 
+Room* RoomManager::createSoloRoom(GameType type, PlayerId playerId) {
+    // If player already has a room, detach first
+    handleDisconnect(playerId);
+
+    if (m_rooms.size() >= m_maxRooms) {
+        return nullptr;
+    }
+
+    std::string code = "S" + generateUniqueCode().substr(0, 3);
+    auto room = std::make_unique<Room>(code, type, "Solo Player", 1);
+    room->init();
+    room->addPlayer(playerId);
+
+    Room* ptr = room.get();
+    m_rooms.push_back(std::move(room));
+    m_playerToRoom[playerId] = code;
+    return ptr;
+}
+
 void RoomManager::removeRoom(const std::string& code) {
     std::vector<PlayerId> playersToRemove;
     for (const auto& pair : m_playerToRoom) {
@@ -63,20 +82,10 @@ std::string RoomManager::serializeDirectory() const {
     oss << "{\"type\":\"room_directory\",\"rooms\":[";
     bool first = true;
     for (const auto& r : m_rooms) {
-        if (r->getPlayerCount() < r->getMaxPlayers() && !r->isFinished()) {
+        if (r->getMaxPlayers() > 1 && r->getPlayerCount() < r->getMaxPlayers() && !r->isFinished()) {
             if (!first) oss << ",";
             first = false;
-            std::string gname = "ttt_pvp";
-            switch (r->getGameType()) {
-                case GameType::SNAKE_DUEL: gname = "snake_duel"; break;
-                case GameType::TICTACTOE_PVP: gname = "ttt_pvp"; break;
-                case GameType::CONNECT_FOUR_PVP: gname = "connect4_pvp"; break;
-                case GameType::PONG_DUEL: gname = "pong_duel"; break;
-                case GameType::TRON_DUEL: gname = "tron_duel"; break;
-                case GameType::BATTLESHIP_PVP: gname = "battleship_pvp"; break;
-                case GameType::DOMINO_PVP: gname = "domino_pvp"; break;
-                default: break;
-            }
+            std::string gname = gameTypeToString(r->getGameType());
             oss << "{\"code\":\"" << r->getCode() << "\","
                 << "\"game\":\"" << gname << "\","
                 << "\"host\":\"" << r->getHostName() << "\","

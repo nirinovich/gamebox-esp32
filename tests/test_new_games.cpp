@@ -40,6 +40,13 @@ int main() {
         std::string state = c4_solo.serializeState();
         assert(state.find("\"game\":\"connect4\"") != std::string::npos);
         std::cout << "    ConnectFour Solo Minimax response verified." << std::endl;
+
+        // Test Strategy Pattern: isolated ConnectFourMinimaxStrategy
+        gamehub::core::ConnectFourMinimaxStrategy strat(3);
+        std::array<std::array<int, 6>, 7> customBoard{};
+        int botCol = strat.computeMove(customBoard, 2);
+        assert(botCol >= 0 && botCol < 7 && "Bot move must be a valid column");
+        std::cout << "    ConnectFourMinimaxStrategy isolated execution verified." << std::endl;
     }
 
     // --- 2. Pong Tests ---
@@ -171,6 +178,7 @@ int main() {
         assert(s3.find("\"boneyard_count\":7") != std::string::npos); // 28 - 21 = 7
 
         // Block mode prohibits drawing
+        domino3.setBlockMode(true);
         domino3.handleInput(1, "{\"cmd\":\"draw\"}");
         std::string s3_nodraw = domino3.serializeState();
         assert(s3_nodraw.find("\"p1_count\":7") != std::string::npos);

@@ -13,7 +13,11 @@ Room::Room(const std::string& code, GameType type, const std::string& hostName, 
                     type == GameType::PONG_SOLO || type == GameType::TRON_SOLO ||
                     type == GameType::BATTLESHIP_SOLO ? 1 : 2)),
       m_game(GameFactory::create(type)),
-      m_state(std::make_unique<WaitingRoomState>()) {}
+      m_state(std::make_unique<WaitingRoomState>()) {
+    if (m_game) {
+        m_game->setPlayerCount(static_cast<int>(m_maxPlayers));
+    }
+}
 
 void Room::init() {
     if (m_game) {
@@ -77,7 +81,7 @@ std::string Room::serializeState() const {
             std::ostringstream oss;
             oss << ",\"series_p1\":" << m_p1SeriesWins
                 << ",\"series_p2\":" << m_p2SeriesWins
-                << ",\"series_match\":" << m_seriesMatchCount << "}";
+                << ",\"series_match\":" << m_seriesGameCount << "}";
             s += oss.str();
         }
         return s;
@@ -93,7 +97,7 @@ std::string Room::serializeStateForPlayer(PlayerId id) const {
             std::ostringstream oss;
             oss << ",\"series_p1\":" << m_p1SeriesWins
                 << ",\"series_p2\":" << m_p2SeriesWins
-                << ",\"series_match\":" << m_seriesMatchCount << "}";
+                << ",\"series_match\":" << m_seriesGameCount << "}";
             s += oss.str();
         }
         return s;
@@ -118,6 +122,16 @@ void Room::addPlayer(PlayerId id) {
     }
 }
 
+void Room::startEarly() {
+    if (m_players.size() >= 2 && m_players.size() < m_maxPlayers) {
+        m_maxPlayers = m_players.size();
+        if (m_game) {
+            m_game->setPlayerCount(static_cast<int>(m_maxPlayers));
+        }
+        transitionTo(std::make_unique<ActiveRoomState>());
+    }
+}
+
 void Room::removePlayer(PlayerId id) {
     m_players.erase(std::remove(m_players.begin(), m_players.end(), id), m_players.end());
     if (m_players.empty()) {
@@ -138,7 +152,7 @@ bool Room::isRematchReady() const {
 void Room::resetForRematch() {
     if (getWinner() == 1) m_p1SeriesWins++;
     else if (getWinner() == 2) m_p2SeriesWins++;
-    m_seriesMatchCount++;
+    m_seriesGameCount++;
     m_rematchRequests.clear();
     if (m_game) {
         m_game->init();

@@ -11,10 +11,11 @@ export function GameHud() {
   const p1Name = room.isHost ? playerName.value : room.opponentName;
   const p2Name = room.isHost ? room.opponentName : playerName.value;
 
-  const p1Score = state?.p1_score ?? state?.score1 ?? state?.score ?? 0;
-  const p2Score = state?.p2_score ?? state?.score2 ?? state?.highScore ?? 0;
-  const p3Score = state?.p3_score ?? 0;
-  const hasP3 = state?.p3_active === true;
+  const isDomino = state?.game === 'domino';
+  const p1Score = isDomino ? (state?.p1_count ?? 0) : (state?.p1_score ?? state?.score1 ?? state?.score ?? 0);
+  const p2Score = isDomino ? (state?.p2_count ?? 0) : (state?.p2_score ?? state?.score2 ?? state?.highScore ?? 0);
+  const p3Score = isDomino ? (state?.p3_count ?? 0) : (state?.p3_score ?? 0);
+  const hasP3 = state?.p3_active === true || state?.num_players === 3;
 
   const seriesP1 = state?.series_p1 ?? room.seriesScore?.p1 ?? 0;
   const seriesP2 = state?.series_p2 ?? room.seriesScore?.p2 ?? 0;

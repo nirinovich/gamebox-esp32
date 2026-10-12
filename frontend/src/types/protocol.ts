@@ -12,6 +12,7 @@ export type GameKey =
   | 'battleship_solo'
   | 'battleship_pvp'
   | 'domino_solo'
+  | 'domino_duel'
   | 'domino_pvp';
 
 export type GameCategory = 'ALL' | 'SOLO' | 'DUEL' | 'PARTY';

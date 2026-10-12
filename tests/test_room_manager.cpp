@@ -63,7 +63,21 @@ int main() {
     manager.joinRoom(roomNew->getCode(), 602);
     std::string fullDirJson = manager.serializeDirectory();
     assert(fullDirJson.find("\"host\":\"Alice\"") == std::string::npos && "Full room must not be in open directory");
-    std::cout << "  [PASS] RoomDirectory serialization and open filter verified." << std::endl;
+    // 7. Solo Room Lifecycle and Directory Exclusion
+    manager.removeRoom(roomNew->getCode());
+    Room* soloRoom = manager.createSoloRoom(GameType::SNAKE_SOLO, 701);
+    assert(soloRoom != nullptr && "Solo room creation must succeed");
+    assert(soloRoom->getMaxPlayers() == 1 && "Solo room must have maxPlayers == 1");
+    assert(manager.findRoomByPlayer(701) == soloRoom && "Solo room must map to player");
+    
+    // Solo rooms must NOT appear in public RoomDirectory
+    std::string dirWithSolo = manager.serializeDirectory();
+    assert(dirWithSolo.find(soloRoom->getCode()) == std::string::npos && "Solo room must never appear in public directory");
+
+    // Cleanup solo room
+    manager.handleDisconnect(701);
+    assert(manager.findRoomByPlayer(701) == nullptr && "Solo room must clean up on disconnect");
+    std::cout << "  [PASS] Solo Room lifecycle and directory privacy verified." << std::endl;
 
     std::cout << "[TEST] All RoomManager Lifecycle Tests Passed!" << std::endl;
     return 0;

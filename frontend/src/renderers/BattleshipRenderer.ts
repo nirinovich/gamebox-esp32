@@ -1,4 +1,4 @@
-import { IGameRenderer } from './IGameRenderer';
+import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
 import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 import { ParticleEngine } from './ParticleEngine';
@@ -8,13 +8,26 @@ import { activeRoom } from '../state/gameStore';
 export class BattleshipRenderer implements IGameRenderer {
   private width = 400;
   private height = 400;
+  private prevEnemyGrid: number[] = [];
+  private alertBanner = '';
+  private alertTimer = 0;
+  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
 
   constructor(
-    _particles?: ParticleEngine,
-    _juice?: CameraJuice
+    private particles?: ParticleEngine,
+    private juice?: CameraJuice
   ) {}
 
-  public init() {}
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+    if (dispatch) this.dispatch = dispatch;
+    this.prevEnemyGrid = [];
+    this.alertBanner = '';
+    this.alertTimer = 0;
+  }
+
+  public setDispatcher(dispatch: ActionDispatcher) {
+    this.dispatch = dispatch;
+  }
 
   public resize(width: number, height: number) {
     this.width = width;
@@ -42,16 +55,28 @@ export class BattleshipRenderer implements IGameRenderer {
       ctx.stroke();
     }
 
+    // Sonar Range Rings (Issue 07)
+    const center = this.width / 2;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(center, center, 55, 0, Math.PI * 2);
+    ctx.arc(center, center, 115, 0, Math.PI * 2);
+    ctx.arc(center, center, 175, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
     // Continuous 360 Sonar Radar Sweep Line (Issue 07)
     const sweepAngle = (Date.now() / 1400) % (Math.PI * 2);
     ctx.save();
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
     ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.moveTo(this.width / 2, this.height / 2);
+    ctx.moveTo(center, center);
     ctx.lineTo(
-      this.width / 2 + Math.cos(sweepAngle) * 280,
-      this.height / 2 + Math.sin(sweepAngle) * 280
+      center + Math.cos(sweepAngle) * 280,
+      center + Math.sin(sweepAngle) * 280
     );
     ctx.stroke();
     ctx.restore();
@@ -60,6 +85,7 @@ export class BattleshipRenderer implements IGameRenderer {
     const me = myPlayerNum === 1 ? state?.p1 : state?.p2;
 
     if (state?.phase === 'placement') {
+      this.prevEnemyGrid = [];
       if (me?.own) {
         me.own.forEach((cell: number, idx: number) => {
           const r = Math.floor(idx / 10);
@@ -72,7 +98,33 @@ export class BattleshipRenderer implements IGameRenderer {
       }
     } else {
       if (me?.enemy) {
-        me.enemy.forEach((cell: number, idx: number) => {
+        const enemyCells = me.enemy as number[];
+        // Check for new state changes to trigger VFX
+        if (this.prevEnemyGrid.length === enemyCells.length) {
+          for (let i = 0; i < enemyCells.length; i++) {
+            if (this.prevEnemyGrid[i] === 0 && enemyCells[i] !== 0) {
+              const r = Math.floor(i / 10);
+              const c = i % 10;
+              const cx = c * sz + sz / 2;
+              const cy = r * sz + sz / 2;
+              if (enemyCells[i] === 2) {
+                // Direct Hit
+                this.particles?.explosion(cx, cy, '#ef4444');
+                this.juice?.shake(6);
+                sound.hit();
+                this.alertBanner = 'DIRECT HIT CONFIRMED!';
+                this.alertTimer = 60;
+              } else if (enemyCells[i] === 3) {
+                // Splash Miss
+                this.particles?.ripple(cx, cy, '#38bdf8');
+                sound.bounce();
+              }
+            }
+          }
+        }
+        this.prevEnemyGrid = [...enemyCells];
+
+        enemyCells.forEach((cell: number, idx: number) => {
           const r = Math.floor(idx / 10);
           const c = idx % 10;
           const cx = c * sz + sz / 2;
@@ -92,6 +144,17 @@ export class BattleshipRenderer implements IGameRenderer {
         });
       }
     }
+
+    // Destruction & Hit Alert Banner
+    if (this.alertTimer > 0) {
+      this.alertTimer--;
+      ctx.save();
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+      ctx.font = '700 13px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(this.alertBanner, this.width / 2, 28);
+      ctx.restore();
+    }
   }
 
   public handlePointerDown(x: number, y: number) {
@@ -102,7 +165,7 @@ export class BattleshipRenderer implements IGameRenderer {
     if (col >= 0 && col < 10 && row >= 0 && row < 10) {
       sound.laser();
       haptic(20);
-      gameSocket.send({ cmd: 'fire', row, col });
+      this.dispatch({ cmd: 'fire', row, col });
     }
   }
 

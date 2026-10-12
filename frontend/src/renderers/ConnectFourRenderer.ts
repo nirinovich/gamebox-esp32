@@ -1,4 +1,4 @@
-import { IGameRenderer } from './IGameRenderer';
+import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
 import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 import { CameraJuice } from './CameraJuice';
@@ -21,14 +21,20 @@ export class ConnectFourRenderer implements IGameRenderer {
   private prevBoard: number[] | null = null;
   private hoveredCol = -1;
   private juice: CameraJuice;
+  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
 
   constructor(juice: CameraJuice) {
     this.juice = juice;
   }
 
-  public init() {
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+    if (dispatch) this.dispatch = dispatch;
     this.droppingChips = [];
     this.prevBoard = null;
+  }
+
+  public setDispatcher(dispatch: ActionDispatcher) {
+    this.dispatch = dispatch;
   }
 
   public resize(width: number, height: number) {
@@ -130,7 +136,7 @@ export class ConnectFourRenderer implements IGameRenderer {
   public handlePointerDown(x: number, _y: number) {
     const col = Math.floor(x / (this.width / 7));
     if (col >= 0 && col < 7) {
-      gameSocket.send({ cmd: 'drop', col });
+      this.dispatch({ cmd: 'drop', col });
     }
   }
 

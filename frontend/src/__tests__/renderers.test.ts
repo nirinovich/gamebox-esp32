@@ -79,4 +79,14 @@ describe('Turn-Based Game Renderers', () => {
     expect(() => sound.place()).not.toThrow();
     expect(() => sound.victory()).not.toThrow();
   });
+
+  it('Renderers support isolated ActionDispatcher without socket dependency', () => {
+    const customDispatch = vi.fn();
+    const renderer = new TicTacToeRenderer();
+    renderer.init(undefined, undefined, customDispatch);
+    renderer.resize(400, 400);
+
+    renderer.handlePointerDown(50, 50);
+    expect(customDispatch).toHaveBeenCalledWith({ cmd: 'place', cell: 0 });
+  });
 });

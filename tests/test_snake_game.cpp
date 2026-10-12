@@ -12,6 +12,7 @@ int main() {
     // 1. Create a Room hosting Solo Snake
     Room room("SOLO", GameType::SNAKE_SOLO);
     room.init();
+    room.addPlayer(1);
 
     // 2. Verify initial serialized state
     std::string stateJson = room.serializeState();

@@ -1,12 +1,19 @@
-import { IGameRenderer } from './IGameRenderer';
+import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
 import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 
 export class TicTacToeRenderer implements IGameRenderer {
   private width = 400;
   private height = 400;
+  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
 
-  public init() {}
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+    if (dispatch) this.dispatch = dispatch;
+  }
+
+  public setDispatcher(dispatch: ActionDispatcher) {
+    this.dispatch = dispatch;
+  }
 
   public resize(width: number, height: number) {
     this.width = width;
@@ -115,7 +122,7 @@ export class TicTacToeRenderer implements IGameRenderer {
       const cell = row * 3 + col;
       sound.place();
       haptic(15);
-      gameSocket.send({ cmd: 'place', cell });
+      this.dispatch({ cmd: 'place', cell });
     }
   }
 

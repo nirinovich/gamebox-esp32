@@ -16,6 +16,7 @@ public:
     virtual ~RoomManager() = default;
 
     Room* createRoom(GameType type, PlayerId hostId, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
+    Room* createSoloRoom(GameType type, PlayerId playerId);
     Room* joinRoom(const std::string& code, PlayerId playerId);
     Room* findRoomByCode(const std::string& code);
     Room* findRoomByPlayer(PlayerId playerId);

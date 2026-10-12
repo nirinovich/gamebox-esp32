@@ -20,10 +20,32 @@ class ESP32NetworkAdapter : public gamehub::core::INetworkAdapter {
 public:
     explicit ESP32NetworkAdapter(AsyncWebSocket& websocket) : m_ws(websocket) {}
     void sendToClient(uint32_t sessionId, const std::string& message) override {
-        m_ws.text(sessionId, message.c_str());
+        AsyncWebSocketClient* client = m_ws.client(sessionId);
+        if (client && client->status() == WS_CONNECTED) {
+            // Avoid queue backlog and heap exhaustion by dropping stale tick state frames in real-time games
+            bool isRealtimeState = message.find("\"type\":\"state\"") != std::string::npos &&
+                                  (message.find("\"game\":\"snake\"") != std::string::npos ||
+                                   message.find("\"game\":\"pong\"") != std::string::npos ||
+                                   message.find("\"game\":\"tron\"") != std::string::npos);
+            if (isRealtimeState && client->queueLen() >= 2) {
+                return;
+            }
+            client->text(message.c_str());
+        }
     }
     void broadcast(const std::string& message) override {
-        m_ws.textAll(message.c_str());
+        for (auto& client : m_ws.getClients()) {
+            if (client.status() == WS_CONNECTED) {
+                bool isRealtimeState = message.find("\"type\":\"state\"") != std::string::npos &&
+                                      (message.find("\"game\":\"snake\"") != std::string::npos ||
+                                       message.find("\"game\":\"pong\"") != std::string::npos ||
+                                       message.find("\"game\":\"tron\"") != std::string::npos);
+                if (isRealtimeState && client.queueLen() >= 2) {
+                    continue;
+                }
+                client.text(message.c_str());
+            }
+        }
     }
 private:
     AsyncWebSocket& m_ws;
@@ -34,6 +56,7 @@ gamehub::core::HostEngine engine(&netAdapter, 4);
 
 void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
     if (type == WS_EVT_CONNECT) {
+        client->setCloseClientOnQueueFull(false);
         engine.onClientConnect(client->id());
     } else if (type == WS_EVT_DISCONNECT) {
         engine.onClientDisconnect(client->id());
@@ -63,23 +86,9 @@ void setup() {
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    // 4. Captive Portal Auto-Popup Endpoints (Stream chunked directly from flash without heap allocation)
+    // 4. Captive Portal Auto-Popup Endpoints (Zero-copy stream directly from flash memory)
     auto serveSPA = [](AsyncWebServerRequest* request) {
-        request->sendChunked("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
-            const auto& parts = gamehub::web::WebAssets::getParts();
-            size_t partOffset = 0;
-            for (const char* part : parts) {
-                size_t partLen = strlen(part);
-                if (index < partOffset + partLen) {
-                    size_t startInPart = index - partOffset;
-                    size_t toCopy = std::min(maxLen, partLen - startInPart);
-                    memcpy(buffer, part + startInPart, toCopy);
-                    return toCopy;
-                }
-                partOffset += partLen;
-            }
-            return 0; // End of stream
-        });
+        request->send(200, "text/html", gamehub::web::WebAssets::getIndexHtmlData(), gamehub::web::WebAssets::getIndexHtmlSize());
     };
 
     server.on("/", HTTP_GET, serveSPA);

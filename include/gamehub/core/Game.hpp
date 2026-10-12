@@ -17,6 +17,7 @@ public:
     virtual std::string serializeStateForPlayer(PlayerId /*id*/) const { return serializeState(); }
     virtual bool isFinished() const = 0;
     virtual int getWinner() const = 0;
+    virtual void setPlayerCount(int /*count*/) {}
 };
 
 } // namespace core

@@ -19,7 +19,7 @@ struct DominoTile {
 
 class DominoGame : public Game {
 public:
-    explicit DominoGame(bool isSolo = false, int numPlayers = 2, bool isBlockMode = true);
+    explicit DominoGame(bool isSolo = false, int numPlayers = 2, bool isBlockMode = false);
     ~DominoGame() override = default;
 
     void init() override;
@@ -29,6 +29,7 @@ public:
     std::string serializeStateForPlayer(PlayerId id) const override;
     bool isFinished() const override { return m_finished; }
     int getWinner() const override { return m_winner; }
+    void setPlayerCount(int count) override { setNumPlayers(count); }
 
     void setNumPlayers(int n);
     int getNumPlayers() const { return m_numPlayers; }
@@ -48,7 +49,7 @@ private:
 
     bool m_isSolo{false};
     int m_numPlayers{2};
-    bool m_isBlockMode{true};
+    bool m_isBlockMode{false};
     int m_turn{1};
     bool m_finished{false};
     int m_winner{0};

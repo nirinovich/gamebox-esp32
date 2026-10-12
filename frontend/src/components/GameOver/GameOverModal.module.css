@@ -40,16 +40,19 @@
 .victoryIcon {
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid var(--success);
+  color: var(--success);
 }
 
 .defeatIcon {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 .drawIcon {
   background: rgba(245, 158, 11, 0.15);
   border: 1px solid var(--bot-amber);
+  color: var(--bot-amber);
 }
 
 .title {

@@ -6,6 +6,7 @@ import { Lobby } from './components/Lobby/Lobby';
 import { WaitingRoom } from './components/WaitingRoom/WaitingRoom';
 import { GameHud } from './components/GameHud/GameHud';
 import { GameCanvas } from './components/GameCanvas/GameCanvas';
+import { TrophyDrawer } from './components/TrophyDrawer/TrophyDrawer';
 
 export function App() {
   useEffect(() => {
@@ -31,6 +32,7 @@ export function App() {
           <GameCanvas />
         </div>
       )}
+      <TrophyDrawer />
     </>
   );
 }

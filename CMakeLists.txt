@@ -45,6 +45,9 @@ target_link_libraries(test_new_games PRIVATE gamehub_core)
 add_executable(test_host_engine tests/test_host_engine.cpp)
 target_link_libraries(test_host_engine PRIVATE gamehub_core)
 
+add_executable(test_domino_diagnosis tests/test_domino_diagnosis.cpp)
+target_link_libraries(test_domino_diagnosis PRIVATE gamehub_core)
+
 enable_testing()
 add_test(NAME TracerBulletTest COMMAND test_tracer_bullet)
 add_test(NAME SnakeGameTest COMMAND test_snake_game)

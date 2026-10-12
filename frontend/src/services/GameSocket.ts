@@ -144,19 +144,26 @@ class GameSocketService {
         currentView.value = 'WAITING';
         break;
 
-      case 'room_joined':
+      case 'room_joined': {
         gameState.value = null;
+        const playerNum = msg.player || 2;
+        const maxPlayers = msg.max || 2;
         activeRoom.value = {
           code: msg.code || '',
           isHost: false,
           gameType: (msg.game as GameKey) || (activeRoom.value?.gameType || 'snake_duel'),
-          playerNum: msg.player || 2,
+          playerNum,
           opponentName: msg.host || 'Host',
-          waitingCount: 2,
-          waitingMax: msg.max || 2
+          waitingCount: playerNum,
+          waitingMax: maxPlayers
         };
-        currentView.value = 'GAME';
+        if (playerNum >= maxPlayers) {
+          currentView.value = 'GAME';
+        } else {
+          currentView.value = 'WAITING';
+        }
         break;
+      }
 
       case 'room_waiting_update':
         if (activeRoom.value) {
@@ -214,7 +221,8 @@ class GameSocketService {
 
   public createRoom(game: GameKey) {
     gameState.value = null;
-    this.send({ cmd: 'create', game });
+    const players = game === 'domino_duel' ? 2 : (game === 'domino_pvp' ? 3 : 2);
+    this.send({ cmd: 'create', game, players, max: players });
   }
 
   public startSolo(game: GameKey) {

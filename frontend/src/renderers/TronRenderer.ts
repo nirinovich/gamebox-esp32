@@ -1,4 +1,4 @@
-import { IGameRenderer } from './IGameRenderer';
+import { IGameRenderer, ActionDispatcher } from './IGameRenderer';
 import { gameSocket } from '../services/GameSocket';
 import { sound, haptic } from '../audio/SoundEngine';
 
@@ -8,8 +8,16 @@ export class TronRenderer implements IGameRenderer {
   private touchStartX = 0;
   private touchStartY = 0;
   private swipeDone = false;
+  private dispatch: ActionDispatcher = (action) => gameSocket.send(action);
 
-  public init() {}
+  public init(_canvas?: HTMLCanvasElement, _ctx?: CanvasRenderingContext2D, dispatch?: ActionDispatcher) {
+    if (dispatch) this.dispatch = dispatch;
+    this.swipeDone = false;
+  }
+
+  public setDispatcher(dispatch: ActionDispatcher) {
+    this.dispatch = dispatch;
+  }
 
   public resize(width: number, height: number) {
     this.width = width;
@@ -76,7 +84,7 @@ export class TronRenderer implements IGameRenderer {
       }
       haptic(15);
       sound.move();
-      gameSocket.send({ cmd: 'dir', val: dir });
+      this.dispatch({ cmd: 'dir', val: dir });
       this.swipeDone = true;
       this.touchStartX = x;
       this.touchStartY = y;
