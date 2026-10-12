@@ -12,6 +12,7 @@ void SnakeGame::init() {
     m_winner = 0;
     m_score1 = 0;
     m_score2 = 0;
+    m_tickAccum = 0.0f;
 
     m_snake1.clear();
     m_snake1.push_back({10, 10});
@@ -81,8 +82,12 @@ void SnakeGame::handleInput(PlayerId id, const std::string& commandJson) {
     }
 }
 
-void SnakeGame::update(float /*dt*/) {
+void SnakeGame::update(float dt) {
     if (m_finished) return;
+
+    m_tickAccum += dt;
+    if (m_tickAccum < m_stepInterval) return;
+    m_tickAccum -= m_stepInterval;
 
     m_dir1 = m_nextDir1;
     Point head1 = m_snake1.front();

@@ -203,22 +203,28 @@ int main() {
         assert(mockNet.hasMessageFor(301, "\"game\":\"snake\""));
         assert(mockNet.hasMessageFor(301, "\"score\":0"));
 
-        // Tick solo game
+        // Authoritative HostEngine tick loop MUST advance and send state for solo real-time games
         mockNet.clear();
-        engine.onClientMessage(301, "{\"cmd\":\"tick\"}");
-        assert(mockNet.hasMessageFor(301, "\"game\":\"snake\""));
-        std::cout << "    Solo Snake game execution verified." << std::endl;
+        engine.tick(0.066f);
+        assert(mockNet.hasMessageFor(301, "\"game\":\"snake\"") && "HostEngine::tick must tick and broadcast solo snake state to client");
+        std::cout << "    Solo Snake real-time engine tick verified." << std::endl;
 
         // Solo Pong
         mockNet.clear();
         engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"pong_solo\"}");
         assert(mockNet.hasMessageFor(301, "\"game\":\"pong\""));
+        mockNet.clear();
+        engine.tick(0.066f);
+        assert(mockNet.hasMessageFor(301, "\"game\":\"pong\"") && "HostEngine::tick must tick and broadcast solo pong");
         std::cout << "    Solo Pong game execution verified." << std::endl;
 
         // Solo Tron
         mockNet.clear();
         engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"tron_solo\"}");
         assert(mockNet.hasMessageFor(301, "\"game\":\"tron\""));
+        mockNet.clear();
+        engine.tick(0.1f);
+        assert(mockNet.hasMessageFor(301, "\"game\":\"tron\"") && "HostEngine::tick must tick and broadcast solo tron");
         std::cout << "    Solo Tron game execution verified." << std::endl;
 
         // Solo Battleship

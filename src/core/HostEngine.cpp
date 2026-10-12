@@ -291,6 +291,7 @@ void HostEngine::tick(float dt) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_roomManager.tickAll(dt);
 
+    // 1. Tick active multiplayer rooms
     for (const auto& pair : m_roomPlayers) {
         if (pair.second.size() >= 2) {
             Room* r = m_roomManager.findRoomByCode(pair.first);
@@ -301,6 +302,26 @@ void HostEngine::tick(float dt) {
                     gt == GameType::TRON_DUEL) {
                     r->tick(dt);
                     broadcastStateToRoom(r);
+                }
+            }
+        }
+    }
+
+    // 2. Tick active solo real-time games
+    for (auto& pair : m_sessions) {
+        uint32_t sid = pair.first;
+        Session* session = pair.second.get();
+        if (session) {
+            Room* r = session->getActiveRoom();
+            if (r && !r->isFinished()) {
+                auto gt = r->getGameType();
+                if (gt == GameType::SNAKE_SOLO ||
+                    gt == GameType::PONG_SOLO ||
+                    gt == GameType::TRON_SOLO) {
+                    r->tick(dt);
+                    if (m_network) {
+                        m_network->sendToClient(sid, r->serializeState());
+                    }
                 }
             }
         }

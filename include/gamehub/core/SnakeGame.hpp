@@ -19,9 +19,16 @@ public:
     int getWinner() const override { return m_winner; }
 
     void setFood(int x, int y) { m_food = {x, y}; }
+    void setStepInterval(float interval) { m_stepInterval = interval; }
+    float getStepInterval() const { return m_stepInterval; }
+
+    static constexpr float DEFAULT_STEP_INTERVAL = 0.12f;
 
 private:
     void spawnFood();
+
+    float m_stepInterval{DEFAULT_STEP_INTERVAL};
+    float m_tickAccum{0.0f};
 
     bool m_isDuel{false};
     int m_gridWidth{20};
