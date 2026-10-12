@@ -32,8 +32,6 @@ private:
 ESP32NetworkAdapter netAdapter(ws);
 gamehub::core::HostEngine engine(&netAdapter, 4);
 
-TaskHandle_t gameTaskHandle = NULL;
-
 void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
     if (type == WS_EVT_CONNECT) {
         engine.onClientConnect(client->id());
@@ -45,17 +43,6 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
             std::string msg((char*)data, len);
             engine.onClientMessage(client->id(), msg);
         }
-    }
-}
-
-// Dedicated FreeRTOS Task pinned to Core 1 for real-time game simulation
-void GameEngineTask(void* parameter) {
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(66); // 15 Hz tick loop
-
-    for (;;) {
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
-        engine.tick(0.066f);
     }
 }
 
@@ -110,22 +97,18 @@ void setup() {
     server.begin();
     Serial.println("[HTTP] Server ready on Core 0.");
 
-    // 5. Pin Game Engine Task to Core 1
-    xTaskCreatePinnedToCore(
-        GameEngineTask,
-        "GameEngineTask",
-        8192,
-        NULL,
-        1,
-        &gameTaskHandle,
-        1 // Core 1
-    );
-    Serial.println("[RTOS] GameEngineTask running on Core 1.");
+    Serial.println("[GameHub] Core 0 event loop active (15 Hz game engine + captive portal).");
 }
 
 void loop() {
+    static uint32_t lastTick = 0;
+    uint32_t now = millis();
+    if (now - lastTick >= 66) {
+        lastTick = now;
+        engine.tick(0.066f);
+    }
     dnsServer.processNextRequest();
     ws.cleanupClients();
-    delay(10);
+    delay(5);
 }
 #endif

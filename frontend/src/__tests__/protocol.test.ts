@@ -10,6 +10,7 @@ import {
   filteredGames,
   resetRoomState,
   activeRoom,
+  gameState,
   currentView
 } from '../state/gameStore';
 
@@ -69,7 +70,7 @@ describe('GameStore and Reactive State Transitions', () => {
     expect(filteredGames.value.length).toBe(1);
   });
 
-  it('resets room state cleanly back to LOBBY', () => {
+  it('resets room state cleanly back to LOBBY and clears gameState', () => {
     activeRoom.value = {
       code: 'ABCD',
       isHost: true,
@@ -77,10 +78,12 @@ describe('GameStore and Reactive State Transitions', () => {
       playerNum: 1,
       opponentName: 'Challenger'
     };
+    gameState.value = { finished: true, winner: 1 };
     currentView.value = 'GAME';
 
     resetRoomState();
     expect(activeRoom.value).toBeNull();
+    expect(gameState.value).toBeNull();
     expect(currentView.value).toBe('LOBBY');
   });
 

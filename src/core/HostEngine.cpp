@@ -53,6 +53,11 @@ void HostEngine::detachPlayerFromRoom(uint32_t sessionId) {
         }
     }
     m_sessionPlayerMap.erase(sessionId);
+
+    auto itS = m_sessions.find(sessionId);
+    if (itS != m_sessions.end()) {
+        itS->second->setRoom(nullptr);
+    }
 }
 
 void HostEngine::broadcastToRoom(const std::string& roomCode, const std::string& message) {
@@ -112,19 +117,26 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
         GameType gtype = GameType::TICTACTOE_PVP;
         size_t maxPlayers = 2;
+        std::string gname = "ttt_pvp";
 
         if (rawMessage.find("\"snake_duel\"") != std::string::npos) {
             gtype = GameType::SNAKE_DUEL;
+            gname = "snake_duel";
         } else if (rawMessage.find("\"connect4_pvp\"") != std::string::npos) {
             gtype = GameType::CONNECT_FOUR_PVP;
+            gname = "connect4_pvp";
         } else if (rawMessage.find("\"pong_duel\"") != std::string::npos) {
             gtype = GameType::PONG_DUEL;
+            gname = "pong_duel";
         } else if (rawMessage.find("\"tron_duel\"") != std::string::npos) {
             gtype = GameType::TRON_DUEL;
+            gname = "tron_duel";
         } else if (rawMessage.find("\"battleship_pvp\"") != std::string::npos) {
             gtype = GameType::BATTLESHIP_PVP;
+            gname = "battleship_pvp";
         } else if (rawMessage.find("\"domino_pvp\"") != std::string::npos) {
             gtype = GameType::DOMINO_PVP;
+            gname = "domino_pvp";
             maxPlayers = (rawMessage.find("\"players\":2") != std::string::npos || rawMessage.find("\"max\":2") != std::string::npos) ? 2 : 3;
         }
 
@@ -147,7 +159,10 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         }
 
         std::ostringstream oss;
-        oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1,\"host\":\"" << hostName << "\"}";
+        oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode()
+            << "\",\"game\":\"" << gname
+            << "\",\"player\":1,\"host\":\"" << hostName
+            << "\",\"max\":" << maxPlayers << "}";
         std::string resp = oss.str();
         if (m_network) m_network->sendToClient(sessionId, resp);
         return resp;
@@ -170,10 +185,26 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         m_sessionPlayerMap[sessionId] = pNum;
         m_roomPlayers[code].push_back(sessionId);
 
+        std::string gname = "ttt_pvp";
+        switch (room->getGameType()) {
+            case GameType::SNAKE_DUEL: gname = "snake_duel"; break;
+            case GameType::TICTACTOE_PVP: gname = "ttt_pvp"; break;
+            case GameType::CONNECT_FOUR_PVP: gname = "connect4_pvp"; break;
+            case GameType::PONG_DUEL: gname = "pong_duel"; break;
+            case GameType::TRON_DUEL: gname = "tron_duel"; break;
+            case GameType::BATTLESHIP_PVP: gname = "battleship_pvp"; break;
+            case GameType::DOMINO_PVP: gname = "domino_pvp"; break;
+            default: break;
+        }
+
         if (m_network) {
             m_network->broadcast(m_roomManager.serializeDirectory());
             std::ostringstream oss;
-            oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":" << pNum << ",\"host\":\"" << room->getHostName() << "\"}";
+            oss << "{\"type\":\"room_joined\",\"code\":\"" << code
+                << "\",\"game\":\"" << gname
+                << "\",\"player\":" << pNum
+                << ",\"host\":\"" << room->getHostName()
+                << "\",\"max\":" << room->getMaxPlayers() << "}";
             m_network->sendToClient(sessionId, oss.str());
 
             if (room->getPlayerCount() >= room->getMaxPlayers()) {
@@ -289,7 +320,6 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
 void HostEngine::tick(float dt) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_roomManager.tickAll(dt);
 
     // 1. Tick active multiplayer rooms
     for (const auto& pair : m_roomPlayers) {

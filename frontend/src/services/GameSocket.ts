@@ -131,6 +131,7 @@ class GameSocketService {
         break;
 
       case 'room_created':
+        gameState.value = null;
         activeRoom.value = {
           code: msg.code || '',
           isHost: true,
@@ -144,6 +145,7 @@ class GameSocketService {
         break;
 
       case 'room_joined':
+        gameState.value = null;
         activeRoom.value = {
           code: msg.code || '',
           isHost: false,
@@ -211,10 +213,12 @@ class GameSocketService {
   }
 
   public createRoom(game: GameKey) {
+    gameState.value = null;
     this.send({ cmd: 'create', game });
   }
 
   public startSolo(game: GameKey) {
+    gameState.value = null;
     activeRoom.value = {
       code: 'SOLO',
       isHost: true,
@@ -227,6 +231,7 @@ class GameSocketService {
   }
 
   public joinRoom(code: string) {
+    gameState.value = null;
     this.send({ cmd: 'leave' });
     this.send({ cmd: 'join', code: code.toUpperCase() });
   }

@@ -80,6 +80,8 @@ int main() {
         assert(reply.find("\"type\":\"room_created\"") != std::string::npos);
         assert(reply.find("\"player\":1") != std::string::npos);
         assert(reply.find("\"host\":\"Alice\"") != std::string::npos);
+        assert(reply.find("\"game\":\"snake_duel\"") != std::string::npos);
+        assert(reply.find("\"max\":2") != std::string::npos);
 
         // Extract room code
         auto codePos = reply.find("\"code\":\"");
@@ -100,8 +102,10 @@ int main() {
         engine.onClientConnect(102);
         engine.onClientMessage(102, "{\"cmd\":\"join\",\"code\":\"" + roomCode + "\"}");
 
-        // Player 2 should receive room_joined
+        // Player 2 should receive room_joined with game and max metadata
         assert(mockNet.hasMessageFor(102, "\"type\":\"room_joined\""));
+        assert(mockNet.hasMessageFor(102, "\"game\":\"snake_duel\""));
+        assert(mockNet.hasMessageFor(102, "\"max\":2"));
 
         // Both players should receive room_ready
         assert(mockNet.hasMessageFor(101, "\"type\":\"room_ready\""));
@@ -125,7 +129,7 @@ int main() {
         std::cout << "    Multiplayer input successfully routed." << std::endl;
     }
 
-    // --- 5. Real-Time Tick Loop ---
+    // --- 5. Real-Time Tick Loop & Game Over Broadcast ---
     {
         std::cout << "  - Testing real-time tick loop..." << std::endl;
         mockNet.clear();
@@ -134,7 +138,20 @@ int main() {
         // Snake Duel is a real-time game: tick should broadcast updated states
         assert(mockNet.hasMessageFor(101, "\"type\":\"state\""));
         assert(mockNet.hasMessageFor(102, "\"type\":\"state\""));
-        std::cout << "    Real-time tick loop advanced match." << std::endl;
+
+        // Tick repeatedly until snakes hit walls / match finishes
+        bool sawFinishedBroadcast = false;
+        for (int i = 0; i < 40; ++i) {
+            mockNet.clear();
+            engine.tick(0.066f);
+            if (mockNet.hasMessageFor(101, "\"finished\":true")) {
+                sawFinishedBroadcast = true;
+                assert(mockNet.hasMessageFor(102, "\"finished\":true"));
+                break;
+            }
+        }
+        assert(sawFinishedBroadcast);
+        std::cout << "    Real-time tick loop advanced match and broadcast final Game Over state." << std::endl;
     }
 
     // --- 6. Disconnect & Opponent Notification ---
