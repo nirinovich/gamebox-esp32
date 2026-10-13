@@ -10,7 +10,7 @@ import { KatroRenderer } from './KatroRenderer';
 
 // ---- Minimal canvas mock (JSDOM ne fournit pas getContext CanvasRenderingContext2D) ----
 function makeCtx(): CanvasRenderingContext2D {
-  return {
+  const target: any = {
     fillStyle: '',
     font: '',
     textAlign: 'left',
@@ -19,7 +19,21 @@ function makeCtx(): CanvasRenderingContext2D {
     beginPath: vi.fn(),
     arc: vi.fn(),
     fill: vi.fn(),
-  } as unknown as CanvasRenderingContext2D;
+    save: vi.fn(),
+    restore: vi.fn(),
+    stroke: vi.fn(),
+    strokeRect: vi.fn(),
+    measureText: vi.fn(() => ({ width: 50 })),
+    moveTo: vi.fn(),
+    lineTo: vi.fn(),
+  };
+  return new Proxy(target, {
+    get(t, prop) {
+      if (prop in t) return t[prop];
+      t[prop] = vi.fn();
+      return t[prop];
+    }
+  }) as unknown as CanvasRenderingContext2D;
 }
 
 // Payload d'état canonique Katro (4 graines, tour P1)
@@ -45,12 +59,11 @@ describe('KatroRenderer', () => {
     renderer.init(undefined, undefined, dispatch, 1);
     renderer.resize(400, 400);
 
-    // Pointer-down puis pointer-up sur la case 4 (col 4, rangée 0 → P1)
-    // topOffset = 40, cellH = (400-40-8)/4 = 88
-    // cellW = 400/8 = 50
-    // Case 4 : x = 4*50+25 = 225, y = 40 + 44 = 84
-    renderer.handlePointerDown(225, 84);
-    renderer.handlePointerUp(225, 84);
+    // Pointer-down puis pointer-up sur la case 2 (col 2, rangée 0 → P1)
+    // topOffset = 42, cellW = 400/4 = 100
+    // Case 2 : x = 2*100+50 = 250, y = 84
+    renderer.handlePointerDown(250, 84);
+    renderer.handlePointerUp(250, 84);
 
     // Vérifie qu'une action sow a été dispatchée
     expect(dispatch).toHaveBeenCalledOnce();
@@ -67,8 +80,8 @@ describe('KatroRenderer', () => {
     renderer.init(undefined, undefined, dispatch, 1);
     renderer.resize(400, 400);
 
-    renderer.handlePointerDown(25, 84);   // Case 0
-    renderer.handlePointerUp(75, 84);     // Case 1 (différente)
+    renderer.handlePointerDown(25, 84);   // Case 0 (x: 0..100)
+    renderer.handlePointerUp(150, 84);    // Case 1 (x: 100..200)
 
     expect(dispatch).not.toHaveBeenCalled();
   });
