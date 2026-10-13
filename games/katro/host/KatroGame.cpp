@@ -19,6 +19,7 @@
 #include "KatroGame.hpp"
 #include <sstream>
 #include <algorithm>
+#include <random>
 
 namespace gamehub {
 namespace core {
@@ -500,39 +501,39 @@ void KatroGame::setBoard(const std::vector<int>& board) {
 }
 
 // ============================================================================
-// computeBotMove() — Bot heuristique pour Nord (P2)
+// computeBotMove() — Bot adverse : coup aléatoire parmi les cases disponibles
 //
-// Évalue chaque coup légal de Nord et choisit celui qui maximise
-// le nombre de graines finales de Nord après le coup.
+// Identifie toutes les cases disponibles (appartenant à Nord et contenant
+// au moins 1 graine), puis choisit aléatoirement l'une d'entre elles.
 // ============================================================================
 
 int KatroGame::computeBotMove() const {
-    int bestCell  = -1;
-    int bestGain  = -9999;
+    std::vector<int> availableMoves;
     int startNord = 2 * m_cols;
     int endNord   = m_totalCells;
 
     for (int cell = startNord; cell < endNord; ++cell) {
-        if (m_board[cell] <= 0) continue;
-
-        // Simulation sur copie
-        KatroGame sim(false, m_cols, m_seedsPerCell);
-        sim.m_board    = m_board;
-        sim.m_turn     = 2;
-        sim.m_finished = false;
-
-        int seedsBefore = sim.countPlayerSeeds(KatroPlayer::NORTH);
-        sim.playTurn(cell, 2, m_defaultDirection);
-        int seedsAfter  = sim.countPlayerSeeds(KatroPlayer::NORTH);
-        int gain        = seedsAfter - seedsBefore;
-
-        if (gain > bestGain || (gain == bestGain && (bestCell == -1 || m_board[cell] > m_board[bestCell]))) {
-            bestGain = gain;
-            bestCell = cell;
+        if (m_board[cell] > 0) {
+            availableMoves.push_back(cell);
         }
     }
 
-    return bestCell;
+    if (availableMoves.empty()) {
+        return -1;
+    }
+
+    // Sélection aléatoire uniforme d'un coup parmi les coups disponibles
+    static std::mt19937 rng([]() {
+        try {
+            std::random_device rd;
+            return rd();
+        } catch (...) {
+            return 1337u;
+        }
+    }());
+
+    std::uniform_int_distribution<size_t> dist(0, availableMoves.size() - 1);
+    return availableMoves[dist(rng)];
 }
 
 } // namespace core

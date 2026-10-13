@@ -356,6 +356,13 @@ void HostEngine::tick(float dt) {
                     m_network->sendToClient(r->getPlayers()[0], r->serializeState());
                 }
             }
+        } else if (gt == GameType::KATRO_SOLO) {
+            int prevSeq = r->getMoveSeq();
+            r->tick(dt);
+            int newSeq = r->getMoveSeq();
+            if (newSeq > prevSeq && !r->getPlayers().empty() && m_network) {
+                m_network->sendToClient(r->getPlayers()[0], r->serializeState());
+            }
         }
     }
 }

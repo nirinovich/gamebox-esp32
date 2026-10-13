@@ -11,7 +11,7 @@ Room::Room(const std::string& code, GameType type, const std::string& hostName, 
                    (type == GameType::SNAKE_SOLO || type == GameType::TICTACTOE_SOLO ||
                     type == GameType::CONNECT_FOUR_SOLO || type == GameType::DOMINO_SOLO ||
                     type == GameType::PONG_SOLO || type == GameType::TRON_SOLO ||
-                    type == GameType::BATTLESHIP_SOLO ? 1 : 2)),
+                    type == GameType::BATTLESHIP_SOLO || type == GameType::KATRO_SOLO ? 1 : 2)),
       m_game(GameFactory::create(type)),
       m_state(std::make_unique<WaitingRoomState>()) {
     if (m_game) {

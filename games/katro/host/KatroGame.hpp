@@ -206,11 +206,17 @@ public:
     bool canPlayerMove(KatroPlayer player) const;
 
     const std::vector<KatroAnimEvent>& getLastEvents() const { return m_lastEvents; }
-    int getMoveSeq() const { return m_moveSeq; }
+    int getMoveSeq() const override { return m_moveSeq; }
+
+    /**
+     * Choisit un coup aléatoire parmi toutes les cases disponibles
+     * (contenant des graines) dans le camp du bot (Nord).
+     * @return Index de la case choisie, ou -1 si aucune case n'est disponible.
+     */
+    int computeBotMove() const;
 
 private:
     void checkEndCondition();
-    int  computeBotMove() const;
 
     // Paramètres du plateau
     int m_rows;

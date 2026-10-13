@@ -109,7 +109,12 @@ export class KatroRenderer implements IGameRenderer {
   private lastSeq     = -1;
   private isAnimating = false;
 
-  // File d'événements d'animation
+  // File d'états serveur en attente d'animation (buffer séquentiel)
+  // Quand plusieurs états arrivent pendant une animation, ils sont mis en
+  // attente ici et dépilés un par un à la fin de chaque animation complète.
+  private pendingStateQueue: Array<{ board: number[]; events: AnimEvent[] }> = [];
+
+  // File d'événements d'animation (coup actif en cours)
   private eventQueue: AnimEvent[] = [];
   private animTimer   = 0;
   private lastEventPos: { x: number; y: number } | null = null;
@@ -133,20 +138,21 @@ export class KatroRenderer implements IGameRenderer {
   ): void {
     if (dispatch)  this.dispatch  = dispatch;
     if (playerNum) this.playerNum = playerNum;
-    this.displayBoard    = [];
-    this.lastSeq         = -1;
-    this.isAnimating     = false;
-    this.eventQueue      = [];
-    this.particles       = [];
-    this.beams           = [];
-    this.banners         = [];
-    this.pops            = [];
-    this.shakeFrames     = 0;
-    this.activeRelayCell = -1;
-    this.relayHaloFrames = 0;
-    this.hoveredCell     = -1;
-    this.pressedCell     = -1;
-    this.currentCols     = 4;
+    this.displayBoard      = [];
+    this.lastSeq           = -1;
+    this.isAnimating       = false;
+    this.pendingStateQueue = [];
+    this.eventQueue        = [];
+    this.particles         = [];
+    this.beams             = [];
+    this.banners           = [];
+    this.pops              = [];
+    this.shakeFrames       = 0;
+    this.activeRelayCell   = -1;
+    this.relayHaloFrames   = 0;
+    this.hoveredCell       = -1;
+    this.pressedCell       = -1;
+    this.currentCols       = 4;
   }
 
   public setDispatcher(dispatch: ActionDispatcher): void {
@@ -170,20 +176,35 @@ export class KatroRenderer implements IGameRenderer {
     if (state?.board && Array.isArray(state.board)) {
       this.currentCols = Math.max(1, Math.floor(state.board.length / ROWS));
 
-      // Gestion de la séquence d'événements reçue du Host
+      // --- Gestion séquentielle des états serveur ---
+      // Chaque état avec un seq supérieur est mis en file d'attente.
+      // Il ne sera dépilé et animé qu'une fois l'animation précédente
+      // entièrement terminée, évitant toute téléportation de graines.
       const seq = state.seq ?? 0;
       if (this.lastSeq === -1) {
         // Initialisation initiale sans animation
         this.displayBoard = [...state.board];
         this.lastSeq = seq;
       } else if (seq > this.lastSeq) {
+        // Met cet état en file d'attente (y compris ses événements d'animation)
         this.lastSeq = seq;
-        if (state.events && Array.isArray(state.events) && state.events.length > 0) {
-          this.eventQueue = [...state.events];
-          this.isAnimating = true;
-          this.animTimer = 0;
+        const events = (state.events && Array.isArray(state.events))
+          ? state.events as AnimEvent[]
+          : [];
+        if (!this.isAnimating && this.eventQueue.length === 0 && this.particles.length === 0) {
+          // Aucune animation en cours : on peut démarrer immédiatement
+          if (events.length > 0) {
+            this.eventQueue = events;
+            this.isAnimating = true;
+            this.animTimer = 0;
+            // Garde ce board pour la fin de l'animation
+            this.pendingStateQueue.push({ board: [...state.board], events: [] });
+          } else {
+            this.displayBoard = [...state.board];
+          }
         } else {
-          this.displayBoard = [...state.board];
+          // Une animation est déjà en cours → on met en file d'attente
+          this.pendingStateQueue.push({ board: [...state.board], events });
         }
       }
     }
@@ -285,10 +306,32 @@ export class KatroRenderer implements IGameRenderer {
         this._processAnimEvent(ev);
       }
     } else if (this.particles.length === 0) {
-      // Fin de toute l'animation
+      // Fin de toute l'animation en cours
       this.isAnimating = false;
       this.activeRelayCell = -1;
-      if (state?.board) {
+
+      if (this.pendingStateQueue.length > 0) {
+        // Dépile le prochain état en attente et lance son animation
+        const next = this.pendingStateQueue.shift()!;
+        if (next.events.length > 0) {
+          // Synchronise le plateau sur le board de l'état courant
+          // puis lance l'animation des événements associés.
+          // Note : displayBoard est déjà à jour grâce aux events précédents.
+          this.eventQueue  = next.events;
+          this.isAnimating = true;
+          this.animTimer   = 0;
+          // Si d'autres états sont en attente après celui-ci, on les garde.
+          // Le board sera synchronisé à la fin de cette animation.
+          if (this.pendingStateQueue.length === 0) {
+            // Dernier état : on le prépare comme état final
+            this.pendingStateQueue.push({ board: next.board, events: [] });
+          }
+        } else {
+          // Pas d'événements : synchronisation directe du plateau
+          this.displayBoard = [...next.board];
+        }
+      } else if (state?.board) {
+        // Aucun état en attente : synchronise avec le board courant du signal
         this.displayBoard = [...state.board];
       }
     }
@@ -762,10 +805,13 @@ export class KatroRenderer implements IGameRenderer {
   }
 
   public destroy(): void {
-    this.particles    = [];
-    this.beams        = [];
-    this.banners      = [];
-    this.pops         = [];
-    this.displayBoard = [];
+    this.particles         = [];
+    this.beams             = [];
+    this.banners           = [];
+    this.pops              = [];
+    this.displayBoard      = [];
+    this.eventQueue        = [];
+    this.pendingStateQueue = [];
+    this.isAnimating       = false;
   }
 }

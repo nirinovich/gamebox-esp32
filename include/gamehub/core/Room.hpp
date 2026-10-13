@@ -28,6 +28,7 @@ public:
     const std::string& getHostName() const { return m_hostName; }
     GameType getGameType() const { return m_type; }
     Game* getGame() { return m_game.get(); }
+    int getMoveSeq() const { return m_game ? m_game->getMoveSeq() : 0; }
 
     void addPlayer(PlayerId id);
     void removePlayer(PlayerId id);

@@ -18,6 +18,7 @@ public:
     virtual bool isFinished() const = 0;
     virtual int getWinner() const = 0;
     virtual void setPlayerCount(int /*count*/) {}
+    virtual int getMoveSeq() const { return 0; }
 };
 
 } // namespace core
