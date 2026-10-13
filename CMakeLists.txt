@@ -26,6 +26,7 @@ add_library(gamehub_core OBJECT
     games/tron/host/TronGame.cpp
     games/battleship/host/BattleshipGame.cpp
     games/domino/host/DominoGame.cpp
+    games/katro/host/KatroGame.cpp   # Katro (Fanorana Katro malgache) — plateau 4×8
 )
 target_include_directories(gamehub_core PUBLIC include games)
 
@@ -114,6 +115,11 @@ add_test(NAME ColocatedBattleshipTest COMMAND test_battleship)
 add_executable(test_domino games/domino/host/test_domino.cpp)
 target_link_libraries(test_domino PRIVATE gamehub_core)
 add_test(NAME ColocatedDominoTest COMMAND test_domino)
+
+# Katro (Fanorana Katro malgache) — plateau 4×8, 4 graines/case
+add_executable(test_katro games/katro/host/test_katro.cpp)
+target_link_libraries(test_katro PRIVATE gamehub_core)
+add_test(NAME ColocatedKatroTest COMMAND test_katro)
 
 # Desktop runner executable
 if (WIN32)

@@ -13,7 +13,9 @@ export type GameKey =
   | 'battleship_pvp'
   | 'domino_solo'
   | 'domino_duel'
-  | 'domino_pvp';
+  | 'domino_pvp'
+  | 'katro_solo'   // Katro solo vs Bot IA
+  | 'katro_pvp';  // Katro PvP 2 joueurs
 
 export type GameCategory = 'ALL' | 'SOLO' | 'DUEL' | 'PARTY';
 

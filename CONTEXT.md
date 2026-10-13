@@ -84,6 +84,34 @@ _Avoid_: HandValue, TileCount
 The rollover jackpot point pool in MalagasyDominoGame accumulated when consecutive rounds end in tied blocks.
 _Avoid_: Carryover, TieBonus, PotRoll
 
+**TexasHoldemGame**:
+A polymorphic Game model implementing No-Limit Texas Hold'em for 2 to 4 Players with private HoleCards, shared CommunityCards, pot accounting, and 7-card rank evaluation.
+_Avoid_: PokerGame, CardTable
+
+**HoleCards**:
+The two private face-down cards dealt exclusively to a Player and strictly masked from other Sessions until showdown.
+_Avoid_: Hand, PocketCards
+
+**CommunityCards**:
+The up to five face-up shared cards dealt on the board across Flop, Turn, and River betting rounds.
+_Avoid_: BoardCards, TableCards
+
+**Pot**:
+The pool of chips wagered by Players across betting rounds awarded to the winning hand or split upon ties.
+_Avoid_: Kitty, ChipsPool
+
+**LudoGame**:
+A polymorphic Game model implementing 2 to 4 Player cross-and-circle board mechanics featuring pawn collisions, yard rollout on 6, and safe zone navigation.
+_Avoid_: Parchisi, Pachisi, TokenRace
+
+**PawnYard**:
+The designated corner holding area for a Player's tokens prior to being rolled out onto the active track.
+_Avoid_: Base, Spawn, Nest
+
+**SafeSquare**:
+A designated track position (marked by a star) where tokens are immune to capture collisions.
+_Avoid_: SafeZone, Refuge, StarCell
+
 **VisualEngine**:
 The client-side 60 FPS presentation layer in WebAssets.hpp that renders authoritative domain states via Canvas 2D without microcontroller overhead.
 _Avoid_: Renderer, GraphicsCore
