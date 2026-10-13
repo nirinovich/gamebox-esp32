@@ -148,7 +148,7 @@ class GameSocketService {
         activeRoom.value = {
           code: msg.code || '',
           isHost: true,
-          gameType: (msg.game as GameKey) || 'snake_duel',
+          gameType: (msg.game as GameKey) || 'katro_pvp',
           playerNum: 1,
           opponentName: 'Waiting for challenger...',
           waitingCount: 1,
@@ -164,7 +164,7 @@ class GameSocketService {
         activeRoom.value = {
           code: msg.code || '',
           isHost: false,
-          gameType: (msg.game as GameKey) || (activeRoom.value?.gameType || 'snake_duel'),
+          gameType: (msg.game as GameKey) || (activeRoom.value?.gameType || 'katro_pvp'),
           playerNum,
           opponentName: msg.host || 'Host',
           waitingCount: playerNum,

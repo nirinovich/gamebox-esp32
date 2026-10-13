@@ -22,11 +22,8 @@ public:
     void sendToClient(uint32_t sessionId, const std::string& message) override {
         AsyncWebSocketClient* client = m_ws.client(sessionId);
         if (client && client->status() == WS_CONNECTED) {
-            // Avoid queue backlog and heap exhaustion by dropping stale tick state frames in real-time games
-            bool isRealtimeState = message.find("\"type\":\"state\"") != std::string::npos &&
-                                  (message.find("\"game\":\"snake\"") != std::string::npos ||
-                                   message.find("\"game\":\"pong\"") != std::string::npos ||
-                                   message.find("\"game\":\"tron\"") != std::string::npos);
+            // Avoid queue backlog and heap exhaustion by dropping stale tick state frames if congested
+            bool isRealtimeState = message.find("\"type\":\"state\"") != std::string::npos;
             if (isRealtimeState && client->queueLen() >= 2) {
                 return;
             }
@@ -36,10 +33,7 @@ public:
     void broadcast(const std::string& message) override {
         for (auto& client : m_ws.getClients()) {
             if (client.status() == WS_CONNECTED) {
-                bool isRealtimeState = message.find("\"type\":\"state\"") != std::string::npos &&
-                                      (message.find("\"game\":\"snake\"") != std::string::npos ||
-                                       message.find("\"game\":\"pong\"") != std::string::npos ||
-                                       message.find("\"game\":\"tron\"") != std::string::npos);
+                bool isRealtimeState = message.find("\"type\":\"state\"") != std::string::npos;
                 if (isRealtimeState && client.queueLen() >= 2) {
                     continue;
                 }

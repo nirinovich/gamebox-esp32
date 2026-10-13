@@ -11,7 +11,7 @@ int main() {
     RoomManager manager(4); // Max 4 concurrent rooms
 
     // 1. Create Room & Verify 4-character RoomCode
-    Room* room1 = manager.createRoom(GameId("ttt_pvp"), 101);
+    Room* room1 = manager.createRoom(GameId("domino_pvp"), 101);
     assert(room1 != nullptr && "Room creation must succeed");
     std::string code1 = room1->getCode();
     assert(code1.length() == 4 && "RoomCode must be exactly 4 characters");
@@ -33,12 +33,12 @@ int main() {
     std::cout << "  [PASS] Invalid RoomCode rejection verified." << std::endl;
 
     // 4. Enforce 4-Room Capacity Cap
-    Room* room2 = manager.createRoom(GameId("ttt_pvp"), 201);
-    Room* room3 = manager.createRoom(GameId("snake_duel"), 301);
-    Room* room4 = manager.createRoom(GameId("snake_solo"), 401);
+    Room* room2 = manager.createRoom(GameId("domino_pvp"), 201);
+    Room* room3 = manager.createRoom(GameId("katro_pvp"), 301);
+    Room* room4 = manager.createRoom(GameId("domino_solo"), 401);
     assert(room2 && room3 && room4 && "Creating up to 4 rooms must succeed");
 
-    Room* room5 = manager.createRoom(GameId("ttt_pvp"), 501);
+    Room* room5 = manager.createRoom(GameId("domino_pvp"), 501);
     assert(room5 == nullptr && "5th room creation must be rejected by 4-room cap");
     std::cout << "  [PASS] 4-Room capacity limit enforcement verified." << std::endl;
 
@@ -48,7 +48,7 @@ int main() {
     assert(manager.findRoomByCode(code1) == nullptr && "Room must be destroyed on player disconnect");
 
     // After cleanup, a new room CAN be created
-    Room* roomNew = manager.createRoom(GameId("ttt_pvp"), 601, "Alice");
+    Room* roomNew = manager.createRoom(GameId("domino_pvp"), 601, "Alice");
     assert(roomNew != nullptr && "Capacity must be freed after room destruction");
     assert(roomNew->getHostName() == "Alice" && "Room must store host name");
     std::cout << "  [PASS] Room cleanup on player disconnect verified." << std::endl;

@@ -82,7 +82,7 @@ describe('GameStore and Reactive State Transitions', () => {
     activeRoom.value = {
       code: 'ABCD',
       isHost: true,
-      gameType: 'snake_duel',
+      gameType: 'domino_pvp',
       playerNum: 1,
       opponentName: 'Challenger'
     };

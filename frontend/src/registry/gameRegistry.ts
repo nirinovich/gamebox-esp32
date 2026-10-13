@@ -47,7 +47,7 @@ export function getGameRenderer(gameType: string, juice?: CameraJuice): IGameRen
       return gameRendererMap[key](juice);
     }
   }
-  const fallback = gameRendererMap['ttt_solo'] || gameRendererMap['tictactoe'];
+  const fallback = gameRendererMap['domino_solo'] || gameRendererMap['katro_solo'] || (Object.values(gameRendererMap)[0] ? Object.values(gameRendererMap)[0] : null);
   if (fallback) return fallback(juice);
   throw new Error(`No renderer registered for gameType: ${gameType}`);
 }

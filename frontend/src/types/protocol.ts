@@ -1,21 +1,14 @@
 export type GameKey =
-  | 'snake_solo'
-  | 'snake_duel'
-  | 'ttt_solo'
-  | 'ttt_pvp'
-  | 'connect4_solo'
-  | 'connect4_pvp'
-  | 'pong_solo'
-  | 'pong_duel'
-  | 'tron_solo'
-  | 'tron_duel'
-  | 'battleship_solo'
-  | 'battleship_pvp'
   | 'domino_solo'
   | 'domino_duel'
   | 'domino_pvp'
-  | 'katro_solo'   // Katro solo vs Bot IA
-  | 'katro_pvp';  // Katro PvP 2 joueurs
+  | 'katro_solo'
+  | 'katro_pvp'
+  | 'poker_solo'
+  | 'poker_table'
+  | 'ludo_solo'
+  | 'ludo_table'
+  | (string & {});
 
 export type GameCategory = 'ALL' | 'SOLO' | 'DUEL' | 'PARTY';
 

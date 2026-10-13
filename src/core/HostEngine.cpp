@@ -131,7 +131,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         if (hostName.empty()) hostName = extractJsonString(rawMessage, "name");
         if (hostName.empty()) hostName = "Player 1";
 
-        GameId gameId = regEntry ? regEntry->descriptor.id : GameId(gId.empty() ? "ttt_pvp" : gId);
+        GameId gameId = regEntry ? regEntry->descriptor.id : GameId(gId.empty() ? "domino_pvp" : gId);
         Room* newRoom = m_roomManager.createRoom(gameId, sessionId, hostName, maxPlayers);
         if (!newRoom) {
             std::string err = "{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}";
@@ -260,7 +260,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
         std::string gId = extractJsonString(rawMessage, "game");
         const auto* regEntry = !gId.empty() ? GameRegistry::instance().find(gId) : nullptr;
-        GameId gameId = regEntry ? regEntry->descriptor.id : GameId(gId.empty() ? "snake_solo" : gId);
+        GameId gameId = regEntry ? regEntry->descriptor.id : GameId(gId.empty() ? "domino_solo" : gId);
         Room* room = m_roomManager.createSoloRoom(gameId, sessionId);
 
         auto itS = m_sessions.find(sessionId);

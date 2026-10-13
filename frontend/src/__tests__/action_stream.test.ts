@@ -32,7 +32,7 @@ describe('Authoritative ActionStream and Prompt Protocol', () => {
   it('renders ActionToolbar JSX when available_actions is populated', () => {
     gameState.value = {
       type: 'state',
-      game: 'battleship',
+      game: 'domino',
       available_actions: [
         { id: 'auto_place', label: 'DEPLOY FLEET', enabled: true, style: 'primary' }
       ]
@@ -48,7 +48,7 @@ describe('Authoritative ActionStream and Prompt Protocol', () => {
   });
 
   it('returns null from ActionToolbar when no actions are available', () => {
-    gameState.value = { type: 'state', game: 'snake' };
+    gameState.value = { type: 'state', game: 'katro' };
     const vnode = ActionToolbar();
     expect(vnode).toBeNull();
   });
@@ -90,15 +90,12 @@ describe('Authoritative ActionStream and Prompt Protocol', () => {
     const registeredKeys = Object.keys(gameRendererMap);
     expect(registeredKeys.length).toBeGreaterThan(0);
 
-    // Verify all 7 core game types resolve
+    // Verify active game types resolve
     const expectedGames = [
-      'snake_solo',
-      'ttt_solo',
-      'connect4_solo',
-      'pong_solo',
-      'tron_solo',
-      'battleship_solo',
-      'domino_solo'
+      'domino_solo',
+      'domino_pvp',
+      'katro_solo',
+      'katro_pvp'
     ];
 
     for (const gid of expectedGames) {
