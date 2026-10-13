@@ -4,13 +4,13 @@
 
 **Blocked by:** 01: Purge Legacy Tutorial Games & Clean Platform Registry
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `PokerGame.hpp` and `PokerGame.cpp` implement a 2-to-4 player No-Limit Texas Hold'em finite state machine under `games/poker/host/`.
-- [ ] 52-card deck is shuffled deterministically and deals 2 private HoleCards to each seat.
-- [ ] `serializeStateForPlayer(id)` strictly conceals opponents' HoleCards prior to showdown while exposing visible chip counts, current bets, and CommunityCards.
-- [ ] Multi-street betting loop properly processes `fold`, `check`, `call`, `raise`, and `all-in` commands, balancing pot and side-pots.
-- [ ] Server-side 20-second action timer triggers auto-check/fold in `update(dt)` if an active player fails to respond.
-- [ ] Zero-heap 7-card hand rank evaluator correctly determines winning hands (High Card up to Royal Flush) and resolves split pots.
-- [ ] Autonomous `BotController` logic makes heuristic betting decisions for solo and partially filled tables.
-- [ ] Unit tests in `games/poker/host/test_poker.cpp` verify dealing, card masking, side-pot distribution, and 7-card evaluations.
+- [x] `PokerGame.hpp` and `PokerGame.cpp` implement a 2-to-4 player No-Limit Texas Hold'em finite state machine under `games/poker/host/`.
+- [x] 52-card deck is shuffled deterministically and deals 2 private HoleCards to each seat.
+- [x] `serializeStateForPlayer(id)` strictly conceals opponents' HoleCards prior to showdown while exposing visible chip counts, current bets, and CommunityCards.
+- [x] Multi-street betting loop properly processes `fold`, `check`, `call`, `raise`, and `all-in` commands, balancing pot and side-pots.
+- [x] Server-side 20-second action timer triggers auto-check/fold in `update(dt)` if an active player fails to respond.
+- [x] Zero-heap 7-card hand rank evaluator correctly determines winning hands (High Card up to Royal Flush) and resolves split pots.
+- [x] Autonomous `BotController` logic makes heuristic betting decisions for solo and partially filled tables.
+- [x] Unit tests in `games/poker/host/test_poker.cpp` verify dealing, card masking, side-pot distribution, and 7-card evaluations.

@@ -21,6 +21,7 @@ add_library(gamehub_core OBJECT
     src/core/HostEngine.cpp
     games/domino/host/DominoGame.cpp
     games/katro/host/KatroGame.cpp
+    games/poker/host/PokerGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include games)
 
@@ -73,6 +74,10 @@ add_test(NAME ColocatedDominoTest COMMAND test_domino)
 add_executable(test_katro games/katro/host/test_katro.cpp)
 target_link_libraries(test_katro PRIVATE gamehub_core)
 add_test(NAME ColocatedKatroTest COMMAND test_katro)
+
+add_executable(test_poker games/poker/host/test_poker.cpp)
+target_link_libraries(test_poker PRIVATE gamehub_core)
+add_test(NAME ColocatedPokerTest COMMAND test_poker)
 
 # Desktop runner executable
 if (WIN32)
