@@ -27,7 +27,7 @@ int main() {
     // Player 1 turns UP, Player 2 turns DOWN
     room.handleInput(1, "{\"cmd\":\"dir\",\"val\":\"UP\"}");
     room.handleInput(2, "{\"cmd\":\"dir\",\"val\":\"DOWN\"}");
-    room.tick(0.066f);
+    room.tick(0.12f);
 
     std::string movedState = room.serializeState();
     // Snake 1 was at (10,10), moved UP -> (10, 9)
@@ -39,10 +39,10 @@ int main() {
     // 4. Opponent body collision death
     // Tick again:
     // Snake 1 moves to (10, 8), Snake 2 moves to (10, 7)
-    room.tick(0.066f);
+    room.tick(0.12f);
     // Tick again:
     // Snake 1 moves to (10, 7) and Snake 2 moves to (10, 8) -> Head-to-head or collision!
-    room.tick(0.066f);
+    room.tick(0.12f);
     std::string collisionState = room.serializeState();
     assert(room.isFinished() && "Mutual collision must end game");
     assert(room.getWinner() != 0 && "Game must declare a winner or draw");

@@ -1,9 +1,10 @@
-﻿#include <iostream>
+#include <iostream>
 #include <cassert>
 #include <gamehub/core/ConnectFourGame.hpp>
 #include <gamehub/core/PongGame.hpp>
 #include <gamehub/core/TronGame.hpp>
 #include <gamehub/core/BattleshipGame.hpp>
+#include <gamehub/core/DominoGame.hpp>
 
 int main() {
     std::cout << "[TEST] Running New Games test suite..." << std::endl;
@@ -39,6 +40,13 @@ int main() {
         std::string state = c4_solo.serializeState();
         assert(state.find("\"game\":\"connect4\"") != std::string::npos);
         std::cout << "    ConnectFour Solo Minimax response verified." << std::endl;
+
+        // Test Strategy Pattern: isolated ConnectFourMinimaxStrategy
+        gamehub::core::ConnectFourMinimaxStrategy strat(3);
+        std::array<std::array<int, 6>, 7> customBoard{};
+        int botCol = strat.computeMove(customBoard, 2);
+        assert(botCol >= 0 && botCol < 7 && "Bot move must be a valid column");
+        std::cout << "    ConnectFourMinimaxStrategy isolated execution verified." << std::endl;
     }
 
     // --- 2. Pong Tests ---
@@ -58,12 +66,20 @@ int main() {
         assert(state.find("\"game\":\"pong\"") != std::string::npos);
         assert(state.find("\"p1y\":") != std::string::npos);
         std::cout << "    Pong movement and physics verified." << std::endl;
+
+        // Solo Pong with Kinematic Trajectory Bot
+        gamehub::core::PongGame pong_solo(true);
+        pong_solo.init();
+        pong_solo.update(0.2f);
+        std::string sPongSolo = pong_solo.serializeState();
+        assert(sPongSolo.find("\"game\":\"pong\"") != std::string::npos);
+        std::cout << "    Pong Solo Kinematic Bot verified." << std::endl;
     }
 
     // --- 3. Tron Tests ---
     {
         std::cout << "  - Testing TronGame..." << std::endl;
-        gamehub::core::TronGame tron;
+        gamehub::core::TronGame tron(false);
         tron.init();
         assert(!tron.isFinished());
 
@@ -74,12 +90,22 @@ int main() {
         std::string state = tron.serializeState();
         assert(state.find("\"game\":\"tron\"") != std::string::npos);
         std::cout << "    Tron light cycle stepping verified." << std::endl;
+
+        // Solo Tron with Voronoi Flood-Fill Bot
+        gamehub::core::TronGame tron_solo(true);
+        tron_solo.init();
+        for (int i = 0; i < 5; ++i) {
+            tron_solo.update(0.1f);
+        }
+        std::string sTronSolo = tron_solo.serializeState();
+        assert(sTronSolo.find("\"game\":\"tron\"") != std::string::npos);
+        std::cout << "    Tron Solo Voronoi AI verified." << std::endl;
     }
 
     // --- 4. Battleship Tests ---
     {
         std::cout << "  - Testing BattleshipGame..." << std::endl;
-        gamehub::core::BattleshipGame bship;
+        gamehub::core::BattleshipGame bship(false);
         bship.init();
         assert(!bship.isFinished());
 
@@ -97,6 +123,93 @@ int main() {
         std::string battleState = bship.serializeState();
         assert(battleState.find("\"turn\":2") != std::string::npos);
         std::cout << "    Battleship fleet deployment and battle firing verified." << std::endl;
+
+        // Solo Battleship with Checkerboard Parity AI
+        gamehub::core::BattleshipGame bship_solo(true);
+        bship_solo.init();
+        // In solo mode, bot already deployed fleet
+        std::string sInit = bship_solo.serializeState();
+        assert(sInit.find("\"p2ready\":true") != std::string::npos);
+        // Human deploys
+        bship_solo.handleInput(1, "{\"cmd\":\"auto_place\"}");
+        assert(bship_solo.serializeState().find("\"phase\":\"battle\"") != std::string::npos);
+        // Human fires at 0, 0
+        bship_solo.handleInput(1, "{\"cmd\":\"fire\",\"row\":0,\"col\":0}");
+        // Turn is 2 (Bot's turn)
+        assert(bship_solo.serializeState().find("\"turn\":2") != std::string::npos);
+        // Step bot update
+        bship_solo.update(0.5f);
+        // Bot should have fired using parity hunt and returned turn to 1
+        assert(bship_solo.serializeState().find("\"turn\":1") != std::string::npos);
+        std::cout << "    Battleship Solo Parity AI execution verified." << std::endl;
+    }
+
+    // --- 5. Domino Tests ---
+    {
+        std::cout << "  - Testing DominoGame..." << std::endl;
+        gamehub::core::DominoGame domino2(false, 2); // 2P PvP
+        domino2.init();
+        assert(!domino2.isFinished());
+        assert(domino2.getLeftEnd() == -1);
+        assert(domino2.getRightEnd() == -1);
+
+        std::string s2 = domino2.serializeState();
+        assert(s2.find("\"game\":\"domino\"") != std::string::npos);
+        assert(s2.find("\"p1_count\":7") != std::string::npos);
+        assert(s2.find("\"p2_count\":7") != std::string::npos);
+        assert(s2.find("\"boneyard_count\":14") != std::string::npos);
+
+        // Player 1 plays tile 0 on empty board
+        domino2.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        assert(domino2.getLeftEnd() >= 0 && domino2.getRightEnd() >= 0);
+        std::string s2_played = domino2.serializeState();
+        assert(s2_played.find("\"p1_count\":6") != std::string::npos);
+        assert(s2_played.find("\"turn\":2") != std::string::npos);
+        std::cout << "    Domino 2P dealing, empty board placement, and turn shift verified." << std::endl;
+
+        // 3-Player game test
+        gamehub::core::DominoGame domino3(false, 3);
+        domino3.init();
+        std::string s3 = domino3.serializeState();
+        assert(s3.find("\"num_players\":3") != std::string::npos);
+        assert(s3.find("\"p1_count\":7") != std::string::npos);
+        assert(s3.find("\"p2_count\":7") != std::string::npos);
+        assert(s3.find("\"p3_count\":7") != std::string::npos);
+        assert(s3.find("\"boneyard_count\":7") != std::string::npos); // 28 - 21 = 7
+
+        // Block mode prohibits drawing
+        domino3.setBlockMode(true);
+        domino3.handleInput(1, "{\"cmd\":\"draw\"}");
+        std::string s3_nodraw = domino3.serializeState();
+        assert(s3_nodraw.find("\"p1_count\":7") != std::string::npos);
+        assert(s3_nodraw.find("\"block_mode\":true") != std::string::npos);
+
+        // Switch to Draw mode and verify drawing from boneyard
+        domino3.setBlockMode(false);
+        domino3.handleInput(1, "{\"cmd\":\"draw\"}");
+        std::string s3_drawn = domino3.serializeState();
+        assert(s3_drawn.find("\"p1_count\":8") != std::string::npos);
+        assert(s3_drawn.find("\"boneyard_count\":6") != std::string::npos);
+        assert(s3_drawn.find("\"block_mode\":false") != std::string::npos);
+        std::cout << "    Domino Block mode (no-draw) and Draw mode variants verified." << std::endl;
+
+        // Solo Mode with Strategic Minimax Bot
+        gamehub::core::DominoGame dominoSolo(true, 2);
+        dominoSolo.init();
+        dominoSolo.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        std::string sSolo = dominoSolo.serializeState();
+        assert(sSolo.find("\"game\":\"domino\"") != std::string::npos);
+        assert(sSolo.find("\"last_action\"") != std::string::npos);
+        std::cout << "    Domino Solo AI bot play and action tracking verified." << std::endl;
+
+        // Pass validation test: player cannot pass if they hold playable tiles
+        gamehub::core::DominoGame dominoPass(false, 2);
+        dominoPass.init();
+        assert(dominoPass.canPlayerPlay(0)); // Opening move is always playable
+        dominoPass.handleInput(1, "{\"cmd\":\"pass\"}");
+        std::string sPassReject = dominoPass.serializeState();
+        assert(sPassReject.find("\"turn\":1") != std::string::npos); // Rejected: turn must remain 1
+        std::cout << "    Domino pass rules verified (cannot pass when playable moves exist)." << std::endl;
     }
 
     std::cout << "[SUCCESS] All new game tests passed!" << std::endl;

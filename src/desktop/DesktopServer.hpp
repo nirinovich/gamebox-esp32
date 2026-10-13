@@ -27,6 +27,9 @@ public:
     using MessageHandler = std::function<std::string(uint32_t sessionId, const std::string& msg)>;
     void setMessageHandler(MessageHandler handler) { m_messageHandler = handler; }
 
+    using ConnectHandler = std::function<void(uint32_t sessionId)>;
+    void setConnectHandler(ConnectHandler handler) { m_connectHandler = handler; }
+
     using DisconnectHandler = std::function<void(uint32_t sessionId)>;
     void setDisconnectHandler(DisconnectHandler handler) { m_disconnectHandler = handler; }
 
@@ -43,6 +46,7 @@ private:
     std::thread m_acceptThread;
     std::atomic<uint32_t> m_nextSessionId{1};
     MessageHandler m_messageHandler;
+    ConnectHandler m_connectHandler;
     DisconnectHandler m_disconnectHandler;
 
     std::unordered_map<uint32_t, uintptr_t> m_clients;

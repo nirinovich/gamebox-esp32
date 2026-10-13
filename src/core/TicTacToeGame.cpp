@@ -1,5 +1,6 @@
 #include <gamehub/core/TicTacToeGame.hpp>
 #include <sstream>
+#include <charconv>
 
 namespace gamehub {
 namespace core {
@@ -35,11 +36,8 @@ void TicTacToeGame::handleInput(PlayerId id, const std::string& commandJson) {
     if (cellPos == std::string::npos) return;
 
     int cell = -1;
-    try {
-        cell = std::stoi(commandJson.substr(cellPos + 7));
-    } catch (...) {
-        return;
-    }
+    auto [ptr, ec] = std::from_chars(commandJson.data() + cellPos + 7, commandJson.data() + commandJson.size(), cell);
+    if (ec != std::errc{}) return;
 
     if (cell < 0 || cell >= 9 || m_board[cell] != 0) return;
 

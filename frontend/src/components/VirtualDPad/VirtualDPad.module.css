@@ -1,0 +1,55 @@
+.dpadContainer {
+  display: grid;
+  grid-template-columns: 60px 60px 60px;
+  grid-template-rows: 60px 60px 60px;
+  gap: 8px;
+  margin: 12px auto 6px auto;
+  justify-content: center;
+}
+
+.dpadBtn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 80ms, color 80ms, transform 80ms, box-shadow 80ms;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.dpadBtn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-highlight);
+}
+
+.dpadBtn:active {
+  background: var(--p1-cyan);
+  color: #090d16;
+  transform: scale(0.92);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+}
+
+.dpadUp {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpadLeft {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpadRight {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpadDown {
+  grid-column: 2;
+  grid-row: 3;
+}

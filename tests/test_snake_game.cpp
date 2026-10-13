@@ -12,6 +12,7 @@ int main() {
     // 1. Create a Room hosting Solo Snake
     Room room("SOLO", GameType::SNAKE_SOLO);
     room.init();
+    room.addPlayer(1);
 
     // 2. Verify initial serialized state
     std::string stateJson = room.serializeState();
@@ -22,7 +23,7 @@ int main() {
 
     // 3. Test movement on Tick
     // Snake starts at (10, 10) moving RIGHT by default
-    room.tick(0.1f);
+    room.tick(0.12f);
     std::string movedState = room.serializeState();
     assert(movedState.find("\"head\":[11,10]") != std::string::npos && "Snake must have moved right to (11, 10)");
     std::cout << "  [PASS] Snake tick movement verified." << std::endl;
@@ -30,14 +31,14 @@ int main() {
     // 4. Test direction input handling
     // Turn DOWN
     room.handleInput(1, "{\"cmd\":\"dir\",\"val\":\"DOWN\"}");
-    room.tick(0.1f);
+    room.tick(0.12f);
     std::string downState = room.serializeState();
     assert(downState.find("\"head\":[11,11]") != std::string::npos && "Snake must have moved down to (11, 11)");
     std::cout << "  [PASS] Snake directional input handling verified." << std::endl;
 
     // 5. Test 180-degree reversal prevention (cannot turn UP when moving DOWN)
     room.handleInput(1, "{\"cmd\":\"dir\",\"val\":\"UP\"}");
-    room.tick(0.1f);
+    room.tick(0.12f);
     std::string blockedState = room.serializeState();
     assert(blockedState.find("\"head\":[11,12]") != std::string::npos && "Snake must ignore 180-degree reverse and continue down");
     std::cout << "  [PASS] 180-degree reversal rejection verified." << std::endl;
@@ -46,7 +47,7 @@ int main() {
     // Turn RIGHT and run into right wall (grid width is 20, x goes 0..19)
     room.handleInput(1, "{\"cmd\":\"dir\",\"val\":\"RIGHT\"}");
     for (int i = 0; i < 20; ++i) {
-        room.tick(0.1f);
+        room.tick(0.12f);
     }
     std::string deadState = room.serializeState();
     assert(deadState.find("\"finished\":true") != std::string::npos && "Snake hitting wall must trigger finished=true");

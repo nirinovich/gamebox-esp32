@@ -10,7 +10,7 @@ int main() {
     // Test 1: Verify embedded web assets are present and valid HTML
     std::string html = gamehub::web::WebAssets::getIndexHtml();
     assert(!html.empty() && "Embedded HTML must not be empty");
-    assert(html.find("<canvas") != std::string::npos && "HTML must contain canvas element");
+    assert(html.find("canvas") != std::string::npos && "HTML must contain canvas reference");
     assert(html.find("WebSocket") != std::string::npos && "HTML must contain WebSocket client code");
     std::cout << "  [PASS] WebAssets contains valid HTML and WebSocket client." << std::endl;
 

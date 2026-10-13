@@ -1,0 +1,3 @@
+# Preact Single-File Inlined Client Shell
+
+We need a maintainable, reactive, and type-safe frontend for Gamebox that runs reliably on an offline ESP32 captive portal without causing flash bloat or requiring complex filesystem partitioning. We decided to rebuild the client as a Preact application using Preact Signals for real-time WebSocket state management, bundled into a single inlined HTML file via Vite and `vite-plugin-singlefile`, and converted into flash memory (`PROGMEM`) raw string chunks in `WebAssets.hpp`. This preserves our single-command firmware builds (ADR 0004) and headless C++ engine architecture (ADR 0001) while isolating 60 FPS gameplay to the HTML5 Canvas 2D `VisualEngine`.

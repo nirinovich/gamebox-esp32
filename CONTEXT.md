@@ -51,3 +51,60 @@ _Avoid_: RemotePlayer, NetworkUser
 **BotController**:
 A PlayerController implementation that autonomously calculates moves on the Host using game-specific heuristics or algorithms.
 _Avoid_: AI, CPU, Computer
+
+**RoomLifecycle**:
+The lifecycle states of a Room: WAITING (open for Challengers), ACTIVE (authoritative game execution in progress), FINISHED (outcome resolved), and DISSOLVED (cleaned up and unmapped).
+_Avoid_: Status, Phase, State
+
+**AutoDetachment**:
+The Host mechanism that automatically cleans up and unbinds a Session from any prior Room when the Session initiates, joins, or leaves a Game.
+_Avoid_: ForceLeave, ResetConnection
+
+**Leaderboard**:
+The dual-layer record system tracking a Client PersonalBest in local storage and the HostRecord in Host memory.
+_Avoid_: ScoreTable, HighScoreList
+
+**DominoGame**:
+A polymorphic Game model implementing Double-Six Draw Dominoes for 2 to 3 Players with Boneyard drawing and PipSum tie-breaking.
+_Avoid_: Dominos, TileMatch
+
+**Boneyard**:
+The shared face-down reserve pool of unplayed domino tiles drawn by a Player when no legal move can be made.
+_Avoid_: Talon, DrawPile, Deck
+
+**PipSum**:
+The cumulative point value of dot markings on tiles remaining in a Player hand when the Game is blocked.
+_Avoid_: HandValue, TileCount
+
+**VisualEngine**:
+The client-side 60 FPS presentation layer in WebAssets.hpp that renders authoritative domain states via Canvas 2D without microcontroller overhead.
+_Avoid_: Renderer, GraphicsCore
+
+**JuiceEngine**:
+The procedural sensory feedback coordinator managing particle emitters, camera shake matrices, and floating retro text popups.
+_Avoid_: VFX, FXManager
+
+**RetinaViewport**:
+The high-DPI canvas buffer scaled by clamped devicePixelRatio to ensure sharp vector lines on mobile OLED displays.
+_Avoid_: HiDPIScreen, ResolutionScaler
+
+**SeriesScore**:
+The persistent match win tally retained inside a Room across consecutive rematches.
+_Avoid_: MatchCount, SetScore
+
+**Rematch**:
+The protocol transition allowing active players to reinitialize a Game inside the same Room without disconnecting or returning to the Lobby.
+_Avoid_: PlayAgain, ResetRoom
+
+**ClientShell**:
+The client-side reactive interface orchestrating navigation, Lobby, RoomDirectory, SeriesScore overlays, and Player identity around the VisualEngine.
+_Avoid_: UI, Frontend, WebApp
+
+**GameplayCore**:
+The zero-heap-allocation C++ value types, compile-time grids, and stream serialization utilities shared across all authoritative Host game implementations.
+_Avoid_: EngineUtils, CommonLib, GameHelpers
+
+**CanvasGridLayer**:
+The client-side 2D presentation component managing cell dimensioning, coordinate mapping, neon line borders, and pointer hit-detection on the Canvas.
+_Avoid_: BoardRenderer, GridComponent, ScreenGrid
+

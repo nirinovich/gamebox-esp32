@@ -12,6 +12,7 @@ int main() {
     // 1. Create a Room hosting Solo Tic-Tac-Toe
     Room room("TTT1", GameType::TICTACTOE_SOLO);
     room.init();
+    room.addPlayer(1);
 
     // 2. Initial state verification
     std::string stateJson = room.serializeState();
@@ -53,6 +54,7 @@ int main() {
     for (int firstMove = 0; firstMove < 9; ++firstMove) {
         Room simRoom("BOT_TEST", GameType::TICTACTOE_SOLO);
         simRoom.init();
+        simRoom.addPlayer(1);
         simRoom.handleInput(1, "{\"cmd\":\"place\",\"cell\":" + std::to_string(firstMove) + "}");
 
         // Keep placing in the first available empty cell until game finishes

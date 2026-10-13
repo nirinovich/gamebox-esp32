@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 #include "Game.hpp"
 #include "GameTypes.hpp"
-#include <vector>
+#include <array>
 #include <string>
 
 namespace gamehub {
@@ -12,7 +12,7 @@ public:
     static constexpr int GRID = 30;
     static constexpr float TICK_INTERVAL = 0.10f;
 
-    TronGame();
+    explicit TronGame(bool isSolo = false);
 
     void init() override;
     void update(float dt) override;
@@ -20,6 +20,7 @@ public:
     std::string serializeState() const override;
     bool isFinished() const override { return m_finished; }
     int  getWinner() const override  { return m_winner; }
+    bool isSolo() const { return m_isSolo; }
 
 private:
     struct Bike {
@@ -29,13 +30,18 @@ private:
         bool alive{true};
     };
 
-    std::vector<std::vector<int>> m_grid; // 0=free, 1=P1 trail, 2=P2 trail
+    std::array<int8_t, GRID * GRID> m_grid{}; // 0=free, 1=P1 trail, 2=P2 trail
+    int8_t cell(int x, int y) const { return m_grid[x * GRID + y]; }
+    void setCell(int x, int y, int8_t val) { m_grid[x * GRID + y] = val; }
     Bike  m_p1, m_p2;
+    bool  m_isSolo{false};
     bool  m_finished{false};
     int   m_winner{0};
     float m_tickAccum{0.f};
 
     bool outOfBounds(int x, int y) const;
+    void computeBotMove();
+    int  calculateFloodFill(int startX, int startY) const;
 };
 
 } // namespace core

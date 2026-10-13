@@ -3,6 +3,8 @@
 #include "GameTypes.hpp"
 #include <array>
 #include <string>
+#include <vector>
+#include <utility>
 
 namespace gamehub {
 namespace core {
@@ -11,16 +13,24 @@ class BattleshipGame : public Game {
 public:
     static constexpr int SIZE = 10;
 
-    BattleshipGame();
+    explicit BattleshipGame(bool isSolo = false);
 
     void init() override;
     void update(float dt) override;
     void handleInput(PlayerId player, const std::string& input) override;
     std::string serializeState() const override;
+    std::string serializeStateForPlayer(PlayerId id) const override;
     bool isFinished() const override { return m_finished; }
     int  getWinner() const override  { return m_winner; }
+    bool isSolo() const { return m_isSolo; }
 
 private:
+    bool m_isSolo{false};
+    float m_botTimer{0.f};
+    std::vector<std::pair<int, int>> m_botTargetQueue;
+
+    void updateBot(float dt);
+    std::pair<int, int> computeBotShot();
     enum class Phase { PLACEMENT, BATTLE };
     Phase m_phase{Phase::PLACEMENT};
 
@@ -44,7 +54,7 @@ private:
     bool handleAutoPlace(int pidx);
     bool handleFire(int pidx, const std::string& input);
     bool placeShip(int pidx, int shipId, int row, int col, int len, bool horiz);
-    std::string serializeGrid(int forPlayer) const;
+    std::string serializeGrid(int forPlayer, bool maskUnhitShips = false) const;
 };
 
 } // namespace core

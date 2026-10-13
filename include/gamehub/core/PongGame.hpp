@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Game.hpp"
 #include "GameTypes.hpp"
 #include <string>
@@ -17,7 +17,7 @@ public:
     static constexpr float BALL_SPEED_INIT = 220.f;
     static constexpr int   WIN_SCORE = 5;
 
-    PongGame();
+    explicit PongGame(bool isSolo = false);
 
     void init() override;
     void update(float dt) override;
@@ -25,8 +25,10 @@ public:
     std::string serializeState() const override;
     bool isFinished() const override { return m_finished; }
     int  getWinner() const override  { return m_winner; }
+    bool isSolo() const { return m_isSolo; }
 
 private:
+    bool  m_isSolo{false};
     float m_bx{}, m_by{};
     float m_vx{}, m_vy{};
     float m_p1y{}, m_p2y{};
@@ -35,6 +37,7 @@ private:
     bool  m_finished{false};
     int   m_winner{0};
 
+    void updateBot(float dt);
     void resetBall(int serveDir);
 };
 

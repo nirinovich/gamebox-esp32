@@ -250,6 +250,9 @@ void DesktopServer::handleClient(uintptr_t clientSocket, uint32_t sessionId) {
             std::lock_guard<std::mutex> lk(m_clientsMutex);
             m_clients[sessionId] = clientSocket;
         }
+        if (m_connectHandler) {
+            m_connectHandler(sessionId);
+        }
 
         // Frame read loop
         while (m_running) {

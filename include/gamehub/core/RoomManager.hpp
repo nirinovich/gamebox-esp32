@@ -15,7 +15,8 @@ public:
     explicit RoomManager(size_t maxRooms = 4);
     virtual ~RoomManager() = default;
 
-    Room* createRoom(GameType type, PlayerId hostId, const std::string& hostName = "Player 1");
+    Room* createRoom(GameType type, PlayerId hostId, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
+    Room* createSoloRoom(GameType type, PlayerId playerId);
     Room* joinRoom(const std::string& code, PlayerId playerId);
     Room* findRoomByCode(const std::string& code);
     Room* findRoomByPlayer(PlayerId playerId);
@@ -27,6 +28,7 @@ public:
 
     size_t getRoomCount() const { return m_rooms.size(); }
     size_t getMaxRooms() const { return m_maxRooms; }
+    const std::vector<std::unique_ptr<Room>>& getRooms() const { return m_rooms; }
 
 private:
     std::string generateUniqueCode();

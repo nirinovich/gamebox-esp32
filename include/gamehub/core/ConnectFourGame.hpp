@@ -1,8 +1,10 @@
-﻿#pragma once
+#pragma once
 #include "Game.hpp"
 #include "GameTypes.hpp"
+#include "IBotStrategy.hpp"
 #include <array>
 #include <string>
+#include <memory>
 
 namespace gamehub {
 namespace core {
@@ -13,7 +15,7 @@ public:
     static constexpr int COLS = 7;
     static constexpr int ROWS = 6;
 
-    explicit ConnectFourGame(bool vsBot);
+    explicit ConnectFourGame(bool vsBot, std::unique_ptr<IConnectFourStrategy> botStrategy = nullptr);
 
     void init() override;
     void update(float dt) override;
@@ -22,19 +24,19 @@ public:
     bool isFinished() const override { return m_finished; }
     int  getWinner() const override  { return m_winner; }
 
+    void setBotStrategy(std::unique_ptr<IConnectFourStrategy> strategy) { m_botStrategy = std::move(strategy); }
+
 private:
     bool m_vsBot;
     std::array<std::array<int,ROWS>, COLS> m_board{};
     int  m_turn{1};
     bool m_finished{false};
     int  m_winner{0};
+    std::unique_ptr<IConnectFourStrategy> m_botStrategy;
 
     bool dropPiece(int col, int player);
     bool checkWin(int player) const;
     bool isBoardFull() const;
-    int  minimax(int depth, int alpha, int beta, bool maximizing);
-    int  scoreWindow(int a, int b, int c, int d, int player) const;
-    int  heuristicScore(int player) const;
     int  bestBotCol();
 };
 

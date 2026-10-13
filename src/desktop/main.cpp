@@ -1,13 +1,27 @@
 #include "DesktopServer.hpp"
-#include <gamehub/core/Session.hpp>
-#include <gamehub/core/RoomManager.hpp>
+#include <gamehub/core/HostEngine.hpp>
+#include <gamehub/core/INetworkAdapter.hpp>
 #include <iostream>
-#include <unordered_map>
 #include <memory>
-#include <mutex>
 #include <thread>
 #include <chrono>
-#include <sstream>
+
+namespace {
+
+class DesktopNetworkAdapter : public gamehub::core::INetworkAdapter {
+public:
+    explicit DesktopNetworkAdapter(gamehub::desktop::DesktopServer& server) : m_server(server) {}
+    void sendToClient(uint32_t sessionId, const std::string& message) override {
+        m_server.sendToClient(sessionId, message);
+    }
+    void broadcast(const std::string& message) override {
+        m_server.broadcast(message);
+    }
+private:
+    gamehub::desktop::DesktopServer& m_server;
+};
+
+} // namespace
 
 int main(int argc, char* argv[]) {
     std::cout << "=========================================" << std::endl;
@@ -32,165 +46,20 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    gamehub::core::RoomManager roomManager(4);
-    std::unordered_map<uint32_t, std::unique_ptr<gamehub::core::Session>> sessions;
-    std::unordered_map<uint32_t, uint32_t> sessionPlayerMap; // sessionId -> playerIndex in room (1 or 2)
-    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> roomPlayers; // roomCode -> (p1Session, p2Session)
-    std::mutex engineMutex;
-
     gamehub::desktop::DesktopServer server(initialPort);
+    DesktopNetworkAdapter adapter(server);
+    gamehub::core::HostEngine engine(&adapter, 4);
 
-    static auto extractJsonString = [](const std::string& json, const std::string& key) -> std::string {
-        std::string needle = "\"" + key + "\":";
-        auto pos = json.find(needle);
-        if (pos == std::string::npos) return "";
-        auto start = json.find("\"", pos + needle.size());
-        if (start == std::string::npos) return "";
-        auto end = json.find("\"", start + 1);
-        if (end == std::string::npos) return "";
-        return json.substr(start + 1, end - start - 1);
-    };
-
-    // Disconnect Handler
-    server.setDisconnectHandler([&](uint32_t sessionId) {
-        std::lock_guard<std::mutex> lock(engineMutex);
-        sessions.erase(sessionId);
-
-        // Find room and notify opponent if multiplayer
-        gamehub::core::Room* room = roomManager.findRoomByPlayer(sessionId);
-        if (room) {
-            std::string code = room->getCode();
-            auto it = roomPlayers.find(code);
-            if (it != roomPlayers.end()) {
-                uint32_t other = (it->second.first == sessionId) ? it->second.second : it->second.first;
-                if (other != 0) {
-                    server.sendToClient(other, "{\"type\":\"opponent_left\"}");
-                }
-                roomPlayers.erase(it);
-            }
-            roomManager.handleDisconnect(sessionId);
-            server.broadcast(roomManager.serializeDirectory());
-        }
-        sessionPlayerMap.erase(sessionId);
+    server.setConnectHandler([&](uint32_t sessionId) {
+        engine.onClientConnect(sessionId);
     });
 
-    // Message Handler
+    server.setDisconnectHandler([&](uint32_t sessionId) {
+        engine.onClientDisconnect(sessionId);
+    });
+
     server.setMessageHandler([&](uint32_t sessionId, const std::string& msg) -> std::string {
-        std::lock_guard<std::mutex> lock(engineMutex);
-
-        auto it = sessions.find(sessionId);
-        if (it == sessions.end()) {
-            it = sessions.emplace(sessionId, std::make_unique<gamehub::core::Session>(sessionId)).first;
-        }
-
-        // 0. Query Live Room Directory
-        if (msg.find("\"cmd\":\"get_rooms\"") != std::string::npos) {
-            return roomManager.serializeDirectory();
-        }
-
-        // 1. Create Multiplayer Room
-        if (msg.find("\"cmd\":\"create\"") != std::string::npos) {
-            gamehub::core::GameType gtype = gamehub::core::GameType::TICTACTOE_PVP;
-            if (msg.find("\"snake_duel\"") != std::string::npos) {
-                gtype = gamehub::core::GameType::SNAKE_DUEL;
-            } else if (msg.find("\"connect4_pvp\"") != std::string::npos) {
-                gtype = gamehub::core::GameType::CONNECT_FOUR_PVP;
-            } else if (msg.find("\"pong_duel\"") != std::string::npos) {
-                gtype = gamehub::core::GameType::PONG_DUEL;
-            } else if (msg.find("\"tron_duel\"") != std::string::npos) {
-                gtype = gamehub::core::GameType::TRON_DUEL;
-            } else if (msg.find("\"battleship_pvp\"") != std::string::npos) {
-                gtype = gamehub::core::GameType::BATTLESHIP_PVP;
-            }
-
-            std::string hostName = extractJsonString(msg, "host");
-            if (hostName.empty()) hostName = "Player 1";
-
-            gamehub::core::Room* newRoom = roomManager.createRoom(gtype, sessionId, hostName);
-            if (!newRoom) {
-                return "{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}";
-            }
-
-            sessionPlayerMap[sessionId] = 1;
-            roomPlayers[newRoom->getCode()] = {sessionId, 0};
-
-            // Broadcast updated directory to all clients in lobby
-            server.broadcast(roomManager.serializeDirectory());
-
-            std::ostringstream oss;
-            oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode() << "\",\"player\":1,\"host\":\"" << hostName << "\"}";
-            return oss.str();
-        }
-
-        // 2. Join Multiplayer Room
-        if (msg.find("\"cmd\":\"join\"") != std::string::npos) {
-            std::string code = extractJsonString(msg, "code");
-            if (code.empty()) return "{\"type\":\"error\",\"msg\":\"Missing code\"}";
-
-            gamehub::core::Room* room = roomManager.joinRoom(code, sessionId);
-            if (!room) {
-                return "{\"type\":\"error\",\"msg\":\"Room not found or already full.\"}";
-            }
-
-            sessionPlayerMap[sessionId] = 2;
-            roomPlayers[code].second = sessionId;
-
-            // Broadcast updated directory (room is no longer joinable)
-            server.broadcast(roomManager.serializeDirectory());
-
-            // Notify joiner
-            std::ostringstream oss;
-            oss << "{\"type\":\"room_joined\",\"code\":\"" << code << "\",\"player\":2,\"host\":\"" << room->getHostName() << "\"}";
-            server.sendToClient(sessionId, oss.str());
-
-            // Notify host and start game
-            std::string state = room->serializeState();
-            uint32_t hostSession = roomPlayers[code].first;
-            server.sendToClient(hostSession, "{\"type\":\"room_ready\"}");
-            server.sendToClient(hostSession, state);
-            server.sendToClient(sessionId, state);
-
-            return "";
-        }
-
-        // 3. Leave / Cancel Room
-        if (msg.find("\"cmd\":\"leave\"") != std::string::npos) {
-            gamehub::core::Room* room = roomManager.findRoomByPlayer(sessionId);
-            if (room) {
-                std::string code = room->getCode();
-                auto itR = roomPlayers.find(code);
-                if (itR != roomPlayers.end()) {
-                    uint32_t other = (itR->second.first == sessionId) ? itR->second.second : itR->second.first;
-                    if (other != 0) {
-                        server.sendToClient(other, "{\"type\":\"opponent_left\"}");
-                    }
-                    roomPlayers.erase(itR);
-                }
-                roomManager.handleDisconnect(sessionId);
-                server.broadcast(roomManager.serializeDirectory());
-            }
-            sessionPlayerMap.erase(sessionId);
-            return "{\"type\":\"left\"}";
-        }
-
-        // 4. Multiplayer Moves & Inputs
-        gamehub::core::Room* activeRoom = roomManager.findRoomByPlayer(sessionId);
-        if (activeRoom && activeRoom->getPlayerCount() >= 2) {
-            uint32_t playerNum = sessionPlayerMap[sessionId];
-            activeRoom->handleInput(playerNum, msg);
-            std::string state = activeRoom->serializeState();
-
-            // Broadcast to both players
-            auto itRoom = roomPlayers.find(activeRoom->getCode());
-            if (itRoom != roomPlayers.end()) {
-                server.sendToClient(itRoom->second.first, state);
-                server.sendToClient(itRoom->second.second, state);
-            }
-            return "";
-        }
-
-        // 5. Fallback to session handling (Solo games, ping, etc.)
-        return it->second->handleMessage(msg);
+        return engine.onClientMessage(sessionId, msg);
     });
 
     if (!server.start(true)) {
@@ -200,31 +69,15 @@ int main(int argc, char* argv[]) {
 
     uint16_t activePort = server.getPort();
     std::cout << "[INFO] Server running on http://localhost:" << activePort << std::endl;
-    std::cout << "[INFO] Multiplayer lobby, solo games, and room codes active!" << std::endl;
+    std::cout << "[INFO] Authoritative HostEngine active with GoF State & Strategy patterns!" << std::endl;
     std::cout << "[INFO] Press Enter in this console to stop the server..." << std::endl;
 
-    // Background thread for real-time multiplayer ticking (Snake Duel)
+    // Real-time ticking loop (15 Hz)
     std::atomic<bool> ticking{true};
     std::thread tickThread([&]() {
         while (ticking) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(66)); // 15 Hz
-            std::lock_guard<std::mutex> lock(engineMutex);
-            for (auto& pair : roomPlayers) {
-                if (pair.second.first != 0 && pair.second.second != 0) {
-                    gamehub::core::Room* r = roomManager.findRoomByCode(pair.first);
-                    if (r && !r->isFinished()) {
-                        auto gt = r->getGameType();
-                        if (gt == gamehub::core::GameType::SNAKE_DUEL ||
-                            gt == gamehub::core::GameType::PONG_DUEL ||
-                            gt == gamehub::core::GameType::TRON_DUEL) {
-                            r->tick(0.066f);
-                            std::string state = r->serializeState();
-                            server.sendToClient(pair.second.first, state);
-                            server.sendToClient(pair.second.second, state);
-                        }
-                    }
-                }
-            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(66));
+            engine.tick(0.066f);
         }
     });
 

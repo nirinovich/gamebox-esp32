@@ -1,13 +1,14 @@
 #include <gamehub/core/BattleshipGame.hpp>
 #include <sstream>
 #include <cstring>
+#include <charconv>
 
 namespace gamehub {
 namespace core {
 
 constexpr int BattleshipGame::FLEET[5];
 
-BattleshipGame::BattleshipGame() {
+BattleshipGame::BattleshipGame(bool isSolo) : m_isSolo(isSolo) {
     init();
 }
 
@@ -24,9 +25,101 @@ void BattleshipGame::init() {
     m_finished = false;
     m_winner = 0;
     m_phase = Phase::PLACEMENT;
+    m_botTimer = 0.f;
+    m_botTargetQueue.clear();
+
+    if (m_isSolo) {
+        // Solo mode: Bot immediately auto-deploys fleet for Player 2
+        handleAutoPlace(1);
+    }
 }
 
-void BattleshipGame::update(float /*dt*/) {}
+void BattleshipGame::update(float dt) {
+    if (m_isSolo && !m_finished && m_phase == Phase::BATTLE && m_turn == 2) {
+        updateBot(dt);
+    }
+}
+
+void BattleshipGame::updateBot(float dt) {
+    m_botTimer += dt;
+    if (m_botTimer < 0.4f) return; // 400ms aiming delay for natural cadence
+    m_botTimer = 0.f;
+
+    auto shot = computeBotShot();
+    if (shot.first >= 0 && shot.second >= 0) {
+        int r = shot.first;
+        int c = shot.second;
+        // Bot (Player 2, pidx=1) fires at Human (Player 1, targetIdx=0)
+        m_grids[0].shots[r][c] = true;
+        if (m_grids[0].ships[r][c] != 0) {
+            m_grids[0].hits++;
+            // Enqueue unshot orthogonal neighbors for target mode
+            static const int dr[] = {-1, 1, 0, 0};
+            static const int dc[] = {0, 0, -1, 1};
+            for (int i = 0; i < 4; ++i) {
+                int nr = r + dr[i];
+                int nc = c + dc[i];
+                if (nr >= 0 && nr < SIZE && nc >= 0 && nc < SIZE && !m_grids[0].shots[nr][nc]) {
+                    bool alreadyQueued = false;
+                    for (const auto& q : m_botTargetQueue) {
+                        if (q.first == nr && q.second == nc) {
+                            alreadyQueued = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyQueued) {
+                        m_botTargetQueue.push_back({nr, nc});
+                    }
+                }
+            }
+            if (m_grids[0].hits >= m_grids[0].totalShipCells) {
+                m_finished = true;
+                m_winner = 2;
+            }
+        }
+        if (!m_finished) {
+            m_turn = 1; // Return turn to human
+        }
+    }
+}
+
+std::pair<int, int> BattleshipGame::computeBotShot() {
+    // 1. Target mode: pop from queue of unshot neighbors
+    while (!m_botTargetQueue.empty()) {
+        auto coord = m_botTargetQueue.front();
+        m_botTargetQueue.erase(m_botTargetQueue.begin());
+        if (!m_grids[0].shots[coord.first][coord.second]) {
+            return coord;
+        }
+    }
+
+    // 2. Parity hunt mode: checkerboard (r + c) % 2 == 0
+    std::vector<std::pair<int, int>> parityCells;
+    std::vector<std::pair<int, int>> remainingCells;
+
+    for (int r = 0; r < SIZE; ++r) {
+        for (int c = 0; c < SIZE; ++c) {
+            if (!m_grids[0].shots[r][c]) {
+                remainingCells.push_back({r, c});
+                if ((r + c) % 2 == 0) {
+                    parityCells.push_back({r, c});
+                }
+            }
+        }
+    }
+
+    if (!parityCells.empty()) {
+        int idx = std::rand() % parityCells.size();
+        return parityCells[idx];
+    }
+
+    if (!remainingCells.empty()) {
+        int idx = std::rand() % remainingCells.size();
+        return remainingCells[idx];
+    }
+
+    return {-1, -1};
+}
 
 bool BattleshipGame::placeShip(int pidx, int shipId, int row, int col, int len, bool horiz) {
     if (row < 0 || col < 0) return false;
@@ -54,7 +147,9 @@ bool BattleshipGame::handlePlacement(int pidx, const std::string& input) {
         std::string needle = "\"" + key + "\":";
         auto pos = input.find(needle);
         if (pos == std::string::npos) return -1;
-        try { return std::stoi(input.substr(pos + needle.size())); } catch (...) { return -1; }
+        int val = -1;
+        auto [ptr, ec] = std::from_chars(input.data() + pos + needle.size(), input.data() + input.size(), val);
+        return (ec == std::errc{}) ? val : -1;
     };
     int row = getInt("row");
     int col = getInt("col");
@@ -110,7 +205,9 @@ bool BattleshipGame::handleFire(int pidx, const std::string& input) {
         std::string needle = "\"" + key + "\":";
         auto pos = input.find(needle);
         if (pos == std::string::npos) return -1;
-        try { return std::stoi(input.substr(pos + needle.size())); } catch (...) { return -1; }
+        int val = -1;
+        auto [ptr, ec] = std::from_chars(input.data() + pos + needle.size(), input.data() + input.size(), val);
+        return (ec == std::errc{}) ? val : -1;
     };
     int row = getInt("row");
     int col = getInt("col");
@@ -150,13 +247,13 @@ void BattleshipGame::handleInput(PlayerId player, const std::string& input) {
     }
 }
 
-std::string BattleshipGame::serializeGrid(int forPlayer) const {
+std::string BattleshipGame::serializeGrid(int forPlayer, bool maskUnhitShips) const {
     // forPlayer is 1-indexed
     int ownIdx    = forPlayer - 1;
     int enemyIdx  = 1 - ownIdx;
     std::ostringstream oss;
 
-    // Own board (ships visible + shots)
+    // Own board (ships visible + shots, unless masked by fog-of-war)
     oss << "\"own\":[";
     for (int r = 0; r < SIZE; ++r) {
         for (int c = 0; c < SIZE; ++c) {
@@ -166,7 +263,7 @@ std::string BattleshipGame::serializeGrid(int forPlayer) const {
             int  ship = m_grids[ownIdx].ships[r][c];
             if (shot && ship)  oss << 2;
             else if (shot)     oss << 3;
-            else if (ship)     oss << 1;
+            else if (ship && !maskUnhitShips) oss << 1;
             else               oss << 0;
         }
     }
@@ -189,6 +286,11 @@ std::string BattleshipGame::serializeGrid(int forPlayer) const {
 }
 
 std::string BattleshipGame::serializeState() const {
+    return serializeStateForPlayer(0);
+}
+
+std::string BattleshipGame::serializeStateForPlayer(PlayerId id) const {
+    int reqPidx = (int)id - 1; // 0 for P1, 1 for P2
     std::ostringstream oss;
     oss << "{\"type\":\"state\",\"game\":\"battleship\""
         << ",\"phase\":\"" << (m_phase == Phase::PLACEMENT ? "placement" : "battle") << "\""
@@ -198,11 +300,22 @@ std::string BattleshipGame::serializeState() const {
         << ",\"ships_left_p1\":" << (m_grids[0].totalShipCells - m_grids[0].hits)
         << ",\"ships_left_p2\":" << (m_grids[1].totalShipCells - m_grids[1].hits)
         << ",\"finished\":" << (m_finished ? "true" : "false")
-        << ",\"winner\":" << m_winner
-        // Include both grid perspectives (server-authoritative; client filters)
-        << ",\"p1\":{" << serializeGrid(1) << "}"
-        << ",\"p2\":{" << serializeGrid(2) << "}"
-        << "}";
+        << ",\"winner\":" << m_winner;
+
+    if (m_finished || id == 0) {
+        // Full revelation after match ends or for server observer
+        oss << ",\"p1\":{" << serializeGrid(1, false) << "}"
+            << ",\"p2\":{" << serializeGrid(2, false) << "}";
+    } else if (reqPidx == 0) {
+        // Player 1 sees own ships; Player 2 unhit ships are masked
+        oss << ",\"p1\":{" << serializeGrid(1, false) << "}"
+            << ",\"p2\":{" << serializeGrid(2, true) << "}";
+    } else {
+        // Player 2 sees own ships; Player 1 unhit ships are masked
+        oss << ",\"p1\":{" << serializeGrid(1, true) << "}"
+            << ",\"p2\":{" << serializeGrid(2, false) << "}";
+    }
+    oss << "}";
     return oss.str();
 }
 
