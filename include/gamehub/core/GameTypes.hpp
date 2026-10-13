@@ -22,7 +22,9 @@ enum class GameType {
     BATTLESHIP_SOLO,
     BATTLESHIP_PVP,
     DOMINO_SOLO,
-    DOMINO_PVP
+    DOMINO_PVP,
+    KATRO_SOLO,   ///< Katro solo vs Bot IA
+    KATRO_PVP     ///< Katro 2 joueurs (PvP)
 };
 
 struct Point {
@@ -55,8 +57,10 @@ inline const char* gameTypeToString(GameType gt) {
         case GameType::TRON_DUEL: return "tron_duel";
         case GameType::BATTLESHIP_SOLO: return "battleship_solo";
         case GameType::BATTLESHIP_PVP: return "battleship_pvp";
-        case GameType::DOMINO_SOLO: return "domino_solo";
-        case GameType::DOMINO_PVP: return "domino_pvp";
+        case GameType::DOMINO_SOLO:  return "domino_solo";
+        case GameType::DOMINO_PVP:   return "domino_pvp";
+        case GameType::KATRO_SOLO:   return "katro_solo";
+        case GameType::KATRO_PVP:    return "katro_pvp";
         default: return "ttt_pvp";
     }
 }

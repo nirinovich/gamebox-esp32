@@ -10,6 +10,7 @@
 #include <tron/host/TronGame.hpp>
 #include <battleship/host/BattleshipGame.hpp>
 #include <domino/host/DominoGame.hpp>
+#include <katro/host/KatroGame.hpp>
 
 namespace gamehub {
 namespace core {
@@ -32,6 +33,9 @@ public:
             case GameType::BATTLESHIP_PVP:     return std::make_unique<BattleshipGame>(false);
             case GameType::DOMINO_SOLO:        return std::make_unique<DominoGame>(true, 2);
             case GameType::DOMINO_PVP:         return std::make_unique<DominoGame>(false, 3);
+            // Katro (Fanorana Katro malgache) — plateau 4×8, 4 graines/case
+            case GameType::KATRO_SOLO:         return std::make_unique<KatroGame>(true);
+            case GameType::KATRO_PVP:          return std::make_unique<KatroGame>(false);
             default:                           return std::make_unique<SnakeGame>(false);
         }
     }

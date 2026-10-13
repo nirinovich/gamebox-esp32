@@ -6,6 +6,7 @@ import { TronRenderer } from '@games/tron/client';
 import { ConnectFourRenderer } from '@games/connectfour/client';
 import { BattleshipRenderer } from '@games/battleship/client';
 import { DominoRenderer } from '@games/domino/client';
+import { KatroRenderer } from '@games/katro/client';
 import { CameraJuice } from '../renderers/CameraJuice';
 
 export type RendererFactory = (juice?: CameraJuice) => IGameRenderer;
@@ -24,7 +25,10 @@ export const gameRendererMap: Record<string, RendererFactory> = {
   battleship_solo: () => new BattleshipRenderer(),
   battleship_pvp: () => new BattleshipRenderer(),
   domino_solo: () => new DominoRenderer(),
-  domino_pvp: () => new DominoRenderer()
+  domino_pvp:  () => new DominoRenderer(),
+  // Katro (Fanorana Katro malgache) — plateau 4×8, 4 graines/case
+  katro_solo:  () => new KatroRenderer(),
+  katro_pvp:   () => new KatroRenderer(),
 };
 
 export function getGameRenderer(gameType: string, juice?: CameraJuice): IGameRenderer {

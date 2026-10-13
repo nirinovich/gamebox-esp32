@@ -16,9 +16,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
     "paths": {
-      "@games/*": ["../games/*"]
+      "@games/*": ["./../games/*"]
     }
   },
   "include": ["src", "../games/*/client/**/*"],

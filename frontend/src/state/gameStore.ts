@@ -143,6 +143,27 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     tag: 'Party 3P',
     icon: 'domino_pvp',
     isDuel: false
+  },
+  // -------------------------------------------------------------------------
+  // Katro (Fanorana Katro malgache) — awelé 4 × 8, 4 graines/case
+  // -------------------------------------------------------------------------
+  {
+    key: 'katro_solo',
+    title: 'Katro Solo',
+    category: 'SOLO',
+    description: 'Awelé malgache 4×8 : sème et capture vs Bot glouton',
+    tag: 'Solo AI',
+    icon: 'katro_solo',
+    isDuel: false
+  },
+  {
+    key: 'katro_pvp',
+    title: 'Katro Duel',
+    category: 'DUEL',
+    description: 'Fanorana Katro : duel stratégique de semis et captures',
+    tag: '2P Duel',
+    icon: 'katro_pvp',
+    isDuel: true
   }
 ];
 

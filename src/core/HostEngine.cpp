@@ -133,6 +133,10 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         } else if (rawMessage.find("\"domino_pvp\"") != std::string::npos) {
             gtype = GameType::DOMINO_PVP;
             maxPlayers = (rawMessage.find("\"players\":2") != std::string::npos || rawMessage.find("\"max\":2") != std::string::npos) ? 2 : 3;
+        } else if (rawMessage.find("\"katro_pvp\"") != std::string::npos) {
+            // Katro PvP 2 joueurs — plateau 4×8, 4 graines/case
+            gtype = GameType::KATRO_PVP;
+            maxPlayers = 2;
         }
         std::string gname = gameTypeToString(gtype);
 
@@ -279,6 +283,9 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
             gtype = GameType::TRON_SOLO;
         } else if (rawMessage.find("\"battleship_solo\"") != std::string::npos) {
             gtype = GameType::BATTLESHIP_SOLO;
+        } else if (rawMessage.find("\"katro_solo\"") != std::string::npos) {
+            // Katro Solo vs Bot IA — plateau 4×8, 4 graines/case
+            gtype = GameType::KATRO_SOLO;
         }
 
         Room* room = m_roomManager.createSoloRoom(gtype, sessionId);
