@@ -25,6 +25,7 @@ export interface GameMetadata {
   tag: string;
   icon: string;
   isDuel: boolean;
+  inputs?: string[];
 }
 
 export interface RoomDirectoryEntry {
@@ -52,6 +53,25 @@ export interface ActiveRoomState {
   seriesScore?: { p1?: number; p2?: number };
 }
 
+export interface AvailableAction {
+  id: string;
+  label: string;
+  enabled?: boolean;
+  style?: 'default' | 'highlight' | 'danger' | string;
+  params?: Record<string, unknown>;
+}
+
+export interface ActionChoice {
+  cmd: string;
+  label: string;
+  params?: Record<string, unknown>;
+}
+
+export interface ActionPrompt {
+  title: string;
+  choices: ActionChoice[];
+}
+
 export interface ServerMessage {
   type: string;
   ts?: number;
@@ -65,5 +85,7 @@ export interface ServerMessage {
   needed?: number;
   finished?: boolean;
   winner?: number;
+  available_actions?: AvailableAction[];
+  prompt?: ActionPrompt;
   [key: string]: unknown;
 }

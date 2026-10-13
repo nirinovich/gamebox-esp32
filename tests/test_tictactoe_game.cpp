@@ -10,7 +10,7 @@ int main() {
     using namespace gamehub::core;
 
     // 1. Create a Room hosting Solo Tic-Tac-Toe
-    Room room("TTT1", GameType::TICTACTOE_SOLO);
+    Room room("TTT1", GameId("ttt_solo"), "Solo Player", 1);
     room.init();
     room.addPlayer(1);
 
@@ -52,7 +52,7 @@ int main() {
     // 5. Minimax Bot Unbeatable Verification
     // Play multiple games with various player moves, bot must NEVER lose
     for (int firstMove = 0; firstMove < 9; ++firstMove) {
-        Room simRoom("BOT_TEST", GameType::TICTACTOE_SOLO);
+        Room simRoom("BOT_TEST", GameId("ttt_solo"), "Solo Player", 1);
         simRoom.init();
         simRoom.addPlayer(1);
         simRoom.handleInput(1, "{\"cmd\":\"place\",\"cell\":" + std::to_string(firstMove) + "}");

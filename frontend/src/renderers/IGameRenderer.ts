@@ -12,3 +12,8 @@ export interface IGameRenderer {
   setDispatcher?(dispatch: ActionDispatcher): void;
   destroy(): void;
 }
+
+export interface ClientPlugin {
+  gameIds: string[];
+  createRenderer: (juice?: any) => IGameRenderer;
+}

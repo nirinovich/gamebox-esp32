@@ -31,7 +31,7 @@ export function Lobby() {
 
   const tabs: { label: string; value: GameCategory }[] = [
     { label: 'All Modes', value: 'ALL' },
-    { label: 'Solo AI', value: 'SOLO' },
+    { label: 'Solo Bot', value: 'SOLO' },
     { label: '2P Duel', value: 'DUEL' },
     { label: 'Party (3P)', value: 'PARTY' }
   ];
@@ -110,7 +110,12 @@ export function Lobby() {
       </div>
 
       <div className={styles.gameList}>
-        {filteredGames.value.map(game => (
+        {filteredGames.value.length === 0 ? (
+          <div className={styles.emptyDirectory}>
+            Connecting to Host game directory...
+          </div>
+        ) : (
+          filteredGames.value.map(game => (
           <div
             key={game.key}
             className={styles.gameItem}
@@ -127,7 +132,7 @@ export function Lobby() {
             </div>
             <span className={styles.gameTag}>{game.tag}</span>
           </div>
-        ))}
+        )))}
       </div>
     </div>
   );

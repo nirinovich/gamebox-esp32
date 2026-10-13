@@ -5,7 +5,7 @@
 #include <vector>
 #include "GameTypes.hpp"
 #include "Game.hpp"
-#include "GameFactory.hpp"
+#include "GameRegistry.hpp"
 #include "RoomState.hpp"
 
 namespace gamehub {
@@ -13,7 +13,7 @@ namespace core {
 
 class Room {
 public:
-    Room(const std::string& code, GameType type, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
+    Room(const std::string& code, GameId gameId, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
     virtual ~Room() = default;
 
     void init();
@@ -26,7 +26,7 @@ public:
 
     const std::string& getCode() const { return m_code; }
     const std::string& getHostName() const { return m_hostName; }
-    GameType getGameType() const { return m_type; }
+    const GameId& getGameId() const { return m_gameId; }
     Game* getGame() { return m_game.get(); }
 
     void addPlayer(PlayerId id);
@@ -58,7 +58,7 @@ public:
 private:
     std::string m_code;
     std::string m_hostName;
-    GameType m_type;
+    GameId m_gameId{};
     size_t m_maxPlayers{2};
     std::unique_ptr<Game> m_game;
     std::vector<PlayerId> m_players;

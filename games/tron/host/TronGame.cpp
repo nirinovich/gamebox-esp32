@@ -1,6 +1,38 @@
 #include "TronGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <queue>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createTronSolo() {
+    return std::make_unique<gamehub::core::TronGame>(true);
+}
+std::unique_ptr<gamehub::core::Game> createTronDuel() {
+    return std::make_unique<gamehub::core::TronGame>(false);
+}
+}
+
+REGISTER_GAME("tron_solo", TronSolo, &createTronSolo, {
+    gamehub::core::GameId("tron_solo"),
+    "Tron Arena Bot",
+    "SOLO",
+    "Neon bloom light cycle trails vs Voronoi bot",
+    1, 1,
+    gamehub::core::InputFlag::DPAD,
+    "tron_solo",
+    false
+})
+
+REGISTER_GAME("tron_duel", TronDuel, &createTronDuel, {
+    gamehub::core::GameId("tron_duel"),
+    "Tron Light Cycles",
+    "DUEL",
+    "Fast-paced grid trapping synthwave duel",
+    2, 2,
+    gamehub::core::InputFlag::DPAD,
+    "tron_duel",
+    true
+})
 
 namespace gamehub {
 namespace core {

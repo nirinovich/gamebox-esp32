@@ -5,7 +5,8 @@ import {
   currentView,
   activeRoom,
   roomDirectory,
-  gameState
+  gameState,
+  gameCatalogue
 } from '../state/gameStore';
 import { GameKey, ServerMessage } from '../types/protocol';
 
@@ -128,6 +129,18 @@ class GameSocketService {
 
       case 'room_directory':
         roomDirectory.value = msg.rooms || [];
+        if (msg.games && Array.isArray(msg.games) && msg.games.length > 0) {
+          gameCatalogue.value = msg.games.map((g: any) => ({
+            key: g.id as GameKey,
+            title: g.title,
+            category: g.category,
+            description: g.description,
+            tag: g.category === 'SOLO' ? 'Solo AI' : (g.isDuel ? '2P Duel' : `${g.max}P Party`),
+            icon: g.icon || g.id,
+            isDuel: g.isDuel ?? (g.category === 'DUEL'),
+            inputs: g.inputs || []
+          }));
+        }
         break;
 
       case 'room_created':

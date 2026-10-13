@@ -15,8 +15,8 @@ public:
     explicit RoomManager(size_t maxRooms = 4);
     virtual ~RoomManager() = default;
 
-    Room* createRoom(GameType type, PlayerId hostId, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
-    Room* createSoloRoom(GameType type, PlayerId playerId);
+    Room* createRoom(GameId gameId, PlayerId hostId, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
+    Room* createSoloRoom(GameId gameId, PlayerId playerId);
     Room* joinRoom(const std::string& code, PlayerId playerId);
     Room* findRoomByCode(const std::string& code);
     Room* findRoomByPlayer(PlayerId playerId);
@@ -25,6 +25,7 @@ public:
     void tickAll(float dt);
 
     std::string serializeDirectory() const;
+    std::string serializeCatalog() const;
 
     size_t getRoomCount() const { return m_rooms.size(); }
     size_t getMaxRooms() const { return m_maxRooms; }

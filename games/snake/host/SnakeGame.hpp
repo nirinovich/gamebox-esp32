@@ -17,6 +17,7 @@ public:
     std::string serializeState() const override;
     bool isFinished() const override { return m_finished; }
     int getWinner() const override { return m_winner; }
+    bool isRealTime() const override { return true; }
 
     void setFood(int x, int y) { m_food = {x, y}; }
     void setStepInterval(float interval) { m_stepInterval = interval; }

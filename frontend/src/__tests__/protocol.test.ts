@@ -8,6 +8,7 @@ import {
   crtFilter,
   selectedTab,
   filteredGames,
+  gameCatalogue,
   resetRoomState,
   activeRoom,
   gameState,
@@ -54,16 +55,23 @@ describe('GameStore and Reactive State Transitions', () => {
   });
 
   it('filters game directory correctly based on category tab', () => {
+    gameCatalogue.value = [
+      { key: 's1', title: 'S1', category: 'SOLO', tag: 'Solo', icon: 's1', isDuel: false, inputs: [] },
+      { key: 's2', title: 'S2', category: 'SOLO', tag: 'Solo', icon: 's2', isDuel: false, inputs: [] },
+      { key: 'd1', title: 'D1', category: 'DUEL', tag: 'Duel', icon: 'd1', isDuel: true, inputs: [] },
+      { key: 'p1', title: 'P1', category: 'PARTY', tag: 'Party', icon: 'p1', isDuel: false, inputs: [] },
+    ];
+
     selectedTab.value = 'ALL';
-    expect(filteredGames.value.length).toBe(15);
+    expect(filteredGames.value.length).toBe(4);
 
     selectedTab.value = 'SOLO';
     expect(filteredGames.value.every(g => g.category === 'SOLO')).toBe(true);
-    expect(filteredGames.value.length).toBe(7);
+    expect(filteredGames.value.length).toBe(2);
 
     selectedTab.value = 'DUEL';
     expect(filteredGames.value.every(g => g.category === 'DUEL')).toBe(true);
-    expect(filteredGames.value.length).toBe(7);
+    expect(filteredGames.value.length).toBe(1);
 
     selectedTab.value = 'PARTY';
     expect(filteredGames.value.every(g => g.category === 'PARTY')).toBe(true);

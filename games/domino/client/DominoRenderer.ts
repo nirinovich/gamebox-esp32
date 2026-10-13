@@ -304,9 +304,8 @@ export class DominoRenderer implements IGameRenderer {
         const mRight = tile[0] === rEnd || tile[1] === rEnd;
 
         if (mLeft && mRight && lEnd !== rEnd) {
-          // Can play on both ends
-          this.selectedTileIdx = idx;
-          this.choiceNeeded = true;
+          // Can play on both ends: request authoritative prompt from Host
+          this.dispatch({ cmd: 'select_tile', index: idx });
         } else if (mLeft) {
           this.dispatch({ cmd: 'play', index: idx, end: 'left' });
           this.selectedTileIdx = -1;

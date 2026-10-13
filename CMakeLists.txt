@@ -12,8 +12,8 @@ add_compile_definitions(GAMEBOX_VERSION="${GAMEBOX_VERSION_STR}")
 
 include_directories(include games)
 
-# Core library
-add_library(gamehub_core STATIC
+# Core library (OBJECT library preserves all translation unit static initializers without stripping)
+add_library(gamehub_core OBJECT
     src/core/Session.cpp
     src/core/Room.cpp
     src/core/RoomManager.cpp
@@ -64,7 +64,19 @@ else()
     target_link_libraries(test_desktop_server PRIVATE gamehub_core pthread)
 endif()
 
+add_executable(test_game_registry tests/test_game_registry.cpp)
+target_link_libraries(test_game_registry PRIVATE gamehub_core)
+
+add_executable(test_catalog_broadcast tests/test_catalog_broadcast.cpp)
+target_link_libraries(test_catalog_broadcast PRIVATE gamehub_core)
+
+add_executable(test_action_stream tests/test_action_stream.cpp)
+target_link_libraries(test_action_stream PRIVATE gamehub_core)
+
 enable_testing()
+add_test(NAME GameRegistryTest COMMAND test_game_registry)
+add_test(NAME CatalogBroadcastTest COMMAND test_catalog_broadcast)
+add_test(NAME ActionStreamTest COMMAND test_action_stream)
 add_test(NAME TracerBulletTest COMMAND test_tracer_bullet)
 add_test(NAME SnakeGameTest COMMAND test_snake_game)
 add_test(NAME TicTacToeGameTest COMMAND test_tictactoe_game)

@@ -1,8 +1,40 @@
 #include "PongGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createPongSolo() {
+    return std::make_unique<gamehub::core::PongGame>(true);
+}
+std::unique_ptr<gamehub::core::Game> createPongDuel() {
+    return std::make_unique<gamehub::core::PongGame>(false);
+}
+}
+
+REGISTER_GAME("pong_solo", PongSolo, &createPongSolo, {
+    gamehub::core::GameId("pong_solo"),
+    "Pong Arcade",
+    "SOLO",
+    "Phosphor comet trails & paddle collision sparks vs Bot",
+    1, 1,
+    gamehub::core::InputFlag::DPAD | gamehub::core::InputFlag::DRAG_SLIDER,
+    "pong_solo",
+    false
+})
+
+REGISTER_GAME("pong_duel", PongDuel, &createPongDuel, {
+    gamehub::core::GameId("pong_duel"),
+    "Pong Duel",
+    "DUEL",
+    "High-speed vertical drag paddle volley match",
+    2, 2,
+    gamehub::core::InputFlag::DPAD | gamehub::core::InputFlag::DRAG_SLIDER,
+    "pong_duel",
+    true
+})
 
 namespace gamehub {
 namespace core {

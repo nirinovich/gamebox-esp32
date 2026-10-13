@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
-import { activeRoom, gameState } from '../../state/gameStore';
+import { useEffect, useRef } from 'preact/hooks';
+import { activeRoom, gameState, gameCatalogue } from '../../state/gameStore';
 import { gameSocket } from '../../services/GameSocket';
 import { IGameRenderer } from '../../renderers/IGameRenderer';
 import { ParticleEngine } from '../../renderers/ParticleEngine';
 import { CameraJuice } from '../../renderers/CameraJuice';
 import { getGameRenderer } from '../../registry/gameRegistry';
-import { DominoRenderer } from '@games/domino/client';
 import { GameOverModal } from '../GameOver/GameOverModal';
 import { VirtualDPad } from '../VirtualDPad/VirtualDPad';
+import { ActionToolbar } from '../ActionToolbar/ActionToolbar';
+import { ActionModal } from '../ActionModal/ActionModal';
 import styles from './GameCanvas.module.css';
 
 export function GameCanvas() {
@@ -16,7 +17,6 @@ export function GameCanvas() {
   const particlesRef = useRef<ParticleEngine>(new ParticleEngine());
   const juiceRef = useRef<CameraJuice>(new CameraJuice());
   const animFrameRef = useRef<number | null>(null);
-  const [dominoChoice, setDominoChoice] = useState<number | null>(null);
 
   const room = activeRoom.value;
   const gameType = room?.gameType || 'ttt_solo';
@@ -49,7 +49,7 @@ export function GameCanvas() {
     const particles = particlesRef.current;
     const juice = juiceRef.current;
     const renderer: IGameRenderer = getGameRenderer(gameType, juice);
-    if (gameType.includes('battleship') && 'particles' in renderer) {
+    if ('particles' in renderer) {
       (renderer as any).particles = particles;
     }
 
@@ -74,11 +74,6 @@ export function GameCanvas() {
 
       particles.updateAndRender(ctx);
       ctx.restore();
-
-      // Check if domino choice is pending
-      if (renderer instanceof DominoRenderer && renderer.choiceNeeded) {
-        setDominoChoice(renderer.selectedTileIdx);
-      }
 
       animFrameRef.current = requestAnimationFrame(loop);
     };
@@ -123,32 +118,9 @@ export function GameCanvas() {
     rendererRef.current?.handlePointerUp(x, y);
   };
 
-  const handleDominoEndChoice = (end: 'left' | 'right') => {
-    if (dominoChoice !== null) {
-      gameSocket.send({ cmd: 'play', index: dominoChoice, end });
-      if (rendererRef.current instanceof DominoRenderer) {
-        rendererRef.current.selectedTileIdx = -1;
-        rendererRef.current.choiceNeeded = false;
-      }
-      setDominoChoice(null);
-    }
-  };
-
-  const hasDpad =
-    gameType.includes('snake') || gameType.includes('pong') || gameType.includes('tron');
-  const isDomino = gameType.includes('domino');
-  const isBattleshipPlacement =
-    gameType.includes('battleship') && gameState.value?.phase === 'placement';
-
-  const isMyTurn = gameState.value?.turn === myPlayerNum && !gameState.value?.finished;
-  const myHand = (gameState.value?.hands && gameState.value.hands[myPlayerNum]) || [];
-  const leftEnd = gameState.value?.left_end ?? -1;
-  const rightEnd = gameState.value?.right_end ?? -1;
-  const hasLegalMove = myHand.some((t: number[]) =>
-    leftEnd === -1 || t[0] === leftEnd || t[1] === leftEnd || t[0] === rightEnd || t[1] === rightEnd
-  );
-  const boneyardCount = gameState.value?.boneyard_count ?? 14;
-  const shouldHighlightDraw = isMyTurn && !hasLegalMove && boneyardCount > 0;
+  const meta = gameCatalogue.value.find(g => g.key === gameType);
+  const inputs = (gameState.value as any)?.inputs || meta?.inputs || [];
+  const hasDpad = inputs.includes('dpad');
 
   return (
     <div style={{ width: '100%' }}>
@@ -163,62 +135,12 @@ export function GameCanvas() {
           onTouchMove={handlePointerMove}
           onTouchEnd={handlePointerUp}
         />
+        <ActionModal />
         <GameOverModal />
       </div>
 
-      {/* Battleship Auto-Place */}
-      {isBattleshipPlacement && (
-        <div className={styles.extraControls}>
-          <button
-            className={styles.btnSolid}
-            onClick={() => gameSocket.send({ cmd: 'auto_place' })}
-          >
-            Deploy Fleet (Auto-Arrange)
-          </button>
-        </div>
-      )}
+      <ActionToolbar />
 
-      {/* Domino Controls */}
-      {isDomino && (
-        <div className={styles.extraControls} style={{ marginTop: '8px' }}>
-          <button
-            className={`${styles.btnSolid} ${shouldHighlightDraw ? styles.btnHighlightPulse : ''}`}
-            style={{ flex: 1 }}
-            onClick={() => gameSocket.send({ cmd: 'draw' })}
-          >
-            Draw Tile ({boneyardCount})
-          </button>
-          <button
-            className={styles.btnSolid}
-            style={{ flex: 1, background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }}
-            onClick={() => gameSocket.send({ cmd: 'pass' })}
-          >
-            Pass Turn
-          </button>
-        </div>
-      )}
-
-      {/* Domino End Choice Modal */}
-      {dominoChoice !== null && (
-        <div className={styles.extraControls} style={{ marginTop: '6px' }}>
-          <button
-            className={styles.btnSolid}
-            style={{ flex: 1, background: '#0284c7' }}
-            onClick={() => handleDominoEndChoice('left')}
-          >
-            Place Left End
-          </button>
-          <button
-            className={styles.btnSolid}
-            style={{ flex: 1, background: '#0284c7' }}
-            onClick={() => handleDominoEndChoice('right')}
-          >
-            Place Right End
-          </button>
-        </div>
-      )}
-
-      {/* Virtual Directional Pad */}
       {hasDpad && <VirtualDPad />}
     </div>
   );

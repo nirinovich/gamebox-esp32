@@ -1,8 +1,54 @@
 #include "DominoGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <algorithm>
 #include <random>
 #include <charconv>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createDominoSolo() {
+    return std::make_unique<gamehub::core::DominoGame>(true, 2);
+}
+std::unique_ptr<gamehub::core::Game> createDominoDuel() {
+    return std::make_unique<gamehub::core::DominoGame>(false, 2);
+}
+std::unique_ptr<gamehub::core::Game> createDominoPvp() {
+    return std::make_unique<gamehub::core::DominoGame>(false, 3);
+}
+}
+
+REGISTER_GAME("domino_solo", DominoSolo, &createDominoSolo, {
+    gamehub::core::GameId("domino_solo"),
+    "Dominoes Solo",
+    "SOLO",
+    "Double-six draw dominoes on emerald felt table vs Bot",
+    1, 1,
+    gamehub::core::InputFlag::ACTION_BUTTONS,
+    "domino_solo",
+    false
+})
+
+REGISTER_GAME("domino_duel", DominoDuel, &createDominoDuel, {
+    gamehub::core::GameId("domino_duel"),
+    "Domino Duel",
+    "DUEL",
+    "Head-to-head double-six domino match with Deadwood & Fog of War",
+    2, 2,
+    gamehub::core::InputFlag::ACTION_BUTTONS,
+    "domino_solo",
+    true
+})
+
+REGISTER_GAME("domino_pvp", DominoPvp, &createDominoPvp, {
+    gamehub::core::GameId("domino_pvp"),
+    "3P Party Dominoes",
+    "PARTY",
+    "3-Player social parlor dominoes with Deadwood & Fog of War",
+    2, 3,
+    gamehub::core::InputFlag::ACTION_BUTTONS,
+    "domino_pvp",
+    false
+})
 
 namespace gamehub {
 namespace core {
@@ -251,6 +297,7 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
     if ((int)player != m_turn) return;
 
     if (input.find("\"play\"") != std::string::npos || input.find("\"cmd\":\"play\"") != std::string::npos) {
+        clearPendingChoice();
         // Parse tile index and end
         auto idxPos = input.find("\"index\":");
         int tileIdx = -1;
@@ -267,6 +314,26 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
                 if (m_isSolo && !m_finished && m_turn != 1) {
                     executeBotTurns();
                 }
+            }
+        }
+    } else if (input.find("\"select_tile\"") != std::string::npos) {
+        auto idxPos = input.find("\"index\":");
+        int tileIdx = -1;
+        if (idxPos != std::string::npos) {
+            std::from_chars(input.data() + idxPos + 8, input.data() + input.size(), tileIdx);
+        }
+        if (tileIdx >= 0 && tileIdx < (int)m_hands[pidx].size()) {
+            int l = getLeftEnd();
+            int r = getRightEnd();
+            const auto& t = m_hands[pidx][tileIdx];
+            if (m_board.empty()) {
+                playTile(pidx, tileIdx, "left");
+            } else if (t.matches(l) && t.matches(r) && l != r) {
+                setPendingChoice(pidx + 1, tileIdx);
+            } else if (t.matches(l)) {
+                playTile(pidx, tileIdx, "left");
+            } else if (t.matches(r)) {
+                playTile(pidx, tileIdx, "right");
             }
         }
     } else if (input.find("\"draw\"") != std::string::npos || input.find("\"cmd\":\"draw\"") != std::string::npos) {
@@ -306,6 +373,7 @@ std::string DominoGame::serializeStateForPlayer(PlayerId id) const {
         << ",\"right_end\":" << getRightEnd()
         << ",\"boneyard_count\":" << m_boneyard.size()
         << ",\"last_action\":\"" << m_lastAction << "\""
+        << ",\"scores\":[" << m_hands[0].size() << "," << m_hands[1].size() << "," << m_hands[2].size() << "]"
         << ",\"p1_count\":" << m_hands[0].size()
         << ",\"p2_count\":" << m_hands[1].size()
         << ",\"p3_count\":" << m_hands[2].size();
@@ -341,8 +409,34 @@ std::string DominoGame::serializeStateForPlayer(PlayerId id) const {
             oss << "]";
         }
     }
-    oss << "}}";
+    oss << "}";
 
+    // Available Actions
+    oss << ",\"available_actions\":[";
+    bool isTurn = !m_finished && (id == 0 || static_cast<int>(id) == m_turn);
+    int pidx = (id == 0 ? m_turn - 1 : static_cast<int>(id) - 1);
+    bool canPlay = (pidx >= 0 && pidx < m_numPlayers) ? canPlayerPlay(pidx) : true;
+    bool canDraw = isTurn && !m_isBlockMode && !m_boneyard.empty();
+    bool mustDraw = canDraw && !canPlay;
+    bool canPass = isTurn && !canPlay && (m_isBlockMode || m_boneyard.empty());
+
+    oss << "{\"id\":\"draw\",\"label\":\"Draw Tile (" << m_boneyard.size() << ")\",\"enabled\":"
+        << (canDraw ? "true" : "false")
+        << (mustDraw ? ",\"style\":\"highlight\"" : "") << "},";
+
+    oss << "{\"id\":\"pass\",\"label\":\"Pass Turn\",\"enabled\":"
+        << (canPass ? "true" : "false") << "}";
+    oss << "]";
+
+    // Prompt Modal (if choice pending)
+    if (m_pendingChoiceIdx >= 0 && (id == 0 || static_cast<int>(id) == m_pendingChoicePlayer)) {
+        oss << ",\"prompt\":{\"title\":\"Place Domino\",\"choices\":["
+            << "{\"cmd\":\"play\",\"label\":\"Place Left End\",\"params\":{\"index\":" << m_pendingChoiceIdx << ",\"end\":\"left\"}},"
+            << "{\"cmd\":\"play\",\"label\":\"Place Right End\",\"params\":{\"index\":" << m_pendingChoiceIdx << ",\"end\":\"right\"}}"
+            << "]}";
+    }
+
+    oss << "}";
     return oss.str();
 }
 

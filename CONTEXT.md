@@ -64,17 +64,25 @@ _Avoid_: ForceLeave, ResetConnection
 The dual-layer record system tracking a Client PersonalBest in local storage and the HostRecord in Host memory.
 _Avoid_: ScoreTable, HighScoreList
 
-**DominoGame**:
-A polymorphic Game model implementing Double-Six Draw Dominoes for 2 to 3 Players with Boneyard drawing and PipSum tie-breaking.
-_Avoid_: Dominos, TileMatch
+**MalagasyDominoGame**:
+A polymorphic Game model implementing Malagasy block-style Dominoes (Tsipy Domino) for 2 to 4 Players with no drawing, turn-passing when blocked, and cumulative round scoring toward a TargetScore.
+_Avoid_: DominoGame, DrawDominoes, TileMatch
 
-**Boneyard**:
-The shared face-down reserve pool of unplayed domino tiles drawn by a Player when no legal move can be made.
-_Avoid_: Talon, DrawPile, Deck
+**TargetScore**:
+The cumulative point threshold configured by the Room creator (e.g. 60 or 100 points) required to win a multi-round match.
+_Avoid_: PointGoal, WinLimit, MaxScore
+
+**Deadwood**:
+The undealt face-down domino tiles set aside in 2- or 3-player matches that cannot be drawn.
+_Avoid_: Boneyard, Talon, DrawPile
 
 **PipSum**:
 The cumulative point value of dot markings on tiles remaining in a Player hand when the Game is blocked.
 _Avoid_: HandValue, TileCount
+
+**Rebon**:
+The rollover jackpot point pool in MalagasyDominoGame accumulated when consecutive rounds end in tied blocks.
+_Avoid_: Carryover, TieBonus, PotRoll
 
 **VisualEngine**:
 The client-side 60 FPS presentation layer in WebAssets.hpp that renders authoritative domain states via Canvas 2D without microcontroller overhead.
@@ -120,6 +128,26 @@ _Avoid_: ProbePing, PortalCheck, HotspotTest
 The contiguous byte array allocated in ESP32 flash memory (`PROGMEM`) representing the gzipped ClientShell payload streamed directly without heap duplication.
 _Avoid_: MemoryBlock, BinaryBlob, RomAsset
 
+**GameId**:
+A canonical alphanumeric string identifier uniquely designating a registered Game implementation across the Host and ClientShell.
+_Avoid_: GameType, GameEnum, GameTag
 
+**GameRegistry**:
+The decentralized Host lookup subsystem that maps a GameId to a dynamic game factory instance via static self-registration without centralized enums.
+_Avoid_: GameFactory, FactoryTable, GameMap
 
+**ActionStream**:
+The authoritative collection of currently legal player actions streamed in Host state snapshots to dynamically template Client interactive controls.
+_Avoid_: LegalMoves, ButtonList, ControlSpec
 
+**InputTemplate**:
+The declarative capability contract specifying a Game's required client input peripherals (e.g. DPAD, GRID_POINTER, DRAG_SLIDER) to configure the Client presentation layer.
+_Avoid_: InputSchema, ControlConfig, LayoutSetting
+
+**ActionModal**:
+A transient prompt declaration streamed in an ActionStream to request a discrete branching choice (e.g. end placement or piece selection) rendered generically by the ClientShell.
+_Avoid_: ChoiceDialog, PromptPopup, CustomModal
+
+**ClientPlugin**:
+A self-contained client presentation bundle under `games/<game>/client/` exporting a renderer and lifecycle bindings discovered at build time via Vite globbing.
+_Avoid_: GameFrontend, RendererModule, ClientExtension

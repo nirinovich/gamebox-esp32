@@ -10,7 +10,7 @@ int main() {
     using namespace gamehub::core;
 
     // 1. Create a Room hosting Solo Snake
-    Room room("SOLO", GameType::SNAKE_SOLO);
+    Room room("SOLO", GameId("snake_solo"), "Solo Player", 1);
     room.init();
     room.addPlayer(1);
 

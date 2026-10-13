@@ -52,7 +52,7 @@ describe('DominoRenderer', () => {
     expect(dispatchSpy).toHaveBeenCalledWith({ cmd: 'play', index: 0, end: 'left' });
   });
 
-  it('flags choiceNeeded when tile matches both ends', () => {
+  it('dispatches select_tile when tile matches both ends to trigger authoritative prompt modal', () => {
     const dispatchSpy = vi.fn();
     const renderer = new DominoRenderer();
     renderer.init(undefined, undefined, dispatchSpy, 1);
@@ -70,8 +70,6 @@ describe('DominoRenderer', () => {
     // 1 tile: startX = (400 - 42)/2 = 179
     renderer.handlePointerDown(180, 320);
 
-    expect(renderer.choiceNeeded).toBe(true);
-    expect(renderer.selectedTileIdx).toBe(0);
-    expect(dispatchSpy).not.toHaveBeenCalled();
+    expect(dispatchSpy).toHaveBeenCalledWith({ cmd: 'select_tile', index: 0 });
   });
 });

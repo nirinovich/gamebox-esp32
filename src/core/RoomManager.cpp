@@ -26,13 +26,13 @@ std::string RoomManager::generateUniqueCode() {
     return "AAAA";
 }
 
-Room* RoomManager::createRoom(GameType type, PlayerId hostId, const std::string& hostName, size_t maxPlayers) {
+Room* RoomManager::createRoom(GameId gameId, PlayerId hostId, const std::string& hostName, size_t maxPlayers) {
     if (m_rooms.size() >= m_maxRooms) {
         return nullptr;
     }
 
     std::string code = generateUniqueCode();
-    auto room = std::make_unique<Room>(code, type, hostName, maxPlayers);
+    auto room = std::make_unique<Room>(code, gameId, hostName, maxPlayers);
     room->init();
     room->addPlayer(hostId);
 
@@ -42,7 +42,7 @@ Room* RoomManager::createRoom(GameType type, PlayerId hostId, const std::string&
     return ptr;
 }
 
-Room* RoomManager::createSoloRoom(GameType type, PlayerId playerId) {
+Room* RoomManager::createSoloRoom(GameId gameId, PlayerId playerId) {
     // If player already has a room, detach first
     handleDisconnect(playerId);
 
@@ -51,7 +51,7 @@ Room* RoomManager::createSoloRoom(GameType type, PlayerId playerId) {
     }
 
     std::string code = "S" + generateUniqueCode().substr(0, 3);
-    auto room = std::make_unique<Room>(code, type, "Solo Player", 1);
+    auto room = std::make_unique<Room>(code, gameId, "Solo Player", 1);
     room->init();
     room->addPlayer(playerId);
 
@@ -77,6 +77,43 @@ void RoomManager::removeRoom(const std::string& code) {
         }), m_rooms.end());
 }
 
+std::string RoomManager::serializeCatalog() const {
+    std::ostringstream oss;
+    oss << "[";
+    const auto& reg = GameRegistry::instance();
+    bool first = true;
+    for (size_t i = 0; i < reg.count(); ++i) {
+        if (!first) oss << ",";
+        first = false;
+        const auto& d = reg.get(i).descriptor;
+        oss << "{\"id\":\"" << d.id.c_str() << "\","
+            << "\"title\":\"" << (d.title ? d.title : "") << "\","
+            << "\"category\":\"" << (d.category ? d.category : "SOLO") << "\","
+            << "\"description\":\"" << (d.description ? d.description : "") << "\","
+            << "\"min\":" << d.minPlayers << ","
+            << "\"max\":" << d.maxPlayers << ","
+            << "\"isDuel\":" << (d.isDuel ? "true" : "false") << ","
+            << "\"icon\":\"" << (d.icon ? d.icon : "") << "\","
+            << "\"inputs\":[";
+        bool fIn = true;
+        if (hasInputFlag(d.inputTemplate, InputFlag::DPAD)) {
+            if (!fIn) oss << ","; oss << "\"dpad\""; fIn = false;
+        }
+        if (hasInputFlag(d.inputTemplate, InputFlag::GRID_POINTER)) {
+            if (!fIn) oss << ","; oss << "\"grid_pointer\""; fIn = false;
+        }
+        if (hasInputFlag(d.inputTemplate, InputFlag::DRAG_SLIDER)) {
+            if (!fIn) oss << ","; oss << "\"drag_slider\""; fIn = false;
+        }
+        if (hasInputFlag(d.inputTemplate, InputFlag::ACTION_BUTTONS)) {
+            if (!fIn) oss << ","; oss << "\"action_buttons\""; fIn = false;
+        }
+        oss << "]}";
+    }
+    oss << "]";
+    return oss.str();
+}
+
 std::string RoomManager::serializeDirectory() const {
     std::ostringstream oss;
     oss << "{\"type\":\"room_directory\",\"rooms\":[";
@@ -85,7 +122,7 @@ std::string RoomManager::serializeDirectory() const {
         if (r->getMaxPlayers() > 1 && r->getPlayerCount() < r->getMaxPlayers() && !r->isFinished()) {
             if (!first) oss << ",";
             first = false;
-            std::string gname = gameTypeToString(r->getGameType());
+            std::string gname = r->getGameId().c_str();
             oss << "{\"code\":\"" << r->getCode() << "\","
                 << "\"game\":\"" << gname << "\","
                 << "\"host\":\"" << r->getHostName() << "\","
@@ -93,7 +130,7 @@ std::string RoomManager::serializeDirectory() const {
                 << "\"max\":" << r->getMaxPlayers() << "}";
         }
     }
-    oss << "]}";
+    oss << "],\"games\":" << serializeCatalog() << "}";
     return oss.str();
 }
 

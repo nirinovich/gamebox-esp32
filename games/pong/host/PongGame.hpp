@@ -25,6 +25,7 @@ public:
     std::string serializeState() const override;
     bool isFinished() const override { return m_finished; }
     int  getWinner() const override  { return m_winner; }
+    bool isRealTime() const override { return true; }
     bool isSolo() const { return m_isSolo; }
 
 private:

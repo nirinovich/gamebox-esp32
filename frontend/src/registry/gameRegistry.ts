@@ -1,43 +1,53 @@
-import { IGameRenderer } from '../renderers/IGameRenderer';
-import { SnakeRenderer } from '@games/snake/client';
-import { TicTacToeRenderer } from '@games/tictactoe/client';
-import { PongRenderer } from '@games/pong/client';
-import { TronRenderer } from '@games/tron/client';
-import { ConnectFourRenderer } from '@games/connectfour/client';
-import { BattleshipRenderer } from '@games/battleship/client';
-import { DominoRenderer } from '@games/domino/client';
+import { IGameRenderer, ClientPlugin } from '../renderers/IGameRenderer';
 import { CameraJuice } from '../renderers/CameraJuice';
 
 export type RendererFactory = (juice?: CameraJuice) => IGameRenderer;
 
-export const gameRendererMap: Record<string, RendererFactory> = {
-  snake_solo: () => new SnakeRenderer(),
-  snake_duel: () => new SnakeRenderer(),
-  ttt_solo: () => new TicTacToeRenderer(),
-  ttt_pvp: () => new TicTacToeRenderer(),
-  pong_solo: () => new PongRenderer(),
-  pong_duel: () => new PongRenderer(),
-  tron_solo: () => new TronRenderer(),
-  tron_duel: () => new TronRenderer(),
-  c4_solo: (juice) => new ConnectFourRenderer(juice || new CameraJuice()),
-  c4_pvp: (juice) => new ConnectFourRenderer(juice || new CameraJuice()),
-  battleship_solo: () => new BattleshipRenderer(),
-  battleship_pvp: () => new BattleshipRenderer(),
-  domino_solo: () => new DominoRenderer(),
-  domino_pvp: () => new DominoRenderer()
-};
+export const gameRendererMap: Record<string, RendererFactory> = {};
+
+// Vite glob auto-discovery of all client game packages under games/*/client/
+const gameModules = import.meta.glob<Record<string, any>>('../../../games/*/client/index.ts', { eager: true });
+
+for (const modulePath in gameModules) {
+  const mod = gameModules[modulePath];
+  if (mod.plugin && mod.plugin.createRenderer) {
+    const plugin = mod.plugin as ClientPlugin;
+    const ids = Array.isArray(plugin.gameIds) ? plugin.gameIds : [plugin.gameIds];
+    for (const id of ids) {
+      if (id) {
+        gameRendererMap[id] = plugin.createRenderer;
+      }
+    }
+  } else {
+    // Fallback: extract any exported *Renderer class
+    const match = modulePath.match(/games\/([^/]+)\/client/);
+    const folderName = match ? match[1] : '';
+    for (const exp in mod) {
+      if (typeof mod[exp] === 'function' && exp.endsWith('Renderer')) {
+        const RendererClass = mod[exp];
+        const factory: RendererFactory = (juice) => new RendererClass(juice || new CameraJuice());
+        if (folderName) {
+          gameRendererMap[folderName] = factory;
+          gameRendererMap[`${folderName}_solo`] = factory;
+          gameRendererMap[`${folderName}_duel`] = factory;
+          gameRendererMap[`${folderName}_pvp`] = factory;
+        }
+      }
+    }
+  }
+}
 
 export function getGameRenderer(gameType: string, juice?: CameraJuice): IGameRenderer {
   const factory = gameRendererMap[gameType];
   if (factory) {
     return factory(juice);
   }
-  // Fallback pattern matching
-  if (gameType.includes('snake')) return new SnakeRenderer();
-  if (gameType.includes('pong')) return new PongRenderer();
-  if (gameType.includes('tron')) return new TronRenderer();
-  if (gameType.includes('c4') || gameType.includes('connect')) return new ConnectFourRenderer(juice || new CameraJuice());
-  if (gameType.includes('battleship')) return new BattleshipRenderer();
-  if (gameType.includes('domino')) return new DominoRenderer();
-  return new TicTacToeRenderer();
+  for (const key in gameRendererMap) {
+    if (gameType.includes(key)) {
+      return gameRendererMap[key](juice);
+    }
+  }
+  const fallback = gameRendererMap['ttt_solo'] || gameRendererMap['tictactoe'];
+  if (fallback) return fallback(juice);
+  throw new Error(`No renderer registered for gameType: ${gameType}`);
 }

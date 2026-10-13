@@ -40,6 +40,15 @@ public:
     bool isBlockMode() const { return m_isBlockMode; }
     void setBlockMode(bool block) { m_isBlockMode = block; }
 
+    void setPendingChoice(int pidx, int tileIdx) {
+        m_pendingChoicePlayer = pidx;
+        m_pendingChoiceIdx = tileIdx;
+    }
+    void clearPendingChoice() {
+        m_pendingChoicePlayer = 0;
+        m_pendingChoiceIdx = -1;
+    }
+
 private:
     bool playTile(int pidx, int tileIdx, const std::string& end);
     bool drawTile(int pidx);
@@ -54,6 +63,9 @@ private:
     bool m_finished{false};
     int m_winner{0};
     int m_consecutivePasses{0};
+
+    int m_pendingChoicePlayer{0};
+    int m_pendingChoiceIdx{-1};
 
     std::deque<DominoTile> m_board;
     std::vector<DominoTile> m_hands[3];

@@ -5,15 +5,20 @@
 namespace gamehub {
 namespace core {
 
-Room::Room(const std::string& code, GameType type, const std::string& hostName, size_t maxPlayers)
-    : m_code(code), m_hostName(hostName.empty() ? "Player 1" : hostName), m_type(type),
-      m_maxPlayers(type == GameType::DOMINO_PVP ? std::clamp<size_t>(maxPlayers, 2, 3) : 
-                   (type == GameType::SNAKE_SOLO || type == GameType::TICTACTOE_SOLO ||
-                    type == GameType::CONNECT_FOUR_SOLO || type == GameType::DOMINO_SOLO ||
-                    type == GameType::PONG_SOLO || type == GameType::TRON_SOLO ||
-                    type == GameType::BATTLESHIP_SOLO ? 1 : 2)),
-      m_game(GameFactory::create(type)),
+Room::Room(const std::string& code, GameId gameId, const std::string& hostName, size_t maxPlayers)
+    : m_code(code), m_hostName(hostName.empty() ? "Player 1" : hostName),
+      m_gameId(gameId),
+      m_maxPlayers(maxPlayers),
+      m_game(GameRegistry::instance().create(gameId.view())),
       m_state(std::make_unique<WaitingRoomState>()) {
+    if (m_maxPlayers == 0) {
+        const auto* reg = GameRegistry::instance().find(gameId.view());
+        if (reg) {
+            m_maxPlayers = reg->descriptor.maxPlayers;
+        } else {
+            m_maxPlayers = 2;
+        }
+    }
     if (m_game) {
         m_game->setPlayerCount(static_cast<int>(m_maxPlayers));
     }

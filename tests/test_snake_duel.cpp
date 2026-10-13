@@ -10,7 +10,7 @@ int main() {
     using namespace gamehub::core;
 
     // 1. Create a Room hosting 2-Player Snake Duel
-    Room room("DUEL", GameType::SNAKE_DUEL);
+    Room room("DUEL", GameId("snake_duel"));
     room.init();
     room.addPlayer(1);
     room.addPlayer(2);

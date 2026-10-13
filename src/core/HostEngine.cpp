@@ -114,33 +114,25 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
     if (rawMessage.find("\"cmd\":\"create\"") != std::string::npos) {
         detachPlayerFromRoom(sessionId);
 
-        GameType gtype = GameType::TICTACTOE_PVP;
-        size_t maxPlayers = 2;
+        std::string gId = extractJsonString(rawMessage, "game");
+        const auto* regEntry = !gId.empty() ? GameRegistry::instance().find(gId) : nullptr;
 
-        if (rawMessage.find("\"snake_duel\"") != std::string::npos) {
-            gtype = GameType::SNAKE_DUEL;
-        } else if (rawMessage.find("\"connect4_pvp\"") != std::string::npos) {
-            gtype = GameType::CONNECT_FOUR_PVP;
-        } else if (rawMessage.find("\"pong_duel\"") != std::string::npos) {
-            gtype = GameType::PONG_DUEL;
-        } else if (rawMessage.find("\"tron_duel\"") != std::string::npos) {
-            gtype = GameType::TRON_DUEL;
-        } else if (rawMessage.find("\"battleship_pvp\"") != std::string::npos) {
-            gtype = GameType::BATTLESHIP_PVP;
-        } else if (rawMessage.find("\"domino_duel\"") != std::string::npos) {
-            gtype = GameType::DOMINO_PVP;
-            maxPlayers = 2;
-        } else if (rawMessage.find("\"domino_pvp\"") != std::string::npos) {
-            gtype = GameType::DOMINO_PVP;
-            maxPlayers = (rawMessage.find("\"players\":2") != std::string::npos || rawMessage.find("\"max\":2") != std::string::npos) ? 2 : 3;
+        size_t maxPlayers = 2;
+        if (regEntry) {
+            maxPlayers = regEntry->descriptor.maxPlayers;
         }
-        std::string gname = gameTypeToString(gtype);
+        if (rawMessage.find("\"players\":2") != std::string::npos || rawMessage.find("\"max\":2") != std::string::npos) {
+            maxPlayers = 2;
+        } else if (rawMessage.find("\"players\":3") != std::string::npos || rawMessage.find("\"max\":3") != std::string::npos) {
+            maxPlayers = 3;
+        }
 
         std::string hostName = extractJsonString(rawMessage, "host");
         if (hostName.empty()) hostName = extractJsonString(rawMessage, "name");
         if (hostName.empty()) hostName = "Player 1";
 
-        Room* newRoom = m_roomManager.createRoom(gtype, sessionId, hostName, maxPlayers);
+        GameId gameId = regEntry ? regEntry->descriptor.id : GameId(gId.empty() ? "ttt_pvp" : gId);
+        Room* newRoom = m_roomManager.createRoom(gameId, sessionId, hostName, maxPlayers);
         if (!newRoom) {
             std::string err = "{\"type\":\"error\",\"msg\":\"Room capacity reached (max 4).\"}";
             if (m_network) m_network->sendToClient(sessionId, err);
@@ -156,7 +148,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
         std::ostringstream oss;
         oss << "{\"type\":\"room_created\",\"code\":\"" << newRoom->getCode()
-            << "\",\"game\":\"" << gname
+            << "\",\"game\":\"" << gameId.c_str()
             << "\",\"player\":1,\"host\":\"" << hostName
             << "\",\"max\":" << maxPlayers << "}";
         std::string resp = oss.str();
@@ -181,7 +173,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         m_sessionPlayerMap[sessionId] = pNum;
         m_roomPlayers[code].push_back(sessionId);
 
-        std::string gname = gameTypeToString(room->getGameType());
+        std::string gname = room->getGameId().c_str();
 
         if (m_network) {
             m_network->broadcast(m_roomManager.serializeDirectory());
@@ -266,22 +258,11 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         rawMessage.find("\"start\"") != std::string::npos) {
         detachPlayerFromRoom(sessionId);
 
-        GameType gtype = GameType::SNAKE_SOLO;
-        if (rawMessage.find("\"ttt_solo\"") != std::string::npos) {
-            gtype = GameType::TICTACTOE_SOLO;
-        } else if (rawMessage.find("\"connect4_solo\"") != std::string::npos) {
-            gtype = GameType::CONNECT_FOUR_SOLO;
-        } else if (rawMessage.find("\"domino_solo\"") != std::string::npos) {
-            gtype = GameType::DOMINO_SOLO;
-        } else if (rawMessage.find("\"pong_solo\"") != std::string::npos) {
-            gtype = GameType::PONG_SOLO;
-        } else if (rawMessage.find("\"tron_solo\"") != std::string::npos) {
-            gtype = GameType::TRON_SOLO;
-        } else if (rawMessage.find("\"battleship_solo\"") != std::string::npos) {
-            gtype = GameType::BATTLESHIP_SOLO;
-        }
+        std::string gId = extractJsonString(rawMessage, "game");
+        const auto* regEntry = !gId.empty() ? GameRegistry::instance().find(gId) : nullptr;
+        GameId gameId = regEntry ? regEntry->descriptor.id : GameId(gId.empty() ? "snake_solo" : gId);
+        Room* room = m_roomManager.createSoloRoom(gameId, sessionId);
 
-        Room* room = m_roomManager.createSoloRoom(gtype, sessionId);
         auto itS = m_sessions.find(sessionId);
         if (itS == m_sessions.end()) {
             itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId)).first;
@@ -336,9 +317,7 @@ void HostEngine::tick(float dt) {
         Room* r = roomPtr.get();
         if (!r || r->isFinished() || !r->shouldTick()) continue;
 
-        auto gt = r->getGameType();
-        bool isRealTime = (gt == GameType::SNAKE_DUEL || gt == GameType::PONG_DUEL || gt == GameType::TRON_DUEL ||
-                           gt == GameType::SNAKE_SOLO || gt == GameType::PONG_SOLO || gt == GameType::TRON_SOLO);
+        bool isRealTime = r->getGame() && r->getGame()->isRealTime();
 
         if (isRealTime) {
             r->tick(dt);

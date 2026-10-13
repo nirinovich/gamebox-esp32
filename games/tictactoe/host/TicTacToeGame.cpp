@@ -1,6 +1,49 @@
 #include "TicTacToeGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <charconv>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createTttSolo() {
+    return std::make_unique<gamehub::core::TicTacToeGame>(true);
+}
+std::unique_ptr<gamehub::core::Game> createTttPvp() {
+    return std::make_unique<gamehub::core::TicTacToeGame>(false);
+}
+}
+
+REGISTER_GAME("ttt_solo", TttSolo, &createTttSolo, {
+    gamehub::core::GameId("ttt_solo"),
+    "Tic-Tac-Toe Bot",
+    "SOLO",
+    "Challenge the Minimax algorithmic BotController engine",
+    1, 1,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "ttt_solo",
+    false
+})
+
+REGISTER_GAME("ttt_pvp", TttPvp, &createTttPvp, {
+    gamehub::core::GameId("ttt_pvp"),
+    "2P Tic-Tac-Toe",
+    "DUEL",
+    "Turn-based tactical duel with overdrive laser lines",
+    2, 2,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "ttt_pvp",
+    true
+})
+
+REGISTER_GAME("tictactoe_pvp", TictactoePvpAlias, &createTttPvp, {
+    gamehub::core::GameId("tictactoe_pvp"),
+    "2P Tic-Tac-Toe",
+    "DUEL",
+    "Turn-based tactical duel with overdrive laser lines",
+    2, 2,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "ttt_pvp",
+    true
+})
 
 namespace gamehub {
 namespace core {

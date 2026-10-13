@@ -1,7 +1,39 @@
 #include "BattleshipGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <cstring>
 #include <charconv>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createBattleshipSolo() {
+    return std::make_unique<gamehub::core::BattleshipGame>(true);
+}
+std::unique_ptr<gamehub::core::Game> createBattleshipPvp() {
+    return std::make_unique<gamehub::core::BattleshipGame>(false);
+}
+}
+
+REGISTER_GAME("battleship_solo", BattleshipSolo, &createBattleshipSolo, {
+    gamehub::core::GameId("battleship_solo"),
+    "Battleship Solo",
+    "SOLO",
+    "Naval grid warfare with 360-degree sonar sweep",
+    1, 1,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "battleship_solo",
+    false
+})
+
+REGISTER_GAME("battleship_pvp", BattleshipPvp, &createBattleshipPvp, {
+    gamehub::core::GameId("battleship_pvp"),
+    "Battleship Fleet",
+    "DUEL",
+    "Blind targeting naval duel with torpedo fire VFX",
+    2, 2,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "battleship_pvp",
+    true
+})
 
 namespace gamehub {
 namespace core {
@@ -232,7 +264,7 @@ void BattleshipGame::handleInput(PlayerId player, const std::string& input) {
     if (pidx < 0 || pidx > 1) return;
 
     if (m_phase == Phase::PLACEMENT) {
-        if (input.find("\"auto_place\"") != std::string::npos || input.find("\"deploy\"") != std::string::npos) {
+        if (input.find("\"auto_place\"") != std::string::npos || input.find("\"deploy\"") != std::string::npos || input.find("\"cmd\":\"auto_place\"") != std::string::npos) {
             handleAutoPlace(pidx);
         } else if (input.find("\"place\"") != std::string::npos || input.find("\"cmd\":\"place\"") != std::string::npos) {
             handlePlacement(pidx, input);
@@ -311,6 +343,18 @@ std::string BattleshipGame::serializeStateForPlayer(PlayerId id) const {
         oss << ",\"p1\":{" << serializeGrid(1, true) << "}"
             << ",\"p2\":{" << serializeGrid(2, false) << "}";
     }
+
+    if (m_phase == Phase::PLACEMENT && !m_finished) {
+        bool ownReady = (reqPidx >= 0 && reqPidx <= 1) ? m_grids[reqPidx].ready : false;
+        oss << ",\"available_actions\":[";
+        if (!ownReady) {
+            oss << "{\"id\":\"auto_place\",\"label\":\"DEPLOY FLEET\",\"enabled\":true,\"style\":\"primary\"}";
+        } else {
+            oss << "{\"id\":\"auto_place\",\"label\":\"FLEET READY\",\"enabled\":false}";
+        }
+        oss << "]";
+    }
+
     oss << "}";
     return oss.str();
 }

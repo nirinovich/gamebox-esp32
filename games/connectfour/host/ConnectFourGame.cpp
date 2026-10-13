@@ -1,9 +1,41 @@
 #include "ConnectFourGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <algorithm>
 #include <limits>
 #include <cstdlib>
 #include <charconv>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createConnect4Solo() {
+    return std::make_unique<gamehub::core::ConnectFourGame>(true);
+}
+std::unique_ptr<gamehub::core::Game> createConnect4Pvp() {
+    return std::make_unique<gamehub::core::ConnectFourGame>(false);
+}
+}
+
+REGISTER_GAME("connect4_solo", Connect4Solo, &createConnect4Solo, {
+    gamehub::core::GameId("connect4_solo"),
+    "Connect Four Bot",
+    "SOLO",
+    "Gravity disc drops with physical elastic bounce",
+    1, 1,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "connect4_solo",
+    false
+})
+
+REGISTER_GAME("connect4_pvp", Connect4Pvp, &createConnect4Pvp, {
+    gamehub::core::GameId("connect4_pvp"),
+    "Connect Four Duel",
+    "DUEL",
+    "Vertical four-in-a-row column targeting showdown",
+    2, 2,
+    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "connect4_pvp",
+    true
+})
 
 namespace gamehub {
 namespace core {

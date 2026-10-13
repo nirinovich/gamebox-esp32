@@ -1,6 +1,38 @@
 #include "SnakeGame.hpp"
+#include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <cstdlib>
+
+namespace {
+std::unique_ptr<gamehub::core::Game> createSnakeSolo() {
+    return std::make_unique<gamehub::core::SnakeGame>(false);
+}
+std::unique_ptr<gamehub::core::Game> createSnakeDuel() {
+    return std::make_unique<gamehub::core::SnakeGame>(true);
+}
+}
+
+REGISTER_GAME("snake_solo", SnakeSolo, &createSnakeSolo, {
+    gamehub::core::GameId("snake_solo"),
+    "Snake Survival",
+    "SOLO",
+    "Classic arcade snake with robotic glowing eyes & embers",
+    1, 1,
+    gamehub::core::InputFlag::DPAD | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "snake_solo",
+    false
+})
+
+REGISTER_GAME("snake_duel", SnakeDuel, &createSnakeDuel, {
+    gamehub::core::GameId("snake_duel"),
+    "Snake Arena",
+    "DUEL",
+    "2P Competitive snake head-to-head collision duel",
+    2, 2,
+    gamehub::core::InputFlag::DPAD | gamehub::core::InputFlag::ACTION_BUTTONS,
+    "snake_duel",
+    true
+})
 
 namespace gamehub {
 namespace core {
