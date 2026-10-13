@@ -19,7 +19,7 @@ struct DominoTile {
 
 class DominoGame : public Game {
 public:
-    explicit DominoGame(bool isSolo = false, int numPlayers = 2, bool isBlockMode = false);
+    explicit DominoGame(bool isSolo = false, int numPlayers = 2, int targetScore = 100);
     ~DominoGame() override = default;
 
     void init() override;
@@ -36,9 +36,15 @@ public:
     int getLeftEnd() const;
     int getRightEnd() const;
     bool canPlayerPlay(int pidx) const;
-    size_t getBoneyardCount() const { return m_boneyard.size(); }
-    bool isBlockMode() const { return m_isBlockMode; }
-    void setBlockMode(bool block) { m_isBlockMode = block; }
+    size_t getDeadwoodCount() const { return m_deadwood.size(); }
+    size_t getBoneyardCount() const { return m_deadwood.size(); } // Backward compat alias
+
+    int getTargetScore() const { return m_targetScore; }
+    void setTargetScore(int target) { m_targetScore = (target > 0) ? target : 100; }
+    int getRebon() const { return m_rebonPool; }
+    int getCumulativeScore(int pidx) const { return (pidx >= 0 && pidx < 4) ? m_cumulativeScores[pidx] : 0; }
+    int getRound() const { return m_round; }
+    bool isRoundFinished() const { return m_roundFinished; }
 
     void setPendingChoice(int pidx, int tileIdx) {
         m_pendingChoicePlayer = pidx;
@@ -49,27 +55,45 @@ public:
         m_pendingChoiceIdx = -1;
     }
 
+    void startNewRound();
+
+    // Direct state setup helper for unit testing deterministic scenarios
+    void setupCustomHand(int pidx, const std::vector<DominoTile>& tiles) {
+        if (pidx >= 0 && pidx < m_numPlayers) {
+            m_hands[pidx] = tiles;
+        }
+    }
+    void setTurn(int turn) { m_turn = turn; }
+    void setBoard(const std::deque<DominoTile>& b) { m_board = b; }
+
 private:
-    bool playTile(int pidx, int tileIdx, const std::string& end);
-    bool drawTile(int pidx);
+    bool playTile(int pidx, int tileIdx, const std::string& endChoice);
     void passTurn(int pidx);
     void checkBlockedWin();
+    void determineOpeningLead();
     void executeBotTurns();
 
     bool m_isSolo{false};
     int m_numPlayers{2};
-    bool m_isBlockMode{false};
+    int m_targetScore{100};
     int m_turn{1};
     bool m_finished{false};
     int m_winner{0};
     int m_consecutivePasses{0};
 
+    int m_round{1};
+    bool m_roundFinished{false};
+    int m_roundWinner{0};
+    int m_roundPointsAwarded{0};
+    int m_rebonPool{0};
+    int m_cumulativeScores[4]{0, 0, 0, 0};
+
     int m_pendingChoicePlayer{0};
     int m_pendingChoiceIdx{-1};
 
     std::deque<DominoTile> m_board;
-    std::vector<DominoTile> m_hands[3];
-    std::vector<DominoTile> m_boneyard;
+    std::vector<DominoTile> m_hands[4];
+    std::vector<DominoTile> m_deadwood;
     std::string m_lastAction;
 };
 

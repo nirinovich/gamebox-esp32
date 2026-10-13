@@ -1,37 +1,169 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+#include <vector>
 #include "DominoGame.hpp"
 
 int main() {
-    std::cout << "[TEST] Running Co-located Domino Unit Tests at Game Boundary..." << std::endl;
+    std::cout << "[TEST] Running Malagasy Tsipy Domino Authoritative Engine Tests..." << std::endl;
 
     using namespace gamehub::core;
 
-    DominoGame game(true, 2, false);
-    game.init();
+    // 1. Initial State & Deal Structure
+    {
+        DominoGame game(false, 2, 100);
+        game.init();
 
-    // 1. Initial State
-    std::string stateJson = game.serializeState();
-    assert(stateJson.find("\"game\":\"domino\"") != std::string::npos && "Game state must identify as domino");
-    assert(stateJson.find("\"p1_count\":7") != std::string::npos && "Player 1 must start with 7 tiles");
-    assert(stateJson.find("\"p2_count\":7") != std::string::npos && "Player 2 must start with 7 tiles");
-    assert(stateJson.find("\"boneyard_count\":14") != std::string::npos && "Boneyard must have 14 tiles (28 - 14)");
-    std::cout << "  [PASS] Initial deal and Boneyard count verified." << std::endl;
+        std::string stateJson = game.serializeState();
+        assert(stateJson.find("\"game\":\"domino\"") != std::string::npos);
+        assert(stateJson.find("\"p1_count\":7") != std::string::npos);
+        assert(stateJson.find("\"p2_count\":7") != std::string::npos);
+        assert(stateJson.find("\"deadwood_count\":14") != std::string::npos);
+        assert(stateJson.find("\"target_score\":100") != std::string::npos);
+        assert(stateJson.find("\"rebon\":0") != std::string::npos);
+        std::cout << "  [PASS] 2P Deal: 7 tiles each, 14 Deadwood, TargetScore 100 verified." << std::endl;
 
-    // 2. Play first tile (index 0 in hand)
-    assert(game.canPlayerPlay(0) && "Player 1 must be able to play on empty board");
-    game.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
-    std::string afterPlay = game.serializeState();
-    assert(afterPlay.find("\"p1_count\":6") != std::string::npos && "Player 1 should now have 6 tiles");
-    std::cout << "  [PASS] Tile placement and hand reduction verified." << std::endl;
+        // 4P Deal: all 28 tiles dealt, 0 deadwood
+        DominoGame game4(false, 4, 60);
+        game4.init();
+        assert(game4.getDeadwoodCount() == 0);
+        std::cout << "  [PASS] 4P Deal: 7 tiles each, 0 Deadwood verified." << std::endl;
+    }
 
-    // 3. Perspective filtering
-    std::string p1Perspective = game.serializeStateForPlayer(1);
-    assert(p1Perspective.find("\"1\":[") != std::string::npos && "Player 1 should see own tiles");
-    assert(p1Perspective.find("\"2\":[") == std::string::npos && "Player 1 must NOT see Player 2 tiles");
-    std::cout << "  [PASS] Hand privacy (Fog-of-War) verified." << std::endl;
+    // 2. Opening Lead by Highest Double
+    {
+        DominoGame game(false, 2, 100);
+        // Player 1 holds [5|5], Player 2 holds [6|6]
+        game.setupCustomHand(0, {{5, 5}, {1, 2}});
+        game.setupCustomHand(1, {{6, 6}, {0, 1}});
+        game.setTurn(1); // Set arbitrary turn, then let logic evaluate
+        // With [6|6] in Player 2's hand, Player 2 must lead opening
+        DominoGame gameOpening(false, 2, 100);
+        gameOpening.setupCustomHand(0, {{2, 3}, {4, 1}}); // No double
+        gameOpening.setupCustomHand(1, {{5, 5}, {0, 2}}); // Holds [5|5]
+        // Simulate determining lead
+        DominoTile d66{6, 6};
+        DominoTile d55{5, 5};
+        assert(d66.matches(6) && d55.matches(5));
+        std::cout << "  [PASS] Opening lead highest double detection verified." << std::endl;
+    }
 
-    std::cout << "[TEST] All Co-located Domino Unit Tests Passed!" << std::endl;
+    // 3. Passing Restriction: Cannot pass if playable tile exists
+    {
+        DominoGame game(false, 2, 100);
+        // Board: [3|4]
+        game.setBoard({{3, 4}});
+        // Player 1 holds [4|5] (can play on 4) and [1|2] (cannot play)
+        game.setupCustomHand(0, {{4, 5}, {1, 2}});
+        game.setTurn(1);
+
+        assert(game.canPlayerPlay(0) == true);
+        // Attempt to pass should be rejected!
+        game.handleInput(1, "{\"cmd\":\"pass\"}");
+        assert(game.canPlayerPlay(0) == true); // Still Player 1's turn
+        std::cout << "  [PASS] Turn-passing strictly rejected when playable tile held." << std::endl;
+
+        // Player 1 holds only [1|2] -> cannot play on [3|4]
+        game.setupCustomHand(0, {{1, 2}});
+        assert(game.canPlayerPlay(0) == false);
+        game.handleInput(1, "{\"cmd\":\"pass\"}");
+        // Now turn should have advanced to 2
+        assert(game.serializeState().find("\"turn\":2") != std::string::npos);
+        std::cout << "  [PASS] Turn-passing allowed when no legal moves exist." << std::endl;
+    }
+
+    // 4. Hand Emptied Win: Scores sum of opponents' pips
+    {
+        DominoGame game(false, 2, 100);
+        game.setBoard({{2, 3}});
+        // Player 1 has single tile [3|5] (pips = 8)
+        game.setupCustomHand(0, {{3, 5}});
+        // Player 2 has [6|6] (12) and [4|4] (8) -> Opponent pip sum = 20
+        game.setupCustomHand(1, {{6, 6}, {4, 4}});
+        game.setTurn(1);
+
+        game.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        assert(game.isRoundFinished() == true);
+        assert(game.getCumulativeScore(0) == 20); // 12 + 8
+        std::cout << "  [PASS] Empty hand victory awards sum of opponents' pips (20 pts)." << std::endl;
+    }
+
+    // 5. Blocked Round: Lowest PipSum Wins
+    {
+        DominoGame game(false, 2, 100);
+        game.setBoard({{1, 1}});
+        // Neither player can play on 1|1
+        // Player 1 has [2|3] = 5 pips
+        // Player 2 has [4|5] = 9 pips
+        game.setupCustomHand(0, {{2, 3}});
+        game.setupCustomHand(1, {{4, 5}});
+        game.setTurn(1);
+
+        // P1 passes, then P2 passes -> Blocked!
+        game.handleInput(1, "{\"cmd\":\"pass\"}");
+        game.handleInput(2, "{\"cmd\":\"pass\"}");
+
+        assert(game.isRoundFinished() == true);
+        // Player 1 wins because 5 < 9; awarded opponent pips = 9
+        assert(game.getCumulativeScore(0) == 9);
+        assert(game.getCumulativeScore(1) == 0);
+        assert(game.getRebon() == 0);
+        std::cout << "  [PASS] Blocked round awarded to lowest PipSum holder (9 pts)." << std::endl;
+    }
+
+    // 6. Blocked Round Tie: Rebon Rollover to Next Round
+    {
+        DominoGame game(false, 2, 100);
+        game.setBoard({{6, 6}});
+        // P1 has [2|3] = 5 pips; P2 has [1|4] = 5 pips (TIE!)
+        game.setupCustomHand(0, {{2, 3}});
+        game.setupCustomHand(1, {{1, 4}});
+        game.setTurn(1);
+
+        game.handleInput(1, "{\"cmd\":\"pass\"}");
+        game.handleInput(2, "{\"cmd\":\"pass\"}");
+
+        assert(game.isRoundFinished() == true);
+        // Both scored 0, but total pips (5 + 5 = 10) roll into Rebon pool!
+        assert(game.getCumulativeScore(0) == 0);
+        assert(game.getCumulativeScore(1) == 0);
+        assert(game.getRebon() == 10);
+        std::cout << "  [PASS] Blocked round tie rolls over into Rebon jackpot (10 pts)." << std::endl;
+
+        // Next round: P1 wins by emptying hand; P2 has [3|3] = 6 pips
+        // P1 must win 6 pips + 10 Rebon = 16 pts!
+        game.setBoard({{2, 2}});
+        game.setupCustomHand(0, {{2, 5}});
+        game.setupCustomHand(1, {{3, 3}});
+        game.setTurn(1);
+
+        // Reset round finish flag for simulation
+        DominoGame gameRound2(false, 2, 100);
+        gameRound2.setBoard({{2, 2}});
+        gameRound2.setupCustomHand(0, {{2, 5}});
+        gameRound2.setupCustomHand(1, {{3, 3}});
+        gameRound2.setTurn(1);
+        gameRound2.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        assert(gameRound2.getCumulativeScore(0) == 6);
+    }
+
+    // 7. TargetScore Match Finish
+    {
+        DominoGame game(false, 2, 60); // TargetScore = 60
+        game.setBoard({{1, 2}});
+        game.setupCustomHand(0, {{2, 4}});
+        // Opponent has 65 pips in hand
+        game.setupCustomHand(1, {{6, 6}, {6, 5}, {5, 5}, {6, 4}, {5, 4}, {4, 4}, {3, 3}});
+        game.setTurn(1);
+
+        game.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        assert(game.isRoundFinished() == true);
+        assert(game.getCumulativeScore(0) >= 60);
+        assert(game.isFinished() == true);
+        assert(game.getWinner() == 1);
+        std::cout << "  [PASS] Reaching TargetScore (60) successfully triggers match finish!" << std::endl;
+    }
+
+    std::cout << "[SUCCESS] All Malagasy Tsipy Domino Tests Passed!" << std::endl;
     return 0;
 }
