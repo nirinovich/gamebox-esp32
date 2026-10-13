@@ -1,6 +1,6 @@
 # Spec: Academic Parlor and Board Engines (Purge Clichés, Malagasy Dominoes, Texas Hold'em, Ludo)
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 
