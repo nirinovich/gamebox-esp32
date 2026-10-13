@@ -315,11 +315,12 @@ void DesktopServer::handleClient(uintptr_t clientSocket, uint32_t sessionId) {
             m_disconnectHandler(sessionId);
         }
     } else {
-        // HTTP GET request: Serve embedded single-page application
+        // HTTP GET request: Serve embedded single-page application (Gzip compressed)
         std::string html = web::WebAssets::getIndexHtml();
         std::ostringstream response;
         response << "HTTP/1.1 200 OK\r\n"
                  << "Content-Type: text/html; charset=UTF-8\r\n"
+                 << "Content-Encoding: gzip\r\n"
                  << "Content-Length: " << html.size() << "\r\n"
                  << "Connection: close\r\n\r\n"
                  << html;

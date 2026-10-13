@@ -86,9 +86,15 @@ void setup() {
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
-    // 4. Captive Portal Auto-Popup Endpoints (Zero-copy stream directly from flash memory)
+    // 4. Captive Portal Auto-Popup Endpoints (Zero-copy stream directly from flash memory with Gzip)
     auto serveSPA = [](AsyncWebServerRequest* request) {
-        request->send(200, "text/html", gamehub::web::WebAssets::getIndexHtmlData(), gamehub::web::WebAssets::getIndexHtmlSize());
+        AsyncWebServerResponse* response = request->beginResponse(
+            200, "text/html",
+            gamehub::web::WebAssets::getIndexHtmlData(),
+            gamehub::web::WebAssets::getIndexHtmlSize()
+        );
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
     };
 
     server.on("/", HTTP_GET, serveSPA);

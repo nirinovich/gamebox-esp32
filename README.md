@@ -21,7 +21,7 @@ You can run this project in three ways:
 2. **ESP32 Hardware Mode** (flashing directly to an ESP32-S3 board)
 3. **Wokwi Simulator** (virtual simulation in VS Code or CLI)
 
-> **Note on Web Assets:** All web portal frontend files (HTML/JS/CSS) are compiled directly into the binary as C++ string constants. No separate SPIFFS or LittleFS filesystem flashing is needed.
+> **Note on Web Assets:** All web portal frontend files (HTML/JS/CSS) are compressed with RFC 1952 Gzip and embedded directly into the binary as C++ byte arrays using the native C++ asset packer (`tools/asset_packer.cpp`). No Python scripts, external package managers, or separate SPIFFS/LittleFS filesystem partitions are needed.
 
 ---
 
@@ -107,6 +107,7 @@ You can simulate the ESP32 firmware directly inside VS Code:
 │   ├── core/             # Portable C++17 domain logic (Session, Room, Snake, TicTacToe)
 │   ├── desktop/          # Native desktop server (HTTP & WebSocket for PC testing)
 │   └── esp32/            # ESP32 FreeRTOS tasks, Wi-Fi SoftAP, DNS captive portal
+├── tools/                # Native C++ host build utilities (asset_packer)
 ├── tests/                # Unit and integration tests
 ├── platformio.ini        # PlatformIO configuration for ESP32-S3
 ├── CMakeLists.txt        # CMake build script for desktop and tests

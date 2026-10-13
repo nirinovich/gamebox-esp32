@@ -71,3 +71,18 @@ else()
     )
     target_link_libraries(gamehub_desktop PRIVATE gamehub_core pthread)
 endif()
+
+# Native C++ Asset Packer tool
+add_executable(asset_packer
+    tools/asset_packer.cpp
+)
+
+target_include_directories(asset_packer PRIVATE tools)
+
+add_custom_target(generate_assets
+    COMMAND $<TARGET_FILE:asset_packer> "${CMAKE_CURRENT_SOURCE_DIR}/frontend/dist/index.html" "${CMAKE_CURRENT_SOURCE_DIR}/include/gamehub/web/WebAssets.hpp"
+    DEPENDS asset_packer
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Packing web assets with native C++ asset_packer (RFC 1952 Gzip)"
+)
+
