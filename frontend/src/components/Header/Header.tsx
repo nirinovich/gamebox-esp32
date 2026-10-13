@@ -10,6 +10,7 @@ import {
 } from '../../state/gameStore';
 import { showTrophyDrawer } from '../../state/hallOfFameStore';
 import { gameSocket } from '../../services/GameSocket';
+import { GameboxLogo } from '../common/GameboxLogo';
 import styles from './Header.module.css';
 
 export function Header() {
@@ -33,22 +34,19 @@ export function Header() {
     status === 'CONNECTED'
       ? ping !== null
         ? `${ping} ms`
-        : 'Online'
+        : 'ONLINE'
       : status === 'CONNECTING'
-      ? 'Connecting'
-      : 'Offline';
+      ? 'CONNECTING'
+      : 'OFFLINE';
 
   return (
     <>
       <header className={styles.header}>
         <div className={styles.logoWrap}>
           <span className={styles.logoIcon}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-              <rect x="2" y="6" width="20" height="12" rx="4" />
-              <path d="M6 12h4m-2-2v4m8-2h.01m3-2h.01" />
-            </svg>
+            <GameboxLogo variant="glyph" size={24} animated={true} />
           </span>
-          <span>Gamebox</span>
+          <span className={styles.logoText}>GAMEBOX</span>
         </div>
 
         <div className={styles.headerControls}>

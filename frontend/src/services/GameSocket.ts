@@ -120,6 +120,11 @@ class GameSocketService {
   }
 
   private handleMessage(msg: ServerMessage) {
+    if (msg.type === 'state' || (msg as any).game) {
+      gameState.value = msg;
+      return;
+    }
+
     switch (msg.type) {
       case 'pong':
         if (msg.ts) {

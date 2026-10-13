@@ -5,27 +5,33 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 14px;
-  background: var(--surface);
+  background: var(--gb-surface-1);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--gb-border-crisp);
   border-radius: var(--radius-lg);
   margin-bottom: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .logoWrap {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 1.1rem;
+  gap: 10px;
 }
 
 .logoIcon {
-  color: var(--p1-cyan);
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.logoText {
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  color: var(--gb-text-primary);
+  text-transform: uppercase;
 }
 
 .headerControls {
@@ -35,9 +41,9 @@
 }
 
 .iconBtn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
+  background: var(--gb-surface-2);
+  border: 1px solid var(--gb-border-subtle);
+  color: var(--gb-text-secondary);
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
@@ -45,13 +51,13 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: color 140ms var(--ease), border-color 140ms var(--ease), background 140ms var(--ease);
+  transition: color 140ms var(--ease), border-color 140ms var(--ease), background 140ms var(--ease), transform 100ms var(--ease);
 }
 
 .iconBtn:hover {
-  color: var(--text);
-  border-color: var(--border-highlight);
-  background: var(--surface-hover);
+  color: var(--gb-text-primary);
+  border-color: var(--gb-border-highlight);
+  background: var(--gb-surface-3);
 }
 
 .iconBtn:active {
@@ -59,36 +65,42 @@
 }
 
 .iconBtnActive {
-  color: var(--p1-cyan);
-  border-color: var(--p1-cyan);
-  background: rgba(56, 189, 248, 0.12);
+  color: var(--gb-red);
+  border-color: var(--gb-red);
+  background: var(--gb-red-dim);
 }
 
 .badge {
-  font-size: 0.72rem;
-  padding: 5px 9px;
+  font-size: 0.7rem;
+  padding: 4px 8px;
   border-radius: 9999px;
-  background: #1e293b;
-  color: var(--text-tertiary);
+  background: var(--gb-surface-2);
+  border: 1px solid var(--gb-border-subtle);
+  color: var(--gb-text-tertiary);
   display: flex;
   align-items: center;
   gap: 6px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .connected {
   background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.3);
   color: #4ade80;
 }
 
 .connecting {
-  background: rgba(245, 158, 11, 0.12);
-  color: var(--bot-amber);
+  background: rgba(229, 169, 59, 0.12);
+  border-color: rgba(229, 169, 59, 0.3);
+  color: var(--gb-amber);
 }
 
 .disconnected {
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--danger);
+  background: var(--gb-red-dim);
+  border-color: rgba(239, 57, 56, 0.3);
+  color: var(--gb-red);
 }
 
 .dot {
@@ -108,32 +120,35 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--surface);
+  background: var(--gb-surface-1);
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  border: 1px solid var(--gb-border-crisp);
   margin-bottom: 12px;
 }
 
 .profileLabel {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gb-text-secondary);
 }
 
 .profileInput {
   flex: 1;
-  background: #0b111e;
-  border: 1px solid var(--border);
-  color: var(--p1-cyan);
+  background: var(--gb-surface-2);
+  border: 1px solid var(--gb-border-subtle);
+  color: var(--gb-text-primary);
   padding: 6px 10px;
   border-radius: var(--radius-sm);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   outline: none;
-  transition: border-color 140ms;
+  transition: border-color 140ms var(--ease), background 140ms var(--ease);
 }
 
 .profileInput:focus {
-  border-color: var(--p1-cyan);
+  border-color: var(--gb-red);
+  background: var(--gb-surface-3);
 }

@@ -1,6 +1,6 @@
 .waitingBox {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--gb-surface-1);
+  border: 1px solid var(--gb-border-crisp);
   border-radius: var(--radius-lg);
   padding: 24px;
   display: flex;
@@ -9,33 +9,35 @@
   text-align: center;
   gap: 16px;
   width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .radarPulse {
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid var(--p1-cyan);
+  background: var(--gb-red-dim);
+  border: 2px solid var(--gb-red);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 20px rgba(239, 57, 56, 0.3);
   animation: radarWave 2s infinite ease-out;
+  color: var(--gb-red);
 }
 
 @keyframes radarWave {
   0% {
     transform: scale(0.92);
-    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4);
+    box-shadow: 0 0 0 0 rgba(239, 57, 56, 0.4);
   }
   70% {
     transform: scale(1.04);
-    box-shadow: 0 0 0 16px rgba(56, 189, 248, 0);
+    box-shadow: 0 0 0 16px rgba(239, 57, 56, 0);
   }
   100% {
     transform: scale(0.92);
-    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+    box-shadow: 0 0 0 0 rgba(239, 57, 56, 0);
   }
 }
 
@@ -48,73 +50,85 @@
 .gameTitle {
   font-weight: 800;
   font-size: 1.2rem;
-  color: var(--text);
+  color: var(--gb-white);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .hostMsg {
   font-size: 0.82rem;
-  color: var(--text-secondary);
+  color: var(--gb-text-secondary);
 }
 
 .codeWrap {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #0b111e;
-  border: 1px solid var(--border);
+  background: var(--gb-surface-2);
+  border: 1px solid var(--gb-border-crisp);
   border-radius: var(--radius-sm);
-  padding: 6px 14px;
+  padding: 8px 16px;
   cursor: pointer;
-  transition: border-color 140ms;
+  transition: border-color 140ms var(--ease), background 140ms var(--ease);
 }
 
 .codeWrap:hover {
-  border-color: var(--p1-cyan);
+  border-color: var(--gb-red);
+  background: var(--gb-surface-3);
 }
 
 .roomCodeTag {
   font-size: 1.6rem;
   font-weight: 900;
-  letter-spacing: 3px;
-  color: var(--p1-cyan);
-  font-family: monospace;
+  letter-spacing: 4px;
+  color: var(--gb-white);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .copyLabel {
   font-size: 0.72rem;
-  color: var(--text-tertiary);
-  font-weight: 600;
+  color: var(--gb-text-tertiary);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .btnSolid {
-  background: var(--p1-cyan);
-  color: #090d16;
+  background: var(--gb-red);
+  color: var(--gb-white);
   border: none;
-  font-weight: 800;
+  font-weight: 900;
   font-size: 0.9rem;
+  letter-spacing: 0.05em;
   padding: 10px 18px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   width: 100%;
-  transition: opacity 140ms;
+  transition: background 140ms var(--ease), transform 100ms var(--ease);
 }
 
 .btnSolid:hover {
-  opacity: 0.92;
+  background: var(--gb-red-hover);
+}
+
+.btnSolid:active {
+  transform: scale(0.98);
 }
 
 .btnCancel {
   background: transparent;
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--gb-text-secondary);
+  border: 1px solid var(--gb-border-subtle);
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 140ms;
+  transition: background 140ms var(--ease), color 140ms var(--ease), border-color 140ms var(--ease);
 }
 
 .btnCancel:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--gb-red-dim);
+  border-color: var(--gb-red);
+  color: var(--gb-white);
 }

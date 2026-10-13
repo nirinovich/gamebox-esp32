@@ -11,3 +11,8 @@ Five canonical roles: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-fo
 ### Domain docs
 
 Single-context (`CONTEXT.md` and `docs/adr/` at repo root). See `docs/agents/domain.md`.
+
+### Design System & Anti-Slop Charter
+
+All frontend, styling, and UI changes MUST read and strictly adhere to `DESIGN.md` and `PRODUCT.md`. Use only canonical Gamebox tokens (`#14151b`, `#ef3938`, `#ffffff`). Generating generic AI slop (purple gradients, blurry halos, low-contrast text, unbranded components) is strictly prohibited.
+

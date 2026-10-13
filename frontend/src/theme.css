@@ -1,22 +1,59 @@
 :root {
-  --bg: #090d16;
-  --surface: rgba(17, 24, 39, 0.82);
-  --surface-hover: rgba(31, 41, 61, 0.85);
-  --surface-active: rgba(39, 53, 79, 0.9);
-  --border: #1e293b;
-  --border-highlight: #334155;
-  --p1-cyan: #38bdf8;
-  --p2-pink: #ec4899;
-  --bot-amber: #f59e0b;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --text: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
-  --radius-lg: 14px;
-  --radius-md: 10px;
-  --radius-sm: 6px;
+  /* Canonical Gamebox Brand Palette */
+  --gb-black: #14151b;
+  --gb-red: #ef3938;
+  --gb-red-hover: #f15251;
+  --gb-red-dim: rgba(239, 57, 56, 0.16);
+  --gb-red-glow: rgba(239, 57, 56, 0.4);
+  --gb-white: #ffffff;
+
+  /* Matte Console Elevation Tiers */
+  --gb-bg-canvas: #14151b;
+  --gb-surface-1: #1c1d25;
+  --gb-surface-2: #252733;
+  --gb-surface-3: #2f3140;
+
+  /* Crisp Structural Seams */
+  --gb-border-subtle: rgba(255, 255, 255, 0.08);
+  --gb-border-crisp: rgba(255, 255, 255, 0.16);
+  --gb-border-highlight: rgba(255, 255, 255, 0.32);
+  --gb-border-red: #ef3938;
+  --gb-border-accent: #ef3938;
+  --gb-accent-red: #ef3938;
+  --gb-accent-red-hover: #f15251;
+  --gb-accent-red-dim: rgba(239, 57, 56, 0.16);
+
+  /* Stark Contrast Typography */
+  --gb-text-primary: #ffffff;
+  --gb-text-secondary: #9e9fa8;
+  --gb-text-tertiary: #656775;
+  --gb-text-muted: #656775;
+
+  /* Functional Status & Player Pips */
+  --gb-success: #22c55e;
+  --gb-amber: #e5a93b;
+
+  /* Industrial Geometry (No Bubblegum Slop) */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 4px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Legacy Mappings for Component Interoperability */
+  --bg: var(--gb-bg-canvas);
+  --surface: rgba(28, 29, 37, 0.92);
+  --surface-hover: rgba(37, 39, 51, 0.95);
+  --surface-active: rgba(47, 49, 64, 1);
+  --border: var(--gb-border-crisp);
+  --border-highlight: var(--gb-border-highlight);
+  --text: var(--gb-text-primary);
+  --text-secondary: var(--gb-text-secondary);
+  --text-tertiary: var(--gb-text-tertiary);
+  --danger: var(--gb-red);
+  --p1-cyan: var(--gb-white);
+  --p2-pink: var(--gb-red);
+  --bot-amber: var(--gb-amber);
+  --success: var(--gb-success);
 }
 
 * {
@@ -29,15 +66,16 @@
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--gb-bg-canvas);
+  color: var(--gb-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
   padding: 12px;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 #app {
@@ -48,15 +86,43 @@ body {
   align-items: center;
 }
 
+/* CRT Scanline Filter Overlay */
 body.crt-active::after {
   content: " ";
   display: block;
   position: fixed;
   inset: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-              linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.04));
+  background: linear-gradient(rgba(20, 21, 27, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+              linear-gradient(90deg, rgba(239, 57, 56, 0.03), rgba(0, 0, 0, 0.02), rgba(255, 255, 255, 0.03));
   z-index: 9999;
   background-size: 100% 3px, 6px 100%;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.9;
+}
+
+/* Authentic Brand Micro-Animations */
+@keyframes gb-rocket-launch {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.gb-rocket-launch {
+  animation: gb-rocket-launch 2.4s ease-in-out infinite;
+}
+
+@keyframes gb-rocket-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.gb-rocket-pulse {
+  animation: gb-rocket-pulse 2s ease-in-out infinite;
 }

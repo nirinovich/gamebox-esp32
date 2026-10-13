@@ -1,7 +1,7 @@
 .modalOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(9, 13, 22, 0.88);
+  background: rgba(20, 21, 27, 0.94);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-radius: var(--radius-md);
@@ -90,19 +90,20 @@
 }
 
 .btnAction {
-  background: var(--p1-cyan);
-  color: #090d16;
+  background: var(--gb-red);
+  color: var(--gb-white);
   border: none;
-  font-weight: 800;
+  font-weight: 900;
   font-size: 0.9rem;
+  letter-spacing: 0.05em;
   padding: 11px 18px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: opacity 140ms, transform 100ms;
+  transition: background 140ms var(--ease), transform 100ms var(--ease);
 }
 
 .btnAction:hover {
-  opacity: 0.92;
+  background: var(--gb-red-hover);
 }
 
 .btnAction:active {

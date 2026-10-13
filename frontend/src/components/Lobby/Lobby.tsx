@@ -7,6 +7,7 @@ import {
 import { gameSocket } from '../../services/GameSocket';
 import { GameCategory, GameMetadata, RoomDirectoryEntry } from '../../types/protocol';
 import { Icon } from '../common/Icon';
+import { GameboxLogo } from '../common/GameboxLogo';
 import styles from './Lobby.module.css';
 
 export function Lobby() {
@@ -38,6 +39,21 @@ export function Lobby() {
 
   return (
     <div className={styles.lobby}>
+      {/* Gamebox Arcade Hero Showcase */}
+      <div className={styles.heroShowcase}>
+        <div className={styles.heroEmblem}>
+          <GameboxLogo variant="full" size={60} animated={true} />
+        </div>
+        <div className={styles.heroContent}>
+          <div className={styles.heroBadge}>
+            <span className={styles.heroDot} />
+            <span>CONSOLE CORE ONLINE</span>
+          </div>
+          <h1 className={styles.heroTitle}>GAMEBOX</h1>
+          <p className={styles.heroSubtitle}>Authoritative Multiplayer Arcade Engine</p>
+        </div>
+      </div>
+
       {/* Mode Filter Tabs */}
       <div className={styles.tabBar}>
         {tabs.map(tab => (
