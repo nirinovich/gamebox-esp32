@@ -4,10 +4,10 @@
 
 **Blocked by:** 02: Malagasy Dominoes Authoritative Engine & Cumulative Match Scoring
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Tapping a tile with a single valid play commits or highlights the single open end.
-- [ ] Tapping a tile that matches both open ends activates glowing tactile target brackets over both board ends; tapping either anchor dispatches `{ cmd: "play", index: i, end: "left" | "right" }`.
-- [ ] Player hand renders with fixed, legible tile dimensions in a mobile-friendly horizontal tray without vertical or horizontal squishing when holding 7+ tiles.
-- [ ] Opponent hand counts, pass alerts, cumulative match scores toward TargetScore, and active Rebon pool are clearly rendered on the table HUD.
-- [ ] Unit tests in `DominoRenderer.test.ts` verify dual-choice anchor click detection and action dispatching.
+- [x] Tapping a tile with a single valid play commits or highlights the single open end.
+- [x] Tapping a tile that matches both open ends activates glowing tactile target brackets over both board ends; tapping either anchor dispatches `{ cmd: "play", index: i, end: "left" | "right" }`.
+- [x] Player hand renders with fixed, legible tile dimensions in a mobile-friendly horizontal tray without vertical or horizontal squishing when holding 7+ tiles.
+- [x] Opponent hand counts, pass alerts, cumulative match scores toward TargetScore, and active Rebon pool are clearly rendered on the table HUD.
+- [x] Unit tests in `DominoRenderer.test.ts` verify dual-choice anchor click detection and action dispatching.

@@ -40,7 +40,7 @@ export class DominoRenderer implements IGameRenderer {
     this.lastState = state;
     const myPlayerNum = this.myPlayerNum;
 
-    // Havana Emerald Felt Gaming Table Radial Gradient (Issue 07)
+    // Havana Emerald Felt Gaming Table Radial Gradient
     const grad = ctx.createRadialGradient(200, 200, 20, 200, 200, 260);
     grad.addColorStop(0, '#0f382a');
     grad.addColorStop(1, '#051811');
@@ -51,7 +51,7 @@ export class DominoRenderer implements IGameRenderer {
     ctx.lineWidth = 2;
     ctx.strokeRect(6, 6, this.width - 12, this.height - 12);
 
-    // Opponent Hand Counts (Fog of War)
+    // Header Meta: Opponent Count & Match Series
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 11px system-ui, sans-serif';
     ctx.textAlign = 'left';
@@ -61,39 +61,83 @@ export class DominoRenderer implements IGameRenderer {
       oppStr = `Bot: ${state?.p2_count || 0} tiles`;
     } else if (state?.num_players === 3) {
       oppStr = `P1: ${state?.p1_count} · P2: ${state?.p2_count} · P3: ${state?.p3_count}`;
+    } else if (state?.num_players === 4) {
+      oppStr = `P1: ${state?.p1_count} · P2: ${state?.p2_count} · P3: ${state?.p3_count} · P4: ${state?.p4_count}`;
     } else {
       oppStr = myPlayerNum === 1
         ? `Opponent: ${state?.p2_count || 0} tiles`
         : `Opponent: ${state?.p1_count || 0} tiles`;
     }
-    ctx.fillText(oppStr, 14, 24);
+    ctx.fillText(oppStr, 14, 22);
 
-    // Boneyard / Reserve Badge
+    // TargetScore & Cumulative Series
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#38bdf8';
-    const boneyardLabel = `Reserve: ${state?.boneyard_count || 0}`;
-    ctx.fillText(boneyardLabel, 386, 24);
+    const target = state?.target_score || 100;
+    const p1Score = (state?.scores && state.scores[0]) ?? state?.series_p1 ?? 0;
+    const p2Score = (state?.scores && state.scores[1]) ?? state?.series_p2 ?? 0;
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillText(`Series: P1 ${p1Score}/${target} · P2 ${p2Score}/${target}`, 386, 22);
 
-    // Open End Indicators
-    ctx.font = '700 11px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    if (state?.left_end !== undefined && state.left_end !== -1) {
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`◄ Left: ${state.left_end}`, 14, 42);
-    }
-    ctx.textAlign = 'right';
-    if (state?.right_end !== undefined && state.right_end !== -1) {
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillText(`Right: ${state.right_end} ►`, 386, 42);
+    // Rebon Jackpot & Deadwood
+    const rebon = state?.rebon || 0;
+    if (rebon > 0) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '700 11px system-ui, sans-serif';
+      ctx.fillText(`🔥 REBON JACKPOT: +${rebon} PTS`, 200, 22);
     }
 
-    // Board Chain
+    // Interactive Tactile Board End Anchors
+    const lEnd = state?.left_end;
+    const rEnd = state?.right_end;
+    const hasEnds = lEnd !== undefined && lEnd !== -1 && rEnd !== undefined && rEnd !== -1;
+    const isAmbiguousChoice = this.selectedTileIdx >= 0 && this.choiceNeeded;
+
+    // Left End Anchor Button
+    if (lEnd !== undefined && lEnd !== -1) {
+      ctx.save();
+      const isLeftActive = isAmbiguousChoice;
+      ctx.fillStyle = isLeftActive ? 'rgba(56, 189, 248, 0.25)' : 'rgba(15, 23, 42, 0.5)';
+      ctx.strokeStyle = isLeftActive ? '#38bdf8' : '#0284c7';
+      ctx.lineWidth = isLeftActive ? 2 : 1;
+      ctx.beginPath();
+      ctx.rect(12, 32, 96, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = isLeftActive ? '#38bdf8' : '#bae6fd';
+      ctx.font = '700 11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`◄ Left [${lEnd}]`, 60, 48);
+      ctx.restore();
+    }
+
+    // Right End Anchor Button
+    if (rEnd !== undefined && rEnd !== -1) {
+      ctx.save();
+      const isRightActive = isAmbiguousChoice;
+      ctx.fillStyle = isRightActive ? 'rgba(251, 191, 36, 0.25)' : 'rgba(15, 23, 42, 0.5)';
+      ctx.strokeStyle = isRightActive ? '#fbbf24' : '#d97706';
+      ctx.lineWidth = isRightActive ? 2 : 1;
+      ctx.beginPath();
+      ctx.rect(292, 32, 96, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = isRightActive ? '#fbbf24' : '#fef08a';
+      ctx.font = '700 11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Right [${rEnd}] ►`, 340, 48);
+      ctx.restore();
+    }
+
+    // Board Tiles Chain
     const board = state?.board || [];
     if (board.length === 0) {
       ctx.textAlign = 'center';
       ctx.fillStyle = '#64748b';
       ctx.font = '500 13px system-ui, sans-serif';
-      ctx.fillText('Board is open. Tap any tile in hand to lead!', 200, 160);
+      ctx.fillText('Board is open. Tap highest double in hand to lead!', 200, 150);
     } else {
       const maxPerRow = 7;
       const bTileW = 38;
@@ -106,12 +150,12 @@ export class DominoRenderer implements IGameRenderer {
         const col = isEvenRow ? colInRow : maxPerRow - 1 - colInRow;
 
         const bx = 22 + col * (bTileW + 8);
-        const by = 56 + row * (bTileH + 16);
+        const by = 64 + row * (bTileH + 14);
 
-        // 3D Ivory Tile Body
+        // 3D Ivory Tile
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-        ctx.shadowBlur = 5;
+        ctx.shadowBlur = 4;
         ctx.shadowOffsetY = 2;
         ctx.fillStyle = '#fffbeb';
         ctx.beginPath();
@@ -123,14 +167,13 @@ export class DominoRenderer implements IGameRenderer {
         ctx.lineWidth = 1.2;
         ctx.strokeRect(bx, by, bTileW, bTileH);
 
-        // Center divider
+        // Divider
         ctx.strokeStyle = '#475569';
         ctx.beginPath();
         ctx.moveTo(bx + bTileW / 2, by + 2);
         ctx.lineTo(bx + bTileW / 2, by + bTileH - 2);
         ctx.stroke();
 
-        // Pips
         const pipsLeft = isEvenRow ? t[0] : t[1];
         const pipsRight = isEvenRow ? t[1] : t[0];
         this.drawPips(ctx, pipsLeft, bx, by, bTileW / 2, bTileH);
@@ -150,45 +193,59 @@ export class DominoRenderer implements IGameRenderer {
       });
     }
 
+    // Ambiguous Choice Prompt Overlay
+    if (isAmbiguousChoice) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fef08a';
+      ctx.font = '700 12px system-ui, sans-serif';
+      ctx.fillText('Tap Left or Right button above to place tile!', 200, 268);
+    }
+
     // Divider line
     ctx.strokeStyle = '#143c2e';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(10, 290);
-    ctx.lineTo(390, 290);
+    ctx.moveTo(10, 282);
+    ctx.lineTo(390, 282);
     ctx.stroke();
 
-    // Player Hand Tiles
+    // Player Hand Tray
     const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
     const count = myHand.length;
 
     ctx.textAlign = 'left';
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 11px system-ui, sans-serif';
-    ctx.fillText(`Your Hand (${count} tile${count !== 1 ? 's' : ''}):`, 14, 306);
+    ctx.fillText(`Your Hand (${count} tile${count !== 1 ? 's' : ''}):`, 14, 298);
+
+    if (state?.round_finished) {
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '700 11px system-ui, sans-serif';
+      ctx.fillText(`Round Finished · Winner: P${state.round_winner || 'None'} (+${state.round_points || 0} pts)`, 386, 298);
+    }
 
     if (count > 0) {
-      const tileW = Math.min(42, Math.max(20, Math.floor(376 / count)));
+      const tileW = Math.min(44, Math.max(34, Math.floor(376 / count)));
       const tileH = 68;
       const totalW = count * tileW;
       const startX = Math.max(12, Math.floor((400 - totalW) / 2));
-      const isMyTurn = state?.turn === myPlayerNum && !state?.finished;
+      const isMyTurn = state?.turn === myPlayerNum && !state?.finished && !state?.round_finished;
 
       myHand.forEach((t: number[], i: number) => {
         const tx = startX + i * tileW;
-        let ty = 314;
+        let ty = 308;
         const isSelected = this.selectedTileIdx === i;
         if (isSelected) ty -= 8;
 
         const canPlay =
-          state?.left_end === undefined ||
-          state?.left_end === -1 ||
-          t[0] === state?.left_end ||
-          t[1] === state?.left_end ||
-          t[0] === state?.right_end ||
-          t[1] === state?.right_end;
+          !hasEnds ||
+          t[0] === lEnd ||
+          t[1] === lEnd ||
+          t[0] === rEnd ||
+          t[1] === rEnd;
 
-        // 3D Ivory Body with Drop Shadow
+        // 3D Ivory Body
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
         ctx.shadowBlur = 6;
@@ -212,7 +269,7 @@ export class DominoRenderer implements IGameRenderer {
         }
         ctx.strokeRect(tx + 2, ty, tileW - 4, tileH);
 
-        // Divider
+        // Center line
         ctx.strokeStyle = '#475569';
         ctx.beginPath();
         ctx.moveTo(tx + 4, ty + tileH / 2);
@@ -275,14 +332,38 @@ export class DominoRenderer implements IGameRenderer {
   }
 
   public handlePointerDown(x: number, y: number) {
-    if (y < 300) return; // Only process hand clicks
     const state = this.lastState;
+
+    // Check Board End Anchors click when tile is ambiguous
+    if (y >= 25 && y <= 65 && this.selectedTileIdx >= 0) {
+      if (x <= 130) {
+        // Tapped Left End Anchor
+        sound.click();
+        haptic(20);
+        this.dispatch({ cmd: 'play', index: this.selectedTileIdx, end: 'left' });
+        this.selectedTileIdx = -1;
+        this.choiceNeeded = false;
+        return;
+      }
+      if (x >= 270) {
+        // Tapped Right End Anchor
+        sound.click();
+        haptic(20);
+        this.dispatch({ cmd: 'play', index: this.selectedTileIdx, end: 'right' });
+        this.selectedTileIdx = -1;
+        this.choiceNeeded = false;
+        return;
+      }
+    }
+
+    // Check Hand click
+    if (y < 285) return;
     const myPlayerNum = this.myPlayerNum;
     const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
     const count = myHand.length;
     if (count === 0) return;
 
-    const tileW = Math.min(42, Math.max(20, Math.floor(376 / count)));
+    const tileW = Math.min(44, Math.max(34, Math.floor(376 / count)));
     const totalW = count * tileW;
     const startX = Math.max(12, Math.floor((400 - totalW) / 2));
     const idx = Math.floor((x - startX) / tileW);
@@ -296,22 +377,27 @@ export class DominoRenderer implements IGameRenderer {
       haptic(15);
 
       if (lEnd === undefined || lEnd === -1) {
-        // First tile on board
+        // First tile on board: plays immediately
         this.dispatch({ cmd: 'play', index: idx, end: 'left' });
         this.selectedTileIdx = -1;
+        this.choiceNeeded = false;
       } else {
         const mLeft = tile[0] === lEnd || tile[1] === lEnd;
         const mRight = tile[0] === rEnd || tile[1] === rEnd;
 
         if (mLeft && mRight && lEnd !== rEnd) {
-          // Can play on both ends: request authoritative prompt from Host
+          // Both ends match: activate tactile anchors and prompt host
+          this.selectedTileIdx = idx;
+          this.choiceNeeded = true;
           this.dispatch({ cmd: 'select_tile', index: idx });
         } else if (mLeft) {
           this.dispatch({ cmd: 'play', index: idx, end: 'left' });
           this.selectedTileIdx = -1;
+          this.choiceNeeded = false;
         } else if (mRight) {
           this.dispatch({ cmd: 'play', index: idx, end: 'right' });
           this.selectedTileIdx = -1;
+          this.choiceNeeded = false;
         }
       }
     }
