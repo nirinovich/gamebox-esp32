@@ -21,25 +21,22 @@ import {
 } from 'lucide-preact';
 
 export type IconName =
-  | 'snake_solo'
-  | 'snake_duel'
-  | 'ttt_solo'
-  | 'ttt_pvp'
-  | 'connect4_solo'
-  | 'connect4_pvp'
-  | 'pong_solo'
-  | 'pong_duel'
-  | 'tron_solo'
-  | 'tron_duel'
-  | 'battleship_solo'
-  | 'battleship_pvp'
   | 'domino_solo'
+  | 'domino_duel'
   | 'domino_pvp'
+  | 'poker_solo'
+  | 'poker_table'
+  | 'ludo_solo'
+  | 'ludo_quick'
+  | 'ludo_classic'
+  | 'katro_solo'
+  | 'katro_pvp'
   | 'cyber_master'
   | 'gold_champion'
   | 'silver_ace'
   | 'bronze'
-  | 'close';
+  | 'close'
+  | string;
 
 interface IconProps extends LucideProps {
   name: IconName | string;
@@ -47,20 +44,19 @@ interface IconProps extends LucideProps {
 }
 
 const ICON_MAP: Record<string, any> = {
-  snake_solo: Activity,
-  snake_duel: Swords,
-  ttt_solo: Circle,
-  ttt_pvp: X,
-  connect4_solo: CircleDot,
-  connect4_pvp: Columns3,
-  pong_solo: SlidersHorizontal,
-  pong_duel: Zap,
-  tron_solo: Cpu,
-  tron_duel: Sparkles,
-  battleship_solo: Anchor,
-  battleship_pvp: Crosshair,
   domino_solo: Grid2X2,
-  domino_pvp: Dices,
+  domino_duel: Grid2X2,
+  domino_pvp: Grid2X2,
+  poker_solo: Diamond,
+  poker_table: Trophy,
+  poker: Diamond,
+  ludo_solo: Dices,
+  ludo_quick: Zap,
+  ludo_classic: Trophy,
+  ludo: Dices,
+  katro_solo: CircleDot,
+  katro_pvp: CircleDot,
+  katro: CircleDot,
   cyber_master: Diamond,
   gold_champion: Trophy,
   silver_ace: Medal,
@@ -69,6 +65,6 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export function Icon({ name, size = 18, strokeWidth = 2, ...props }: IconProps) {
-  const Component = ICON_MAP[name] || Activity;
+  const Component = ICON_MAP[name] || Dices;
   return <Component size={size} strokeWidth={strokeWidth} {...props} />;
 }

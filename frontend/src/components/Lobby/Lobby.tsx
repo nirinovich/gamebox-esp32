@@ -31,9 +31,9 @@ export function Lobby() {
 
   const tabs: { label: string; value: GameCategory }[] = [
     { label: 'All Modes', value: 'ALL' },
-    { label: 'Solo Bot', value: 'SOLO' },
+    { label: 'Solo AI', value: 'SOLO' },
     { label: '2P Duel', value: 'DUEL' },
-    { label: 'Party (3P)', value: 'PARTY' }
+    { label: 'Parlor Table', value: 'PARTY' }
   ];
 
   return (

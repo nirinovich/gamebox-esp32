@@ -4,10 +4,10 @@
 
 **Blocked by:** 03: Malagasy Dominoes Tactile UI/UX & Mobile Hand Overhaul, 05: Texas Hold'em Client Renderer & Mobile Betting Interface, 07: Ludo Client Renderer & Interactive Track Presentation
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `Lobby.tsx` and `gameStore.ts` present exclusively Malagasy Dominoes, Texas Hold'em Poker, and Ludo with polished descriptions and category tags.
-- [ ] RoomDirectory displays correct player capacity (`max: 4` for Table games, `max: 2` for Duels).
-- [ ] Vector icons for cards, dominoes, and dice are integrated cleanly into the icon component system.
-- [ ] Desktop server runner and unit tests build and pass 100% green without deprecation warnings.
-- [ ] Automated regression tests verify end-to-end room lifecycle: create room, join, solo bot launch, and rematch across all three games.
+- [x] `Lobby.tsx` and `gameStore.ts` present exclusively Malagasy Dominoes, Texas Hold'em Poker, and Ludo with polished descriptions and category tags.
+- [x] RoomDirectory displays correct player capacity (`max: 4` for Table games, `max: 2` for Duels).
+- [x] Vector icons for cards, dominoes, and dice are integrated cleanly into the icon component system.
+- [x] Desktop server runner and unit tests build and pass 100% green without deprecation warnings.
+- [x] Automated regression tests verify end-to-end room lifecycle: create room, join, solo bot launch, and rematch across all three games.

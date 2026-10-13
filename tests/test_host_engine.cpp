@@ -163,6 +163,18 @@ int main() {
         engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"katro_solo\"}");
         assert(mockNet.hasMessageFor(301, "\"game\":\"katro\""));
         std::cout << "    Solo Katro execution verified." << std::endl;
+
+        // Solo Poker
+        mockNet.clear();
+        engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"poker_solo\"}");
+        assert(mockNet.hasMessageFor(301, "\"game\":\"poker\""));
+        std::cout << "    Solo Poker execution verified." << std::endl;
+
+        // Solo Ludo
+        mockNet.clear();
+        engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"ludo_solo\"}");
+        assert(mockNet.hasMessageFor(301, "\"game\":\"ludo\""));
+        std::cout << "    Solo Ludo execution verified." << std::endl;
         engine.onClientDisconnect(301);
     }
 
@@ -184,6 +196,36 @@ int main() {
         engine.onClientDisconnect(501);
         engine.onClientDisconnect(502);
         std::cout << "    Multiplayer Katro lifecycle verified." << std::endl;
+    }
+
+    // --- 8. Multiplayer Texas Hold'em & Ludo Table Lifecycles ---
+    {
+        std::cout << "  - Testing Multiplayer Poker & Ludo Table Lifecycles..." << std::endl;
+        // Poker Table
+        mockNet.clear();
+        engine.onClientConnect(601);
+        engine.onClientConnect(602);
+        engine.onClientMessage(601, "{\"cmd\":\"create\",\"game\":\"poker_table\",\"host\":\"HostPoker\",\"players\":2}");
+        std::string pokerCode = mockNet.getLastMessageFor(601).substr(mockNet.getLastMessageFor(601).find("\"code\":\"") + 8, 4);
+        engine.onClientMessage(602, "{\"cmd\":\"join\",\"code\":\"" + pokerCode + "\"}");
+        assert(mockNet.hasMessageFor(601, "\"type\":\"room_ready\""));
+        assert(mockNet.hasMessageFor(602, "\"type\":\"room_ready\""));
+        engine.onClientDisconnect(601);
+        engine.onClientDisconnect(602);
+        std::cout << "    Multiplayer Poker Table lifecycle verified." << std::endl;
+
+        // Ludo Quick Match
+        mockNet.clear();
+        engine.onClientConnect(701);
+        engine.onClientConnect(702);
+        engine.onClientMessage(701, "{\"cmd\":\"create\",\"game\":\"ludo_quick\",\"host\":\"HostLudo\",\"players\":2}");
+        std::string ludoCode = mockNet.getLastMessageFor(701).substr(mockNet.getLastMessageFor(701).find("\"code\":\"") + 8, 4);
+        engine.onClientMessage(702, "{\"cmd\":\"join\",\"code\":\"" + ludoCode + "\"}");
+        assert(mockNet.hasMessageFor(701, "\"type\":\"room_ready\""));
+        assert(mockNet.hasMessageFor(702, "\"type\":\"room_ready\""));
+        engine.onClientDisconnect(701);
+        engine.onClientDisconnect(702);
+        std::cout << "    Multiplayer Ludo Quick Match lifecycle verified." << std::endl;
     }
 
     std::cout << "[SUCCESS] All HostEngine tests passed!" << std::endl;
