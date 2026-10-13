@@ -1,8 +1,12 @@
 #include <cassert>
 #include <iostream>
 #include <string>
+#include <vector>
+#include <fstream>
+#include <filesystem>
 #include <gamehub/web/WebAssets.hpp>
 #include <gamehub/core/Session.hpp>
+#include <gamehub/util/GzipCompressor.hpp>
 
 int main() {
     std::cout << "[TEST] Running Tracer Bullet Verification..." << std::endl;
@@ -27,7 +31,40 @@ int main() {
     std::cout << "  [PASS] WebAssets contains valid RFC 1952 Gzip stream ("
               << compressedSize << " bytes compressed vs " << uncompressedSize << " bytes original)." << std::endl;
 
-    // Test 2: Verify Session ping-pong message handling
+    // Test 2: In-memory round-trip decompression verification
+    std::vector<uint8_t> decompressed = gamehub::util::GzipCompressor::decompress(data, compressedSize);
+    assert(decompressed.size() == uncompressedSize && "Decompressed size must exactly match uncompressed size");
+    std::string decompressedHtml(decompressed.begin(), decompressed.end());
+    assert(decompressedHtml.find("<!DOCTYPE html>") != std::string::npos && "Decompressed content must contain HTML doctype");
+    assert(decompressedHtml.find("canvas") != std::string::npos && "Decompressed content must contain canvas reference");
+    assert(decompressedHtml.find("WebSocket") != std::string::npos && "Decompressed content must contain WebSocket reference");
+
+    // If source index.html exists, verify exact byte-for-byte fidelity
+    std::filesystem::path sourceHtml = "frontend/dist/index.html";
+    if (std::filesystem::exists(sourceHtml)) {
+        std::ifstream in(sourceHtml, std::ios::binary);
+        std::vector<uint8_t> expectedBytes(
+            (std::istreambuf_iterator<char>(in)),
+            std::istreambuf_iterator<char>()
+        );
+        in.close();
+        assert(decompressed == expectedBytes && "Decompressed stream must match frontend/dist/index.html byte-for-byte");
+        std::cout << "  [PASS] Byte-for-byte identity verified against frontend/dist/index.html." << std::endl;
+    } else {
+        std::cout << "  [PASS] In-memory decompression integrity verified (HTML tags intact)." << std::endl;
+    }
+
+    // Test 3: Synthetic round-trip test on arbitrary sample data
+    std::string sample = "Hello Gamebox! Test compression with repetitive patterns 1234567890 1234567890 1234567890.";
+    std::vector<uint8_t> sampleCompressed = gamehub::util::GzipCompressor::compress(
+        reinterpret_cast<const uint8_t*>(sample.data()), sample.size()
+    );
+    std::vector<uint8_t> sampleDecompressed = gamehub::util::GzipCompressor::decompress(sampleCompressed);
+    std::string sampleRestored(sampleDecompressed.begin(), sampleDecompressed.end());
+    assert(sampleRestored == sample && "Synthetic sample round-trip must reproduce original string exactly");
+    std::cout << "  [PASS] Synthetic payload round-trip compression and decompression verified." << std::endl;
+
+    // Test 4: Verify Session ping-pong message handling
     gamehub::core::Session session(1);
     assert(session.getId() == 1);
     

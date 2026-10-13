@@ -112,20 +112,14 @@ _Avoid_: BoardRenderer, GridComponent, ScreenGrid
 The native host C++ utility in tools/asset_packer.cpp compressing the single-file ClientShell into an RFC 1952 Gzip stream embedded into WebAssets.hpp.
 _Avoid_: AssetScript, PythonGenerator, WebBuilder
 
+**CaptiveProbe**:
+The automated HTTP request issued by a client operating system upon Wi-Fi association (e.g. `/generate_204`, `/hotspot-detect.html`) intercepted by the Host to trigger captive portal display.
+_Avoid_: ProbePing, PortalCheck, HotspotTest
 
-**GameModule**:
-A self-contained feature package pairing authoritative Host C++ logic with Client visual presentation and controls for a single Game.
-_Avoid_: Subproject, Plugin, MinigameBundle
+**FlashChunk**:
+The contiguous byte array allocated in ESP32 flash memory (`PROGMEM`) representing the gzipped ClientShell payload streamed directly without heap duplication.
+_Avoid_: MemoryBlock, BinaryBlob, RomAsset
 
-**StateSnapshot**:
-The authoritative state payload serialized from Host memory into JSON and broadcast to Sessions over WebSocket.
-_Avoid_: SyncPacket, DeltaUpdate, GameDump
 
-**FunctionalStateCore**:
-The deterministic game design pattern modeling game state as Plain Old Data structs mutated by pure transition logic, avoiding deep OOP entity inheritance.
-_Avoid_: EntityTree, OOPModel, ActorHierarchy
 
-**ReleaseTag**:
-The annotated Semantic Version tag (`vMAJOR.MINOR.PATCH`) cut on the main branch upon non-fast-forward merge from dev.
-_Avoid_: ReleaseCommit, BuildVersion, GitMilestone
 

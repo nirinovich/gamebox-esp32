@@ -21,7 +21,7 @@ You can run this project in three ways:
 2. **ESP32 Hardware Mode** (flashing directly to an ESP32-S3 board)
 3. **Wokwi Simulator** (virtual simulation in VS Code or CLI)
 
-> **Note on Web Assets:** All web portal frontend files (HTML/JS/CSS) are compressed with RFC 1952 Gzip and embedded directly into the binary as C++ byte arrays using the native C++ asset packer (`tools/asset_packer.cpp`). No Python scripts, external package managers, or separate SPIFFS/LittleFS filesystem partitions are needed.
+> **Note on Web Assets:** All ClientShell assets (HTML/JS/CSS) are compressed with RFC 1952 Gzip and embedded directly into the binary as C++ byte arrays using the native C++ asset packer (`tools/asset_packer.cpp`). No Python scripts, external package managers, or separate SPIFFS/LittleFS filesystem partitions are needed.
 
 ---
 
@@ -107,6 +107,10 @@ You can simulate the ESP32 firmware directly inside VS Code:
 │   ├── core/             # Portable C++17 domain logic (Session, Room, Snake, TicTacToe)
 │   ├── desktop/          # Native desktop server (HTTP & WebSocket for PC testing)
 │   └── esp32/            # ESP32 FreeRTOS tasks, Wi-Fi SoftAP, DNS captive portal
+├── docs/                 # Documentation suite & ADRs
+│   ├── architecture/     # Complete architectural deep dives & lifecycle guides
+│   ├── adr/              # Architectural Decision Records (ADRs)
+│   └── index.html        # Interactive browser for architecture documentation
 ├── tools/                # Native C++ host build utilities (asset_packer)
 ├── tests/                # Unit and integration tests
 ├── platformio.ini        # PlatformIO configuration for ESP32-S3
@@ -114,3 +118,4 @@ You can simulate the ESP32 firmware directly inside VS Code:
 ├── diagram.json          # Wokwi simulation hardware definition
 └── wokwi.toml            # Wokwi simulation firmware paths
 ```
+

@@ -8,14 +8,21 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace gamehub {
 namespace web {
 
+/**
+ * Embedded RFC 1952 Gzip-compressed ClientShell single-page application.
+ * Flash memory footprint: 38003 bytes (compressed from 105404 bytes).
+ */
 class WebAssets {
 public:
     static constexpr size_t getIndexHtmlSize() {
+        return INDEX_HTML_SIZE;
+    }
+
+    static constexpr size_t getIndexHtmlGzipSize() {
         return INDEX_HTML_SIZE;
     }
 
@@ -27,23 +34,35 @@ public:
         return true;
     }
 
+    /// Zero-copy pointer to PROGMEM flash-resident RFC 1952 Gzip byte payload
     static const uint8_t* getIndexHtmlData() {
         return INDEX_HTML_DATA;
     }
 
-    static std::string_view getIndexHtmlView() {
+    /// Zero-copy pointer to PROGMEM flash-resident RFC 1952 Gzip byte payload
+    static const uint8_t* getIndexHtmlGzipData() {
+        return INDEX_HTML_DATA;
+    }
+
+    /// String-view over the compressed Gzip payload for HTTP response assembly
+    static std::string_view getGzipPayloadView() {
         return std::string_view(reinterpret_cast<const char*>(INDEX_HTML_DATA), INDEX_HTML_SIZE);
     }
 
-    static std::string getIndexHtml() {
+    /// String copy of the compressed Gzip payload
+    static std::string getGzipPayload() {
         return std::string(reinterpret_cast<const char*>(INDEX_HTML_DATA), INDEX_HTML_SIZE);
     }
 
-    static const std::vector<const char*>& getParts() {
-        static const std::vector<const char*> parts;
-        return parts;
+    /// Backwards compatibility accessor: returns Gzip byte string for Content-Encoding: gzip streaming
+    static std::string_view getIndexHtmlView() {
+        return getGzipPayloadView();
     }
 
+    /// Backwards compatibility accessor: returns Gzip byte string for Content-Encoding: gzip streaming
+    static std::string getIndexHtml() {
+        return getGzipPayload();
+    }
 private:
     static constexpr size_t UNCOMPRESSED_SIZE = 105404;
     static constexpr size_t INDEX_HTML_SIZE = 38003;

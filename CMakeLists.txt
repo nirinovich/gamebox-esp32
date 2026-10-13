@@ -48,6 +48,16 @@ target_link_libraries(test_host_engine PRIVATE gamehub_core)
 add_executable(test_domino_diagnosis tests/test_domino_diagnosis.cpp)
 target_link_libraries(test_domino_diagnosis PRIVATE gamehub_core)
 
+add_executable(test_desktop_server
+    tests/test_desktop_server.cpp
+    src/desktop/DesktopServer.cpp
+)
+if (WIN32)
+    target_link_libraries(test_desktop_server PRIVATE gamehub_core ws2_32)
+else()
+    target_link_libraries(test_desktop_server PRIVATE gamehub_core pthread)
+endif()
+
 enable_testing()
 add_test(NAME TracerBulletTest COMMAND test_tracer_bullet)
 add_test(NAME SnakeGameTest COMMAND test_snake_game)
@@ -56,6 +66,7 @@ add_test(NAME RoomManagerTest COMMAND test_room_manager)
 add_test(NAME SnakeDuelTest COMMAND test_snake_duel)
 add_test(NAME NewGamesTest COMMAND test_new_games)
 add_test(NAME HostEngineTest COMMAND test_host_engine)
+add_test(NAME DesktopServerTest COMMAND test_desktop_server)
 
 # Desktop runner executable
 if (WIN32)
@@ -77,12 +88,17 @@ add_executable(asset_packer
     tools/asset_packer.cpp
 )
 
-target_include_directories(asset_packer PRIVATE tools)
+target_include_directories(asset_packer PRIVATE tools include)
 
-add_custom_target(generate_assets
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/include/gamehub/web/WebAssets.hpp"
     COMMAND $<TARGET_FILE:asset_packer> "${CMAKE_CURRENT_SOURCE_DIR}/frontend/dist/index.html" "${CMAKE_CURRENT_SOURCE_DIR}/include/gamehub/web/WebAssets.hpp"
-    DEPENDS asset_packer
+    DEPENDS asset_packer "${CMAKE_CURRENT_SOURCE_DIR}/frontend/dist/index.html"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Packing web assets with native C++ asset_packer (RFC 1952 Gzip)"
+)
+
+add_custom_target(generate_assets
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/gamehub/web/WebAssets.hpp"
 )
 

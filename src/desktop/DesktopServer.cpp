@@ -315,15 +315,15 @@ void DesktopServer::handleClient(uintptr_t clientSocket, uint32_t sessionId) {
             m_disconnectHandler(sessionId);
         }
     } else {
-        // HTTP GET request: Serve embedded single-page application (Gzip compressed)
-        std::string html = web::WebAssets::getIndexHtml();
+        // HTTP GET request: Serve embedded ClientShell (RFC 1952 Gzip compressed)
+        std::string_view gzipPayload = web::WebAssets::getGzipPayloadView();
         std::ostringstream response;
         response << "HTTP/1.1 200 OK\r\n"
                  << "Content-Type: text/html; charset=UTF-8\r\n"
                  << "Content-Encoding: gzip\r\n"
-                 << "Content-Length: " << html.size() << "\r\n"
+                 << "Content-Length: " << gzipPayload.size() << "\r\n"
                  << "Connection: close\r\n\r\n"
-                 << html;
+                 << gzipPayload;
         std::string respStr = response.str();
         send(client, respStr.data(), static_cast<int>(respStr.size()), 0);
     }
