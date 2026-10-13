@@ -1,27 +1,33 @@
 cmake_minimum_required(VERSION 3.16)
-project(ESP32GameHub LANGUAGES CXX)
+
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" GAMEBOX_VERSION_STR)
+string(STRIP "${GAMEBOX_VERSION_STR}" GAMEBOX_VERSION_STR)
+
+project(ESP32GameHub VERSION ${GAMEBOX_VERSION_STR} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(include)
+add_compile_definitions(GAMEBOX_VERSION="${GAMEBOX_VERSION_STR}")
+
+include_directories(include games)
 
 # Core library
 add_library(gamehub_core STATIC
     src/core/Session.cpp
-    src/core/SnakeGame.cpp
-    src/core/TicTacToeGame.cpp
     src/core/Room.cpp
     src/core/RoomManager.cpp
-    src/core/ConnectFourGame.cpp
-    src/core/PongGame.cpp
-    src/core/TronGame.cpp
-    src/core/BattleshipGame.cpp
-    src/core/DominoGame.cpp
     src/core/RoomState.cpp
     src/core/HostEngine.cpp
+    games/snake/host/SnakeGame.cpp
+    games/tictactoe/host/TicTacToeGame.cpp
+    games/connectfour/host/ConnectFourGame.cpp
+    games/pong/host/PongGame.cpp
+    games/tron/host/TronGame.cpp
+    games/battleship/host/BattleshipGame.cpp
+    games/domino/host/DominoGame.cpp
 )
-target_include_directories(gamehub_core PUBLIC include)
+target_include_directories(gamehub_core PUBLIC include games)
 
 # Test executables
 add_executable(test_tracer_bullet tests/test_tracer_bullet.cpp)
@@ -67,6 +73,35 @@ add_test(NAME SnakeDuelTest COMMAND test_snake_duel)
 add_test(NAME NewGamesTest COMMAND test_new_games)
 add_test(NAME HostEngineTest COMMAND test_host_engine)
 add_test(NAME DesktopServerTest COMMAND test_desktop_server)
+
+# Co-located GameModule tests
+add_executable(test_snake games/snake/host/test_snake.cpp)
+target_link_libraries(test_snake PRIVATE gamehub_core)
+add_test(NAME ColocatedSnakeTest COMMAND test_snake)
+
+add_executable(test_tictactoe games/tictactoe/host/test_tictactoe.cpp)
+target_link_libraries(test_tictactoe PRIVATE gamehub_core)
+add_test(NAME ColocatedTicTacToeTest COMMAND test_tictactoe)
+
+add_executable(test_pong games/pong/host/test_pong.cpp)
+target_link_libraries(test_pong PRIVATE gamehub_core)
+add_test(NAME ColocatedPongTest COMMAND test_pong)
+
+add_executable(test_tron games/tron/host/test_tron.cpp)
+target_link_libraries(test_tron PRIVATE gamehub_core)
+add_test(NAME ColocatedTronTest COMMAND test_tron)
+
+add_executable(test_connectfour games/connectfour/host/test_connectfour.cpp)
+target_link_libraries(test_connectfour PRIVATE gamehub_core)
+add_test(NAME ColocatedConnectFourTest COMMAND test_connectfour)
+
+add_executable(test_battleship games/battleship/host/test_battleship.cpp)
+target_link_libraries(test_battleship PRIVATE gamehub_core)
+add_test(NAME ColocatedBattleshipTest COMMAND test_battleship)
+
+add_executable(test_domino games/domino/host/test_domino.cpp)
+target_link_libraries(test_domino PRIVATE gamehub_core)
+add_test(NAME ColocatedDominoTest COMMAND test_domino)
 
 # Desktop runner executable
 if (WIN32)

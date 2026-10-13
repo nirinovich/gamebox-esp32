@@ -4,13 +4,8 @@ import { gameSocket } from '../../services/GameSocket';
 import { IGameRenderer } from '../../renderers/IGameRenderer';
 import { ParticleEngine } from '../../renderers/ParticleEngine';
 import { CameraJuice } from '../../renderers/CameraJuice';
-import { TicTacToeRenderer } from '../../renderers/TicTacToeRenderer';
-import { ConnectFourRenderer } from '../../renderers/ConnectFourRenderer';
-import { BattleshipRenderer } from '../../renderers/BattleshipRenderer';
-import { SnakeRenderer } from '../../renderers/SnakeRenderer';
-import { PongRenderer } from '../../renderers/PongRenderer';
-import { TronRenderer } from '../../renderers/TronRenderer';
-import { DominoRenderer } from '../../renderers/DominoRenderer';
+import { getGameRenderer } from '../../registry/gameRegistry';
+import { DominoRenderer } from '@games/domino/client';
 import { GameOverModal } from '../GameOver/GameOverModal';
 import { VirtualDPad } from '../VirtualDPad/VirtualDPad';
 import styles from './GameCanvas.module.css';
@@ -53,22 +48,9 @@ export function GameCanvas() {
 
     const particles = particlesRef.current;
     const juice = juiceRef.current;
-    let renderer: IGameRenderer;
-
-    if (gameType.includes('snake')) {
-      renderer = new SnakeRenderer();
-    } else if (gameType.includes('pong')) {
-      renderer = new PongRenderer();
-    } else if (gameType.includes('tron')) {
-      renderer = new TronRenderer();
-    } else if (gameType.includes('domino')) {
-      renderer = new DominoRenderer();
-    } else if (gameType.includes('connect4')) {
-      renderer = new ConnectFourRenderer(juice);
-    } else if (gameType.includes('battleship')) {
-      renderer = new BattleshipRenderer(particles, juice);
-    } else {
-      renderer = new TicTacToeRenderer();
+    const renderer: IGameRenderer = getGameRenderer(gameType, juice);
+    if (gameType.includes('battleship') && 'particles' in renderer) {
+      (renderer as any).particles = particles;
     }
 
     const isSolo = room?.code === 'SOLO';

@@ -15,8 +15,12 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@games/*": ["../games/*"]
+    }
   },
-  "include": ["src"],
-  "exclude": ["src/**/__tests__/*"]
+  "include": ["src", "../games/*/client/**/*"],
+  "exclude": ["src/**/__tests__/*", "../games/**/*.test.ts"]
 }

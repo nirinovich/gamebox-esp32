@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { SnakeRenderer } from '../renderers/SnakeRenderer';
-import { PongRenderer } from '../renderers/PongRenderer';
-import { TronRenderer } from '../renderers/TronRenderer';
-import { DominoRenderer } from '../renderers/DominoRenderer';
+import { SnakeRenderer } from '@games/snake/client';
+import { PongRenderer } from '@games/pong/client';
+import { TronRenderer } from '@games/tron/client';
+import { DominoRenderer } from '@games/domino/client';
 
 describe('Real-Time & Tabletop Renderers', () => {
   it('SnakeRenderer sends direction on swipe gesture', () => {

@@ -1,10 +1,10 @@
 #include <iostream>
 #include <cassert>
-#include <gamehub/core/ConnectFourGame.hpp>
-#include <gamehub/core/PongGame.hpp>
-#include <gamehub/core/TronGame.hpp>
-#include <gamehub/core/BattleshipGame.hpp>
-#include <gamehub/core/DominoGame.hpp>
+#include <connectfour/host/ConnectFourGame.hpp>
+#include <pong/host/PongGame.hpp>
+#include <tron/host/TronGame.hpp>
+#include <battleship/host/BattleshipGame.hpp>
+#include <domino/host/DominoGame.hpp>
 
 int main() {
     std::cout << "[TEST] Running New Games test suite..." << std::endl;

@@ -1,0 +1,1 @@
+export { BattleshipRenderer } from './BattleshipRenderer';

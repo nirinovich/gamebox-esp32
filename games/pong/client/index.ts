@@ -1,0 +1,1 @@
+export { PongRenderer } from './PongRenderer';

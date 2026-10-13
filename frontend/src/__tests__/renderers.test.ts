@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TicTacToeRenderer } from '../renderers/TicTacToeRenderer';
-import { ConnectFourRenderer } from '../renderers/ConnectFourRenderer';
-import { BattleshipRenderer } from '../renderers/BattleshipRenderer';
+import { TicTacToeRenderer } from '@games/tictactoe/client';
+import { ConnectFourRenderer } from '@games/connectfour/client';
+import { BattleshipRenderer } from '@games/battleship/client';
 import { ParticleEngine } from '../renderers/ParticleEngine';
 import { CameraJuice } from '../renderers/CameraJuice';
 import { sound } from '../audio/SoundEngine';

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamebox Architecture Documentation</title>
+  <!-- Marked parser for Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Mermaid for diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --sidebar-bg: #161b22;
+      --card-bg: #21262d;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --heading: #58a6ff;
+      --accent: #00f0ff;
+      --accent-hover: #39ff14;
+      --code-bg: #1f242c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    #sidebar {
+      width: 320px;
+      min-width: 260px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-size: 1.8rem;
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .doc-list {
+      list-style: none;
+      padding: 12px 8px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+
+    .doc-item {
+      margin-bottom: 4px;
+    }
+
+    .doc-link {
+      display: block;
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .doc-link:hover {
+      background: rgba(88, 166, 255, 0.1);
+      color: var(--heading);
+    }
+
+    .doc-link.active {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--accent);
+      font-weight: 600;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Main Content Area */
+    #content-wrapper {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 40px 60px;
+    }
+
+    #content {
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* Markdown Styling */
+    #content h1 {
+      color: #fff;
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #content h2 {
+      color: var(--heading);
+      font-size: 1.5rem;
+      margin-top: 32px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      padding-bottom: 6px;
+    }
+
+    #content h3 {
+      color: #e6edf3;
+      font-size: 1.2rem;
+      margin-top: 24px;
+      margin-bottom: 10px;
+    }
+
+    #content p {
+      margin-bottom: 16px;
+      color: #c9d1d9;
+    }
+
+    #content a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    #content a:hover {
+      text-decoration: underline;
+    }
+
+    #content code {
+      background: var(--code-bg);
+      color: #f0883e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.88em;
+    }
+
+    #content pre {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 20px;
+    }
+
+    #content pre code {
+      background: transparent;
+      padding: 0;
+      color: #e6edf3;
+      font-size: 0.9em;
+    }
+
+    #content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    #content th, #content td {
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    #content th {
+      background: var(--card-bg);
+      color: #fff;
+    }
+
+    #content ul, #content ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    #content li {
+      margin-bottom: 6px;
+    }
+
+    #content hr {
+      border: 0;
+      height: 1px;
+      background: var(--border);
+      margin: 32px 0;
+    }
+
+    .mermaid {
+      background: #161b22;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin: 24px 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      #sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 200px;
+      }
+      #content-wrapper {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">🎮</div>
+      <div>
+        <div class="brand-title">Gamebox</div>
+        <div class="brand-subtitle">Architecture Docs</div>
+      </div>
+    </div>
+    <ul class="doc-list" id="docList">
+      <li class="doc-item"><a class="doc-link active" data-file="architecture/README.md">00. System Overview</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/01-end-to-end-lifecycle.md">01. End-to-End Lifecycle</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/02-esp32-host-and-captive-portal.md">02. Host & Captive Portal</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/03-network-transport-and-concurrency.md">03. Transport & Concurrency</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/04-authoritative-game-engine.md">04. C++17 Game Engine</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/05-client-shell-and-visual-engine.md">05. Client Shell & Visuals</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/06-asset-pipeline-and-compression.md">06. Asset Pipeline & Gzip</a></li>
+      <li class="doc-item"><a class="doc-link" data-file="architecture/07-dual-target-desktop-and-simulation.md">07. Desktop & Wokwi</a></li>
+    </ul>
+  </nav>
+
+  <main id="content-wrapper">
+    <article id="content">Loading documentation...</article>
+  </main>
+
+  <!-- Load pre-bundled docs data so index.html works directly via file:// without any web server -->
+  <script src="docs_data.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+
+    const contentEl = document.getElementById('content');
+    const links = document.querySelectorAll('.doc-link');
+
+    async function loadDoc(file) {
+      try {
+        contentEl.innerHTML = '<p>Loading...</p>';
+        let markdown = null;
+
+        // 1. Try from inlined docs_data.js (works 100% offline and via file://)
+        const baseName = file.replace(/^architecture\//, '');
+        if (window.DOCS_DATA && window.DOCS_DATA[baseName]) {
+          markdown = window.DOCS_DATA[baseName];
+        } else {
+          // 2. Fallback to fetch if served over HTTP
+          const resp = await fetch(file);
+          if (!resp.ok) {
+            throw new Error(`Failed to load ${file}: HTTP ${resp.status}`);
+          }
+          markdown = await resp.text();
+        }
+
+        // Configure marked to render code blocks
+        marked.setOptions({
+          highlight: function(code, lang) {
+            return code;
+          }
+        });
+
+        // Parse markdown
+        let html = marked.parse(markdown);
+        contentEl.innerHTML = html;
+
+        // Convert mermaid code blocks to .mermaid divs
+        const mermaidCodeBlocks = contentEl.querySelectorAll('pre code.language-mermaid');
+        mermaidCodeBlocks.forEach(block => {
+          const pre = block.parentElement;
+          const container = document.createElement('div');
+          container.className = 'mermaid';
+          container.textContent = block.textContent;
+          pre.replaceWith(container);
+        });
+
+        // Render mermaid diagrams
+        await mermaid.run();
+        document.getElementById('content-wrapper').scrollTop = 0;
+      } catch (err) {
+        contentEl.innerHTML = `
+          <h2>Unable to Load Document</h2>
+          <p style="color: #f85149;">${err.message}</p>
+          <p>If you opened this HTML file directly via <code>file://</code>, local browser CORS security policies may restrict file fetching.</p>
+          <p>Run a local static server to browse:</p>
+          <pre><code>python -m http.server 8000 --directory docs</code></pre>
+          <p>Then open <code>http://localhost:8000</code>.</p>
+        `;
+      }
+    }
+
+    links.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        links.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        const file = link.getAttribute('data-file');
+        loadDoc(file);
+      });
+    });
+
+    // Initial load
+    loadDoc('architecture/README.md');
+  </script>
+</body>
+</html>

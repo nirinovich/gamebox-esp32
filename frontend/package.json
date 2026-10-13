@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && python ../scripts/generate_web_assets.py",
+    "build": "tsc && vite build",
     "test": "vitest run",
     "preview": "vite preview"
   },

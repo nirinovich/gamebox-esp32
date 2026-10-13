@@ -3,13 +3,13 @@
 #include <memory>
 #include "GameTypes.hpp"
 #include "Game.hpp"
-#include "SnakeGame.hpp"
-#include "TicTacToeGame.hpp"
-#include "ConnectFourGame.hpp"
-#include "PongGame.hpp"
-#include "TronGame.hpp"
-#include "BattleshipGame.hpp"
-#include "DominoGame.hpp"
+#include <snake/host/SnakeGame.hpp>
+#include <tictactoe/host/TicTacToeGame.hpp>
+#include <connectfour/host/ConnectFourGame.hpp>
+#include <pong/host/PongGame.hpp>
+#include <tron/host/TronGame.hpp>
+#include <battleship/host/BattleshipGame.hpp>
+#include <domino/host/DominoGame.hpp>
 
 namespace gamehub {
 namespace core {
