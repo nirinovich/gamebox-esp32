@@ -9,6 +9,9 @@
 #include <gamehub/core/IGamePhaseState.hpp>
 #include <gamehub/core/PlayerController.hpp>
 #include <gamehub/core/Player.hpp>
+#include <gamehub/core/Room.hpp>
+#include <gamehub/core/Session.hpp>
+#include <gamehub/core/INetworkAdapter.hpp>
 
 namespace {
 
@@ -76,9 +79,8 @@ public:
     explicit IncrementCommand(int delta) : m_delta(delta) {}
 
     bool execute(gamehub::core::Game& game, gamehub::core::PlayerId id) const override {
-        auto* mock = dynamic_cast<MockGame*>(&game);
-        if (!mock) return false;
-        return mock->executeCommand(id, *this);
+        auto& mock = static_cast<MockGame&>(game);
+        return mock.executeCommand(id, *this);
     }
 
     std::string getType() const override { return "increment"; }
@@ -92,32 +94,24 @@ private:
 class ActivePhaseState : public gamehub::core::IGamePhaseState {
 public:
     void onEnter(gamehub::core::Game& game) override {
-        auto* mock = dynamic_cast<MockGame*>(&game);
-        if (mock) mock->stateEntered = true;
+        static_cast<MockGame&>(game).stateEntered = true;
     }
 
     void onExit(gamehub::core::Game& game) override {
-        auto* mock = dynamic_cast<MockGame*>(&game);
-        if (mock) mock->stateExited = true;
+        static_cast<MockGame&>(game).stateExited = true;
     }
 
     bool handleCommand(gamehub::core::Game& game, gamehub::core::PlayerId /*playerId*/, const gamehub::core::ICommand& command) override {
         if (command.getType() == "increment") {
-            const auto* incCmd = dynamic_cast<const IncrementCommand*>(&command);
-            if (incCmd) {
-                auto* mock = dynamic_cast<MockGame*>(&game);
-                if (mock) {
-                    mock->testValue += incCmd->getDelta();
-                    return true;
-                }
-            }
+            const auto& incCmd = static_cast<const IncrementCommand&>(command);
+            static_cast<MockGame&>(game).testValue += incCmd.getDelta();
+            return true;
         }
         return false;
     }
 
     void update(gamehub::core::Game& game, float dt) override {
-        auto* mock = dynamic_cast<MockGame*>(&game);
-        if (mock) mock->testValue += static_cast<int>(dt);
+        static_cast<MockGame&>(game).testValue += static_cast<int>(dt);
     }
 
     std::string getPhaseName() const override { return "ACTIVE_PHASE"; }
@@ -206,6 +200,48 @@ int main() {
         auto botAction = botPlayer.getController()->decideAction(MockGame{}, 2);
         assert(botAction != nullptr);
         assert(botAction->getType() == "increment");
+    }
+
+    // Test 4: Rich Behavioral Session & Room Seat Encapsulation
+    {
+        class TestNetworkAdapter : public gamehub::core::INetworkAdapter {
+        public:
+            std::vector<std::pair<uint32_t, std::string>> sent;
+            void sendToClient(uint32_t sessionId, const std::string& message) override {
+                sent.push_back({sessionId, message});
+            }
+            void broadcast(const std::string& /*message*/) override {}
+        };
+
+        TestNetworkAdapter net;
+        gamehub::core::Session session(42, &net);
+        assert(session.getId() == 42);
+        assert(session.getSeat() == 1);
+        assert(session.getActiveRoom() == nullptr);
+
+        // Ping test
+        std::string pong = session.handleMessage("{\"type\":\"ping\",\"ts\":1234}");
+        assert(pong.find("\"pong\"") != std::string::npos);
+        assert(pong.find("1234") != std::string::npos);
+        assert(!net.sent.empty());
+        assert(net.sent.back().first == 42);
+        assert(net.sent.back().second == pong);
+
+        // Room seat mapping
+        gamehub::core::Room room("TEST", gamehub::core::GameId("domino_pvp"), "HostBob", 2);
+        room.addPlayer(42);
+        room.addPlayer(99);
+        assert(room.getPlayerSeat(42) == 1);
+        assert(room.getPlayerSeat(99) == 2);
+        assert(room.getPlayerSeat(999) == 1); // fallback
+
+        session.joinRoom(&room, static_cast<uint32_t>(room.getPlayerSeat(42)));
+        assert(session.getActiveRoom() == &room);
+        assert(session.getSeat() == 1);
+
+        session.leaveRoom();
+        assert(session.getActiveRoom() == nullptr);
+        assert(session.getSeat() == 1);
     }
 
     std::cout << "[SUCCESS] All Core OOP Patterns tests passed!" << std::endl;

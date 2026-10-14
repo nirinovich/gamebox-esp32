@@ -10,11 +10,18 @@ namespace core {
 
 class LudoGame;
 
-class RollDiceCommand : public ICommand {
+class ILudoCommand : public ICommand {
+public:
+    virtual ~ILudoCommand() = default;
+    virtual bool executeOnLudo(LudoGame& game, PlayerId playerId) const = 0;
+};
+
+class RollDiceCommand : public ILudoCommand {
 public:
     explicit RollDiceCommand(int forcedValue = 0) : m_forcedValue(forcedValue) {}
 
     bool execute(Game& game, PlayerId playerId) const override;
+    bool executeOnLudo(LudoGame& game, PlayerId playerId) const override;
     std::string getType() const override { return "roll"; }
 
     int getForcedValue() const { return m_forcedValue; }
@@ -23,11 +30,12 @@ private:
     int m_forcedValue{0};
 };
 
-class MovePawnCommand : public ICommand {
+class MovePawnCommand : public ILudoCommand {
 public:
     explicit MovePawnCommand(int pawnIndex) : m_pawnIndex(pawnIndex) {}
 
     bool execute(Game& game, PlayerId playerId) const override;
+    bool executeOnLudo(LudoGame& game, PlayerId playerId) const override;
     std::string getType() const override { return "move"; }
 
     int getPawnIndex() const { return m_pawnIndex; }

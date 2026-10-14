@@ -2,6 +2,7 @@
 
 #include <string>
 #include "GameTypes.hpp"
+#include "GameEventListener.hpp"
 
 namespace gamehub {
 namespace core {
@@ -20,6 +21,12 @@ public:
     virtual void setPlayerCount(int /*count*/) {}
     virtual bool isRealTime() const { return false; }
     virtual int getMoveSeq() const { return 0; }
+
+    virtual void setEventListener(class GameEventListener* listener) { m_listener = listener; }
+    class GameEventListener* getEventListener() const { return m_listener; }
+
+protected:
+    class GameEventListener* m_listener{nullptr};
 };
 
 } // namespace core

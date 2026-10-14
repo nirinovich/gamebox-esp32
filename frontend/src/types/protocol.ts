@@ -8,6 +8,8 @@ export type GameKey =
   | 'poker_table'
   | 'ludo_solo'
   | 'ludo_table'
+  | 'fanorona_solo'
+  | 'fanorona_duel'
   | (string & {});
 
 export type GameCategory = 'ALL' | 'SOLO' | 'DUEL' | 'PARTY';

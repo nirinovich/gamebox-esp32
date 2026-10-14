@@ -25,6 +25,7 @@ add_library(gamehub_core OBJECT
     games/domino/host/DominoGame.cpp
     games/katro/host/KatroGame.cpp
     games/ludo/host/LudoGame.cpp
+    games/fanorona/host/FanoronaGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include games)
 
@@ -95,6 +96,10 @@ add_test(NAME CoreOopPatternsTest COMMAND test_core_oop_patterns)
 add_executable(test_ludo games/ludo/host/test_ludo.cpp)
 target_link_libraries(test_ludo PRIVATE gamehub_core)
 add_test(NAME ColocatedLudoTest COMMAND test_ludo)
+
+add_executable(test_fanorona games/fanorona/host/test_fanorona.cpp)
+target_link_libraries(test_fanorona PRIVATE gamehub_core)
+add_test(NAME ColocatedFanoronaTest COMMAND test_fanorona)
 
 # Desktop runner executable
 if (WIN32)

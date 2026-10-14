@@ -9,12 +9,19 @@ namespace core {
 
 class DominoGame;
 
-class PlayTileCommand : public ICommand {
+class IDominoCommand : public ICommand {
+public:
+    virtual ~IDominoCommand() = default;
+    virtual bool executeOnDomino(DominoGame& game, PlayerId playerId) const = 0;
+};
+
+class PlayTileCommand : public IDominoCommand {
 public:
     PlayTileCommand(int index, std::string endChoice = "")
         : m_index(index), m_endChoice(std::move(endChoice)) {}
 
     bool execute(Game& game, PlayerId playerId) const override;
+    bool executeOnDomino(DominoGame& game, PlayerId playerId) const override;
     std::string getType() const override { return "play"; }
 
     int getIndex() const { return m_index; }
@@ -25,19 +32,21 @@ private:
     std::string m_endChoice;
 };
 
-class PassTurnCommand : public ICommand {
+class PassTurnCommand : public IDominoCommand {
 public:
     PassTurnCommand() = default;
 
     bool execute(Game& game, PlayerId playerId) const override;
+    bool executeOnDomino(DominoGame& game, PlayerId playerId) const override;
     std::string getType() const override { return "pass"; }
 };
 
-class ChooseEndCommand : public ICommand {
+class ChooseEndCommand : public IDominoCommand {
 public:
     explicit ChooseEndCommand(std::string choice) : m_choice(std::move(choice)) {}
 
     bool execute(Game& game, PlayerId playerId) const override;
+    bool executeOnDomino(DominoGame& game, PlayerId playerId) const override;
     std::string getType() const override { return "choose_end"; }
 
     const std::string& getChoice() const { return m_choice; }

@@ -21,7 +21,7 @@ std::string HostEngine::extractJsonString(const std::string& json, const std::st
 
 void HostEngine::onClientConnect(uint32_t sessionId) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_sessions[sessionId] = std::make_unique<Session>(sessionId);
+    m_sessions[sessionId] = std::make_unique<Session>(sessionId, m_network);
     if (m_network) {
         m_network->sendToClient(sessionId, m_roomManager.serializeDirectory());
     }
@@ -36,34 +36,28 @@ void HostEngine::onClientDisconnect(uint32_t sessionId) {
 void HostEngine::detachPlayerFromRoom(uint32_t sessionId) {
     Room* room = m_roomManager.findRoomByPlayer(sessionId);
     if (room) {
-        std::string code = room->getCode();
-        auto it = m_roomPlayers.find(code);
-        if (it != m_roomPlayers.end()) {
-            for (uint32_t other : it->second) {
-                if (other != 0 && other != sessionId && m_network) {
-                    m_network->sendToClient(other, "{\"type\":\"opponent_left\"}");
-                }
+        for (uint32_t other : room->getPlayers()) {
+            if (other != 0 && other != sessionId && m_network) {
+                m_network->sendToClient(other, "{\"type\":\"opponent_left\"}");
             }
-            m_roomPlayers.erase(it);
         }
         m_roomManager.handleDisconnect(sessionId);
         if (m_network) {
             m_network->broadcast(m_roomManager.serializeDirectory());
         }
     }
-    m_sessionPlayerMap.erase(sessionId);
 
     auto itS = m_sessions.find(sessionId);
     if (itS != m_sessions.end()) {
-        itS->second->setRoom(nullptr);
+        itS->second->leaveRoom();
     }
 }
 
 void HostEngine::broadcastToRoom(const std::string& roomCode, const std::string& message) {
     if (!m_network) return;
-    auto it = m_roomPlayers.find(roomCode);
-    if (it != m_roomPlayers.end()) {
-        for (uint32_t sid : it->second) {
+    Room* room = m_roomManager.findRoomByCode(roomCode);
+    if (room) {
+        for (uint32_t sid : room->getPlayers()) {
             if (sid != 0) {
                 m_network->sendToClient(sid, message);
             }
@@ -73,13 +67,12 @@ void HostEngine::broadcastToRoom(const std::string& roomCode, const std::string&
 
 void HostEngine::broadcastStateToRoom(Room* room) {
     if (!room || !m_network) return;
-    auto it = m_roomPlayers.find(room->getCode());
-    if (it == m_roomPlayers.end()) return;
-
-    for (uint32_t sid : it->second) {
+    const auto& players = room->getPlayers();
+    for (size_t i = 0; i < players.size(); ++i) {
+        uint32_t sid = players[i];
         if (sid != 0) {
-            uint32_t pIdx = m_sessionPlayerMap[sid];
-            m_network->sendToClient(sid, room->serializeStateForPlayer(pIdx));
+            uint32_t seat = static_cast<uint32_t>(i + 1);
+            m_network->sendToClient(sid, room->serializeStateForPlayer(seat));
         }
     }
 }
@@ -89,6 +82,10 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
     // 0a. Ping / Latency Check
     if (rawMessage.find("\"ping\"") != std::string::npos) {
+        auto itS = m_sessions.find(sessionId);
+        if (itS != m_sessions.end()) {
+            return itS->second->handleMessage(rawMessage);
+        }
         std::string ts = "0";
         auto tsPos = rawMessage.find("\"ts\":");
         if (tsPos != std::string::npos) {
@@ -139,8 +136,11 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
             return err;
         }
 
-        m_sessionPlayerMap[sessionId] = 1;
-        m_roomPlayers[newRoom->getCode()] = {sessionId};
+        auto itS = m_sessions.find(sessionId);
+        if (itS == m_sessions.end()) {
+            itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId, m_network)).first;
+        }
+        itS->second->joinRoom(newRoom, 1);
 
         if (m_network) {
             m_network->broadcast(m_roomManager.serializeDirectory());
@@ -170,8 +170,11 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         }
 
         uint32_t pNum = static_cast<uint32_t>(room->getPlayerCount());
-        m_sessionPlayerMap[sessionId] = pNum;
-        m_roomPlayers[code].push_back(sessionId);
+        auto itS = m_sessions.find(sessionId);
+        if (itS == m_sessions.end()) {
+            itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId, m_network)).first;
+        }
+        itS->second->joinRoom(room, pNum);
 
         std::string gname = room->getGameId().c_str();
 
@@ -189,16 +192,12 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
                 if (room->getGame()) {
                     room->getGame()->setPlayerCount(static_cast<int>(room->getPlayerCount()));
                 }
-                for (uint32_t sidPlayer : m_roomPlayers[code]) {
-                    m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
-                }
+                broadcastToRoom(code, "{\"type\":\"room_ready\"}");
                 broadcastStateToRoom(room);
             } else {
                 std::ostringstream ossCount;
                 ossCount << "{\"type\":\"room_waiting_update\",\"count\":" << room->getPlayerCount() << ",\"max\":" << room->getMaxPlayers() << "}";
-                for (uint32_t sidPlayer : m_roomPlayers[code]) {
-                    m_network->sendToClient(sidPlayer, ossCount.str());
-                }
+                broadcastToRoom(code, ossCount.str());
             }
         }
         return "";
@@ -210,11 +209,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         Room* room = m_roomManager.findRoomByPlayer(sessionId);
         if (room && room->getPlayerCount() >= 2 && !room->isFinished()) {
             room->startEarly();
-            if (m_network) {
-                for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {
-                    m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
-                }
-            }
+            broadcastToRoom(room->getCode(), "{\"type\":\"room_ready\"}");
             broadcastStateToRoom(room);
         }
         return "";
@@ -232,22 +227,19 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
     if (rawMessage.find("\"cmd\":\"rematch\"") != std::string::npos) {
         Room* room = m_roomManager.findRoomByPlayer(sessionId);
         if (room && room->isFinished()) {
-            uint32_t pNum = m_sessionPlayerMap[sessionId];
+            auto itS = m_sessions.find(sessionId);
+            uint32_t pNum = (itS != m_sessions.end()) ? itS->second->getSeat() : static_cast<uint32_t>(room->getPlayerSeat(sessionId));
             room->requestRematch(pNum);
 
             if (room->isRematchReady()) {
                 room->resetForRematch();
-                for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {
-                    if (m_network) m_network->sendToClient(sidPlayer, "{\"type\":\"room_ready\"}");
-                }
+                broadcastToRoom(room->getCode(), "{\"type\":\"room_ready\"}");
                 broadcastStateToRoom(room);
             } else {
                 std::ostringstream oss;
                 oss << "{\"type\":\"rematch_update\",\"requested\":" << room->getRematchRequestCount()
                     << ",\"total\":" << room->getPlayerCount() << "}";
-                for (uint32_t sidPlayer : m_roomPlayers[room->getCode()]) {
-                    if (m_network) m_network->sendToClient(sidPlayer, oss.str());
-                }
+                broadcastToRoom(room->getCode(), oss.str());
             }
         }
         return "";
@@ -265,10 +257,9 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
 
         auto itS = m_sessions.find(sessionId);
         if (itS == m_sessions.end()) {
-            itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId)).first;
+            itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId, m_network)).first;
         }
-        itS->second->setRoom(room);
-        m_sessionPlayerMap[sessionId] = 1;
+        itS->second->joinRoom(room, 1);
 
         std::string reply = room ? room->serializeStateForPlayer(1) : "{\"type\":\"error\",\"msg\":\"Room capacity reached\"}";
         if (m_network && !reply.empty()) {
@@ -280,11 +271,8 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
     // 5. In-Game Actions in Active Room (Multiplayer or Solo)
     Room* activeRoom = m_roomManager.findRoomByPlayer(sessionId);
     if (activeRoom && !activeRoom->isFinished()) {
-        uint32_t playerNum = 1;
-        auto itP = m_sessionPlayerMap.find(sessionId);
-        if (itP != m_sessionPlayerMap.end()) {
-            playerNum = itP->second;
-        }
+        auto itS = m_sessions.find(sessionId);
+        uint32_t playerNum = (itS != m_sessions.end()) ? itS->second->getSeat() : static_cast<uint32_t>(activeRoom->getPlayerSeat(sessionId));
 
         activeRoom->handleInput(playerNum, rawMessage);
         if (activeRoom->getMaxPlayers() > 1) {
@@ -300,7 +288,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
     // 6. Fallback to Session handling (ping, custom messages)
     auto itS = m_sessions.find(sessionId);
     if (itS == m_sessions.end()) {
-        itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId)).first;
+        itS = m_sessions.emplace(sessionId, std::make_unique<Session>(sessionId, m_network)).first;
     }
     std::string reply = itS->second->handleMessage(rawMessage);
     if (m_network && !reply.empty()) {

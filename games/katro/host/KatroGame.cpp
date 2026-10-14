@@ -53,71 +53,78 @@ namespace core {
 // Command Pattern Implementations (Double Dispatch)
 // ============================================================================
 
-bool SowPitCommand::execute(Game& game, PlayerId playerId) const {
-    auto* katro = dynamic_cast<KatroGame*>(&game);
-    if (!katro) return false;
-    return katro->processCommand(playerId, *this);
+bool IKatroCommand::execute(Game& game, PlayerId playerId) const {
+    return executeOnKatro(static_cast<KatroGame&>(game), playerId);
+}
+
+bool SowPitCommand::executeOnKatro(KatroGame& game, PlayerId playerId) const {
+    return game.processCommand(playerId, *this);
 }
 
 // ============================================================================
 // State Pattern Implementations
 // ============================================================================
 
-void KatroTurnState::onEnter(Game& game) {
-    auto* katro = dynamic_cast<KatroGame*>(&game);
-    if (katro) {
-        katro->resetBotTimer();
-    }
+void IKatroState::onEnter(Game& game) {
+    onEnterKatro(static_cast<KatroGame&>(game));
 }
 
-bool KatroTurnState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
-    auto* katro = dynamic_cast<KatroGame*>(&game);
-    if (!katro || katro->isFinished()) return false;
-    if (static_cast<int>(playerId) != katro->getTurn()) return false;
+bool IKatroState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    return handleKatroCommand(static_cast<KatroGame&>(game), playerId, static_cast<const IKatroCommand&>(command));
+}
+
+void IKatroState::update(Game& game, float dt) {
+    updateKatro(static_cast<KatroGame&>(game), dt);
+}
+
+void KatroTurnState::onEnterKatro(KatroGame& game) {
+    game.resetBotTimer();
+}
+
+bool KatroTurnState::handleKatroCommand(KatroGame& game, PlayerId playerId, const IKatroCommand& command) {
+    if (game.isFinished()) return false;
+    if (static_cast<int>(playerId) != game.getTurn()) return false;
 
     if (command.getType() == "sow") {
-        const auto* sowCmd = dynamic_cast<const SowPitCommand*>(&command);
-        if (!sowCmd) return false;
-
-        KatroDirection dir = sowCmd->hasDirection() ? sowCmd->getDirection() : katro->getDefaultDirection();
-        return katro->playTurn(sowCmd->getCell(), static_cast<int>(playerId), dir);
+        const auto& sowCmd = static_cast<const SowPitCommand&>(command);
+        KatroDirection dir = sowCmd.hasDirection() ? sowCmd.getDirection() : game.getDefaultDirection();
+        return game.playTurn(sowCmd.getCell(), static_cast<int>(playerId), dir);
     }
 
     return false;
 }
 
-void KatroTurnState::update(Game& game, float dt) {
-    auto* katro = dynamic_cast<KatroGame*>(&game);
-    if (!katro || katro->isFinished()) return;
+void KatroTurnState::updateKatro(KatroGame& game, float dt) {
+    if (game.isFinished()) return;
 
-    int curTurn = katro->getTurn();
-    auto* player = katro->getPlayer(curTurn);
+    int curTurn = game.getTurn();
+    auto* player = game.getPlayer(curTurn);
     if (player && player->isAutonomous()) {
-        katro->tickBotTimer(dt);
-        if (katro->getBotTimer() >= KatroGame::BOT_DELAY_SEC) {
-            katro->resetBotTimer();
-            auto cmd = player->getController()->decideAction(*katro, static_cast<PlayerId>(curTurn));
+        game.tickBotTimer(dt);
+        if (game.getBotTimer() >= KatroGame::BOT_DELAY_SEC) {
+            game.resetBotTimer();
+            auto cmd = player->getController()->decideAction(game, static_cast<PlayerId>(curTurn));
             if (cmd) {
-                cmd->execute(*katro, static_cast<PlayerId>(curTurn));
+                cmd->execute(game, static_cast<PlayerId>(curTurn));
             }
         }
     }
 }
 
-void KatroGameOverState::onEnter(Game& /*game*/) {}
+void KatroGameOverState::onEnterKatro(KatroGame& /*game*/) {}
 
 // ============================================================================
 // Strategy Pattern Implementations (Autonomous Bot Heuristic)
 // ============================================================================
 
 std::unique_ptr<ICommand> KatroBotController::decideAction(const Game& game, PlayerId id) {
-    const auto* katro = dynamic_cast<const KatroGame*>(&game);
-    if (!katro || katro->isFinished()) return nullptr;
-    if (static_cast<int>(id) != katro->getTurn()) return nullptr;
+    const auto& katro = static_cast<const KatroGame&>(game);
+    if (katro.isFinished()) return nullptr;
+    if (static_cast<int>(id) != katro.getTurn()) return nullptr;
 
-    int bestCell = katro->computeBotMove();
+    int bestCell = katro.computeBotMove();
     if (bestCell >= 0) {
-        return std::make_unique<SowPitCommand>(bestCell, katro->getDefaultDirection(), true);
+        return std::make_unique<SowPitCommand>(bestCell, katro.getDefaultDirection(), true);
     }
 
     return nullptr;
@@ -133,17 +140,21 @@ KatroGame::KatroGame(bool isSolo, int cols, int seedsPerCell)
     init();
 }
 
-void KatroGame::transitionTo(std::unique_ptr<IGamePhaseState> nextState) {
+void KatroGame::transitionTo(std::unique_ptr<IKatroState> nextState) {
     if (!nextState) return;
     m_state = std::move(nextState);
-    m_state->onEnter(*this);
+    m_state->onEnterKatro(*this);
+}
+
+bool KatroGame::processCommand(PlayerId player, const IKatroCommand& cmd) {
+    if (m_state) {
+        return m_state->handleKatroCommand(*this, player, cmd);
+    }
+    return false;
 }
 
 bool KatroGame::processCommand(PlayerId player, const ICommand& cmd) {
-    if (m_state) {
-        return m_state->handleCommand(*this, player, cmd);
-    }
-    return false;
+    return processCommand(player, static_cast<const IKatroCommand&>(cmd));
 }
 
 void KatroGame::init() {
@@ -176,7 +187,7 @@ void KatroGame::init() {
 void KatroGame::update(float dt) {
     if (m_finished) return;
     if (m_state) {
-        m_state->update(*this, dt);
+        m_state->updateKatro(*this, dt);
     }
 }
 
@@ -320,9 +331,15 @@ void KatroGame::checkEndCondition() {
     if (southSeeds <= m_earlyStopThreshold || !southCanMove) {
         m_finished = true;
         m_winner   = 2;  // Nord gagne
+        if (m_listener) {
+            m_listener->onGameFinished(static_cast<PlayerId>(m_winner));
+        }
     } else if (northSeeds <= m_earlyStopThreshold || !northCanMove) {
         m_finished = true;
         m_winner   = 1;  // Sud gagne
+        if (m_listener) {
+            m_listener->onGameFinished(static_cast<PlayerId>(m_winner));
+        }
     }
 }
 int KatroGame::computeBotMove() const {

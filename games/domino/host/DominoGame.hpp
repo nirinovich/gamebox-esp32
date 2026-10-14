@@ -34,8 +34,9 @@ public:
     void setPlayerCount(int count) override { setNumPlayers(count); }
 
     // --- State & Command Dispatch Seams ---
-    void transitionTo(std::unique_ptr<IGamePhaseState> nextState);
-    IGamePhaseState* getActiveState() const { return m_state.get(); }
+    void transitionTo(std::unique_ptr<IDominoState> nextState);
+    IDominoState* getActiveState() const { return m_state.get(); }
+    bool processCommand(PlayerId player, const IDominoCommand& cmd);
     bool processCommand(PlayerId player, const ICommand& cmd);
 
     // --- Game Rules & Domain State Accessors ---
@@ -104,12 +105,18 @@ public:
     void setFinished(bool fin, int winner) {
         m_finished = fin;
         m_winner = winner;
+        if (m_finished && m_listener) {
+            m_listener->onGameFinished(static_cast<PlayerId>(winner));
+        }
     }
 
     void setRoundFinished(bool fin, int winner, int points) {
         m_roundFinished = fin;
         m_roundWinner = winner;
         m_roundPointsAwarded = points;
+        if (m_roundFinished && m_listener) {
+            m_listener->onRoundFinished(static_cast<PlayerId>(winner), points);
+        }
     }
 
 private:
@@ -141,7 +148,7 @@ private:
     std::vector<std::unique_ptr<Player>> m_players;
 
     // State Pattern: Sovereign Phase State
-    std::unique_ptr<IGamePhaseState> m_state;
+    std::unique_ptr<IDominoState> m_state;
 
     // Command Pattern: Deserialization Factory
     DominoCommandFactory m_commandFactory;

@@ -36,6 +36,15 @@ public:
     RoomManager& getRoomManager() { return m_roomManager; }
     const RoomManager& getRoomManager() const { return m_roomManager; }
 
+    Session* getSession(uint32_t sessionId) {
+        auto it = m_sessions.find(sessionId);
+        return (it != m_sessions.end()) ? it->second.get() : nullptr;
+    }
+    const Session* getSession(uint32_t sessionId) const {
+        auto it = m_sessions.find(sessionId);
+        return (it != m_sessions.end()) ? it->second.get() : nullptr;
+    }
+
     void setNetworkAdapter(INetworkAdapter* adapter) { m_network = adapter; }
 
 private:
@@ -44,8 +53,6 @@ private:
     INetworkAdapter* m_network{nullptr};
     RoomManager m_roomManager;
     std::unordered_map<uint32_t, std::unique_ptr<Session>> m_sessions;
-    std::unordered_map<uint32_t, uint32_t> m_sessionPlayerMap; // sessionId -> playerNum (1, 2, 3)
-    std::unordered_map<std::string, std::vector<uint32_t>> m_roomPlayers; // roomCode -> [sessionIds]
     std::mutex m_mutex;
 };
 

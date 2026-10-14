@@ -22,6 +22,24 @@ Room::Room(const std::string& code, GameId gameId, const std::string& hostName, 
     if (m_game && m_maxPlayers > 1) {
         m_game->setPlayerCount(static_cast<int>(m_maxPlayers));
     }
+    if (m_game) {
+        m_game->setEventListener(this);
+    }
+}
+
+void Room::onGameFinished(PlayerId winner) {
+    if (winner == 1) m_p1SeriesWins++;
+    else if (winner == 2) m_p2SeriesWins++;
+    m_seriesGameCount++;
+    transitionTo(std::make_unique<FinishedRoomState>());
+}
+
+void Room::onRoundFinished(PlayerId /*roundWinner*/, int /*pointsAwarded*/) {
+    // Observable round completion hook
+}
+
+void Room::onStateInvalidated() {
+    // Observable state mutation hook
 }
 
 void Room::init() {
@@ -63,18 +81,12 @@ bool Room::shouldTick() const {
 void Room::tick(float dt) {
     if (m_game && shouldTick()) {
         m_game->update(dt);
-        if (m_game->isFinished()) {
-            transitionTo(std::make_unique<FinishedRoomState>());
-        }
     }
 }
 
 void Room::handleInput(PlayerId id, const std::string& commandJson) {
     if (m_game && canProcessInput()) {
         m_game->handleInput(id, commandJson);
-        if (m_game->isFinished()) {
-            transitionTo(std::make_unique<FinishedRoomState>());
-        }
     }
 }
 
@@ -127,6 +139,15 @@ void Room::addPlayer(PlayerId id) {
     }
 }
 
+int Room::getPlayerSeat(PlayerId id) const {
+    for (size_t i = 0; i < m_players.size(); ++i) {
+        if (m_players[i] == id) {
+            return static_cast<int>(i + 1);
+        }
+    }
+    return 1;
+}
+
 void Room::startEarly() {
     if (m_players.size() >= 2 && m_players.size() < m_maxPlayers) {
         m_maxPlayers = m_players.size();
@@ -155,9 +176,6 @@ bool Room::isRematchReady() const {
 }
 
 void Room::resetForRematch() {
-    if (getWinner() == 1) m_p1SeriesWins++;
-    else if (getWinner() == 2) m_p2SeriesWins++;
-    m_seriesGameCount++;
     m_rematchRequests.clear();
     if (m_game) {
         m_game->init();

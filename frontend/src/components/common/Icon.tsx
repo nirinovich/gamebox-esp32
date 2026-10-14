@@ -8,6 +8,7 @@ import {
   Diamond,
   Medal,
   Award,
+  Compass,
   LucideProps
 } from 'lucide-preact';
 
@@ -22,6 +23,9 @@ export type IconName =
   | 'ludo_classic'
   | 'katro_solo'
   | 'katro_pvp'
+  | 'fanorona_solo'
+  | 'fanorona_duel'
+  | 'fanorona'
   | 'cyber_master'
   | 'gold_champion'
   | 'silver_ace'
@@ -48,6 +52,10 @@ const ICON_MAP: Record<string, any> = {
   katro_solo: CircleDot,
   katro_pvp: CircleDot,
   katro: CircleDot,
+  fanorona_solo: Compass,
+  fanorona_duel: Grid2X2,
+  fanorona_pvp: Grid2X2,
+  fanorona: Compass,
   cyber_master: Diamond,
   gold_champion: Trophy,
   silver_ace: Medal,

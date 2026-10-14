@@ -32,8 +32,9 @@ public:
     bool isRealTime() const override { return true; }
 
     // --- State & Command Dispatch Seams ---
-    void transitionTo(std::unique_ptr<IGamePhaseState> nextState);
-    IGamePhaseState* getActiveState() const { return m_state.get(); }
+    void transitionTo(std::unique_ptr<IKatroState> nextState);
+    IKatroState* getActiveState() const { return m_state.get(); }
+    bool processCommand(PlayerId player, const IKatroCommand& cmd);
     bool processCommand(PlayerId player, const ICommand& cmd);
 
     // --- Moteur de jeu Katro ---
@@ -148,7 +149,7 @@ private:
     std::vector<std::unique_ptr<Player>> m_players;
 
     // State Pattern: Sovereign Phase State
-    std::unique_ptr<IGamePhaseState> m_state;
+    std::unique_ptr<IKatroState> m_state;
 
     // Command Pattern: Deserialization Factory
     KatroCommandFactory m_commandFactory;

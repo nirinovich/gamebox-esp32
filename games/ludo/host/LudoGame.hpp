@@ -35,8 +35,9 @@ public:
     bool isRealTime() const override { return true; }
 
     // --- State & Command Dispatch Seams ---
-    void transitionTo(std::unique_ptr<IGamePhaseState> nextState);
-    IGamePhaseState* getActiveState() const { return m_state.get(); }
+    void transitionTo(std::unique_ptr<ILudoState> nextState);
+    ILudoState* getActiveState() const { return m_state.get(); }
+    bool processCommand(PlayerId player, const ILudoCommand& cmd);
     bool processCommand(PlayerId player, const ICommand& cmd);
 
     static bool isSafeSquare(int trackCell);
@@ -123,7 +124,7 @@ private:
     std::vector<std::unique_ptr<Player>> m_playerEntities;
 
     // State Pattern: Sovereign Phase State
-    std::unique_ptr<IGamePhaseState> m_state;
+    std::unique_ptr<ILudoState> m_state;
 
     // Command Pattern: Deserialization Factory
     LudoCommandFactory m_commandFactory;

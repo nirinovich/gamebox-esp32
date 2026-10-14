@@ -48,147 +48,140 @@ REGISTER_GAME("domino_solo", DominoSolo, []() -> std::unique_ptr<Game> {
 })
 
 // ============================================================================
-// Command Pattern Implementations (Double Dispatch)
+// IDominoState Generic Adapters
 // ============================================================================
 
-bool PlayTileCommand::execute(Game& game, PlayerId playerId) const {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino) return false;
-    return domino->processCommand(playerId, *this);
+void IDominoState::onEnter(Game& game) {
+    onEnter(static_cast<DominoGame&>(game));
 }
 
-bool PassTurnCommand::execute(Game& game, PlayerId playerId) const {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino) return false;
-    return domino->processCommand(playerId, *this);
+void IDominoState::onExit(Game& game) {
+    onExit(static_cast<DominoGame&>(game));
 }
 
-bool ChooseEndCommand::execute(Game& game, PlayerId playerId) const {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino) return false;
-    return domino->processCommand(playerId, *this);
+bool IDominoState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    return handleCommand(static_cast<DominoGame&>(game), playerId, static_cast<const IDominoCommand&>(command));
+}
+
+void IDominoState::update(Game& game, float dt) {
+    update(static_cast<DominoGame&>(game), dt);
 }
 
 // ============================================================================
-// State Pattern Implementations
+// Command Pattern Implementations (Compile-Time Typed Execution)
 // ============================================================================
 
-void DominoPlayState::onEnter(Game& /*game*/) {}
-
-bool DominoPlayState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino) return false;
-
+bool PlayTileCommand::executeOnDomino(DominoGame& domino, PlayerId playerId) const {
     int pidx = static_cast<int>(playerId) - 1;
-    if (pidx < 0 || pidx >= domino->getNumPlayers()) return false;
-    if (domino->getTurn() != pidx + 1) return false;
+    if (pidx < 0 || pidx >= domino.getNumPlayers()) return false;
+    if (domino.getTurn() != pidx + 1) return false;
 
-    if (command.getType() == "play") {
-        const auto* playCmd = dynamic_cast<const PlayTileCommand*>(&command);
-        if (!playCmd) return false;
+    const auto& hand = domino.getHand(pidx);
+    if (m_index < 0 || static_cast<size_t>(m_index) >= hand.size()) return false;
 
-        int tileIdx = playCmd->getIndex();
-        const auto& hand = domino->getHand(pidx);
-        if (tileIdx < 0 || static_cast<size_t>(tileIdx) >= hand.size()) return false;
+    const auto& tile = hand.getTile(m_index);
+    int lEnd = domino.getLeftEnd();
+    int rEnd = domino.getRightEnd();
 
-        const auto& tile = hand.getTile(tileIdx);
-        int lEnd = domino->getLeftEnd();
-        int rEnd = domino->getRightEnd();
+    bool canL = (lEnd == -1) || tile.matches(lEnd);
+    bool canR = (rEnd == -1) || tile.matches(rEnd);
 
-        bool canL = (lEnd == -1) || tile.matches(lEnd);
-        bool canR = (rEnd == -1) || tile.matches(rEnd);
+    if (!canL && !canR) return false;
 
-        if (!canL && !canR) return false;
-
-        // Ambiguous choice when tile can attach to both distinct ends
-        if (canL && canR && lEnd != rEnd && playCmd->getEndChoice().empty()) {
-            domino->transitionTo(std::make_unique<DominoPendingChoiceState>(pidx, tileIdx));
-            return true;
-        }
-
-        std::string chosen = playCmd->getEndChoice();
-        if (chosen.empty()) {
-            chosen = canR ? "right" : "left";
-        }
-
-        return domino->executePlayTile(pidx, tileIdx, chosen);
-    } else if (command.getType() == "pass") {
-        if (domino->canPlayerPlay(pidx)) {
-            return false; // Passing is forbidden if a legal move exists
-        }
-        domino->executePassTurn(pidx);
+    if (canL && canR && lEnd != rEnd && m_endChoice.empty()) {
+        domino.transitionTo(std::make_unique<DominoPendingChoiceState>(pidx, m_index));
         return true;
     }
 
-    return false;
+    std::string chosen = m_endChoice;
+    if (chosen.empty()) {
+        chosen = canR ? "right" : "left";
+    }
+
+    return domino.executePlayTile(pidx, m_index, chosen);
 }
 
-void DominoPlayState::update(Game& game, float /*dt*/) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino || domino->isFinished() || domino->isRoundFinished()) return;
+bool PlayTileCommand::execute(Game& game, PlayerId playerId) const {
+    return executeOnDomino(static_cast<DominoGame&>(game), playerId);
+}
 
-    int curPidx = domino->getTurn() - 1;
-    auto* player = domino->getPlayer(curPidx);
+bool PassTurnCommand::executeOnDomino(DominoGame& domino, PlayerId playerId) const {
+    int pidx = static_cast<int>(playerId) - 1;
+    if (pidx < 0 || pidx >= domino.getNumPlayers()) return false;
+    if (domino.getTurn() != pidx + 1) return false;
+
+    if (domino.canPlayerPlay(pidx)) {
+        return false;
+    }
+    domino.executePassTurn(pidx);
+    return true;
+}
+
+bool PassTurnCommand::execute(Game& game, PlayerId playerId) const {
+    return executeOnDomino(static_cast<DominoGame&>(game), playerId);
+}
+
+bool ChooseEndCommand::executeOnDomino(DominoGame& domino, PlayerId playerId) const {
+    return domino.executePlayTile(static_cast<int>(playerId) - 1, domino.getPendingChoiceIndex(), m_choice);
+}
+
+bool ChooseEndCommand::execute(Game& game, PlayerId playerId) const {
+    return executeOnDomino(static_cast<DominoGame&>(game), playerId);
+}
+
+// ============================================================================
+// State Pattern Implementations (Direct Typed Execution)
+// ============================================================================
+
+void DominoPlayState::onEnter(DominoGame& /*game*/) {}
+
+bool DominoPlayState::handleCommand(DominoGame& domino, PlayerId playerId, const IDominoCommand& command) {
+    return command.executeOnDomino(domino, playerId);
+}
+
+void DominoPlayState::update(DominoGame& domino, float /*dt*/) {
+    if (domino.isFinished() || domino.isRoundFinished()) return;
+
+    int curPidx = domino.getTurn() - 1;
+    auto* player = domino.getPlayer(curPidx);
     if (player && player->isAutonomous()) {
-        auto action = player->getController()->decideAction(game, static_cast<PlayerId>(curPidx + 1));
+        auto action = player->getController()->decideAction(domino, static_cast<PlayerId>(curPidx + 1));
         if (action) {
-            action->execute(game, static_cast<PlayerId>(curPidx + 1));
+            action->execute(domino, static_cast<PlayerId>(curPidx + 1));
         }
     }
 }
 
-void DominoPendingChoiceState::onEnter(Game& game) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (domino) {
-        domino->setPendingChoice(m_playerIndex, m_tileIndex);
-    }
+void DominoPendingChoiceState::onEnter(DominoGame& domino) {
+    domino.setPendingChoice(m_playerIndex, m_tileIndex);
 }
 
-bool DominoPendingChoiceState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino) return false;
-
+bool DominoPendingChoiceState::handleCommand(DominoGame& domino, PlayerId playerId, const IDominoCommand& command) {
     int pidx = static_cast<int>(playerId) - 1;
     if (pidx != m_playerIndex) return false;
 
     if (command.getType() == "choose_end") {
-        const auto* chooseCmd = dynamic_cast<const ChooseEndCommand*>(&command);
-        if (!chooseCmd) return false;
-
-        std::string choice = chooseCmd->getChoice();
-        int tileIdx = m_tileIndex;
-
-        domino->clearPendingChoice();
-        domino->transitionTo(std::make_unique<DominoPlayState>());
-        return domino->executePlayTile(pidx, tileIdx, choice);
+        domino.clearPendingChoice();
+        domino.transitionTo(std::make_unique<DominoPlayState>());
+        return command.executeOnDomino(domino, playerId);
     }
-
     return false;
 }
 
-void DominoRoundOverState::onEnter(Game& game) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (domino) {
-        domino->setLastAction("Round Finished");
-    }
+void DominoRoundOverState::onEnter(DominoGame& domino) {
+    domino.setLastAction("Round Finished");
 }
 
-bool DominoRoundOverState::handleCommand(Game& game, PlayerId /*playerId*/, const ICommand& command) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (!domino) return false;
-
+bool DominoRoundOverState::handleCommand(DominoGame& domino, PlayerId /*playerId*/, const IDominoCommand& command) {
     if (command.getType() == "play" || command.getType() == "start_round") {
-        domino->startNewRound();
+        domino.startNewRound();
         return true;
     }
     return false;
 }
 
-void DominoGameOverState::onEnter(Game& game) {
-    auto* domino = dynamic_cast<DominoGame*>(&game);
-    if (domino) {
-        domino->setLastAction("Match Concluded");
-    }
+void DominoGameOverState::onEnter(DominoGame& domino) {
+    domino.setLastAction("Match Concluded");
 }
 
 // ============================================================================
@@ -196,15 +189,14 @@ void DominoGameOverState::onEnter(Game& game) {
 // ============================================================================
 
 std::unique_ptr<ICommand> DominoBotController::decideAction(const Game& game, PlayerId id) {
-    const auto* domino = dynamic_cast<const DominoGame*>(&game);
-    if (!domino) return nullptr;
+    const auto& domino = static_cast<const DominoGame&>(game);
 
     int bidx = static_cast<int>(id) - 1;
-    if (bidx < 0 || bidx >= domino->getNumPlayers()) return nullptr;
+    if (bidx < 0 || bidx >= domino.getNumPlayers()) return nullptr;
 
-    const auto& hand = domino->getHand(bidx);
-    int lEnd = domino->getLeftEnd();
-    int rEnd = domino->getRightEnd();
+    const auto& hand = domino.getHand(bidx);
+    int lEnd = domino.getLeftEnd();
+    int rEnd = domino.getRightEnd();
 
     int bestIdx = -1;
     int bestPips = -1;
@@ -252,7 +244,7 @@ void DominoGame::setNumPlayers(int n) {
     }
 }
 
-void DominoGame::transitionTo(std::unique_ptr<IGamePhaseState> nextState) {
+void DominoGame::transitionTo(std::unique_ptr<IDominoState> nextState) {
     if (m_state) {
         m_state->onExit(*this);
     }
@@ -262,9 +254,14 @@ void DominoGame::transitionTo(std::unique_ptr<IGamePhaseState> nextState) {
     }
 }
 
-bool DominoGame::processCommand(PlayerId player, const ICommand& cmd) {
+bool DominoGame::processCommand(PlayerId player, const IDominoCommand& cmd) {
     if (!m_state) return false;
     return m_state->handleCommand(*this, player, cmd);
+}
+
+bool DominoGame::processCommand(PlayerId player, const ICommand& cmd) {
+    if (!m_state) return false;
+    return m_state->handleCommand(*this, player, static_cast<const IDominoCommand&>(cmd));
 }
 
 void DominoGame::init() {

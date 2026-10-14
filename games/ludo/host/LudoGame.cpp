@@ -53,144 +53,156 @@ namespace gamehub {
 namespace core {
 
 // ============================================================================
-// Command Pattern Implementations (Double Dispatch)
+// ILudoState Generic Adapters
 // ============================================================================
 
+void ILudoState::onEnter(Game& game) {
+    onEnter(static_cast<LudoGame&>(game));
+}
+
+void ILudoState::onExit(Game& game) {
+    onExit(static_cast<LudoGame&>(game));
+}
+
+bool ILudoState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    return handleCommand(static_cast<LudoGame&>(game), playerId, static_cast<const ILudoCommand&>(command));
+}
+
+void ILudoState::update(Game& game, float dt) {
+    update(static_cast<LudoGame&>(game), dt);
+}
+
+// ============================================================================
+// Command Pattern Implementations (Compile-Time Typed Execution)
+// ============================================================================
+
+bool RollDiceCommand::executeOnLudo(LudoGame& ludo, PlayerId playerId) const {
+    if (ludo.isFinished()) return false;
+    if (static_cast<int>(playerId) != ludo.getCurrentTurn()) return false;
+    return ludo.executeRollDice(m_forcedValue);
+}
+
 bool RollDiceCommand::execute(Game& game, PlayerId playerId) const {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (!ludo) return false;
-    return ludo->processCommand(playerId, *this);
+    return executeOnLudo(static_cast<LudoGame&>(game), playerId);
+}
+
+bool MovePawnCommand::executeOnLudo(LudoGame& ludo, PlayerId playerId) const {
+    if (ludo.isFinished()) return false;
+    if (static_cast<int>(playerId) != ludo.getCurrentTurn()) return false;
+    return ludo.executeMovePawn(m_pawnIndex);
 }
 
 bool MovePawnCommand::execute(Game& game, PlayerId playerId) const {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (!ludo) return false;
-    return ludo->processCommand(playerId, *this);
+    return executeOnLudo(static_cast<LudoGame&>(game), playerId);
 }
 
 // ============================================================================
-// State Pattern Implementations
+// State Pattern Implementations (Direct Typed Execution)
 // ============================================================================
 
-void LudoWaitingRollState::onEnter(Game& game) {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (ludo) {
-        ludo->resetTurnTimer();
-        ludo->resetBotTimer();
-    }
+void LudoWaitingRollState::onEnter(LudoGame& ludo) {
+    ludo.resetTurnTimer();
+    ludo.resetBotTimer();
 }
 
-bool LudoWaitingRollState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (!ludo || ludo->isFinished()) return false;
-    if (static_cast<int>(playerId) != ludo->getCurrentTurn()) return false;
-
+bool LudoWaitingRollState::handleCommand(LudoGame& ludo, PlayerId playerId, const ILudoCommand& command) {
+    if (ludo.isFinished()) return false;
+    if (static_cast<int>(playerId) != ludo.getCurrentTurn()) return false;
     if (command.getType() == "roll") {
-        const auto* rollCmd = dynamic_cast<const RollDiceCommand*>(&command);
-        int forced = rollCmd ? rollCmd->getForcedValue() : 0;
-        return ludo->executeRollDice(forced);
+        return command.executeOnLudo(ludo, playerId);
     }
     return false;
 }
 
-void LudoWaitingRollState::update(Game& game, float dt) {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (!ludo || ludo->isFinished()) return;
+void LudoWaitingRollState::update(LudoGame& ludo, float dt) {
+    if (ludo.isFinished()) return;
 
-    ludo->tickTurnTimer(dt);
-    if (ludo->getTurnTimer() <= 0.0f) {
-        ludo->executeRollDice(0);
+    ludo.tickTurnTimer(dt);
+    if (ludo.getTurnTimer() <= 0.0f) {
+        ludo.executeRollDice(0);
         return;
     }
 
-    int curSeat = ludo->getCurrentTurn() - 1;
-    auto* player = ludo->getPlayerEntity(curSeat);
+    int curSeat = ludo.getCurrentTurn() - 1;
+    auto* player = ludo.getPlayerEntity(curSeat);
     if (player && player->isAutonomous()) {
-        ludo->tickBotTimer(dt);
-        if (ludo->getBotTimer() <= 0.0f) {
-            auto cmd = player->getController()->decideAction(*ludo, static_cast<PlayerId>(curSeat + 1));
+        ludo.tickBotTimer(dt);
+        if (ludo.getBotTimer() <= 0.0f) {
+            auto cmd = player->getController()->decideAction(ludo, static_cast<PlayerId>(curSeat + 1));
             if (cmd) {
-                cmd->execute(*ludo, static_cast<PlayerId>(curSeat + 1));
+                cmd->execute(ludo, static_cast<PlayerId>(curSeat + 1));
             }
         }
     }
 }
 
-void LudoSelectPawnState::onEnter(Game& game) {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (ludo) {
-        ludo->resetTurnTimer();
-        ludo->resetBotTimer();
-    }
+void LudoSelectPawnState::onEnter(LudoGame& ludo) {
+    ludo.resetTurnTimer();
+    ludo.resetBotTimer();
 }
 
-bool LudoSelectPawnState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (!ludo || ludo->isFinished()) return false;
-    if (static_cast<int>(playerId) != ludo->getCurrentTurn()) return false;
-
+bool LudoSelectPawnState::handleCommand(LudoGame& ludo, PlayerId playerId, const ILudoCommand& command) {
+    if (ludo.isFinished()) return false;
+    if (static_cast<int>(playerId) != ludo.getCurrentTurn()) return false;
     if (command.getType() == "move") {
-        const auto* moveCmd = dynamic_cast<const MovePawnCommand*>(&command);
-        if (!moveCmd) return false;
-        return ludo->executeMovePawn(moveCmd->getPawnIndex());
+        return command.executeOnLudo(ludo, playerId);
     }
     return false;
 }
 
-void LudoSelectPawnState::update(Game& game, float dt) {
-    auto* ludo = dynamic_cast<LudoGame*>(&game);
-    if (!ludo || ludo->isFinished()) return;
+void LudoSelectPawnState::update(LudoGame& ludo, float dt) {
+    if (ludo.isFinished()) return;
 
-    ludo->tickTurnTimer(dt);
-    if (ludo->getTurnTimer() <= 0.0f) {
-        int curSeat = ludo->getCurrentTurn() - 1;
-        int bestPawn = ludo->pickBestBotPawn(curSeat, ludo->getCurrentDice());
+    ludo.tickTurnTimer(dt);
+    if (ludo.getTurnTimer() <= 0.0f) {
+        int curSeat = ludo.getCurrentTurn() - 1;
+        int bestPawn = ludo.pickBestBotPawn(curSeat, ludo.getCurrentDice());
         if (bestPawn != -1) {
-            ludo->executeMovePawn(bestPawn);
+            ludo.executeMovePawn(bestPawn);
         } else {
-            ludo->setConsecutiveSixes(0);
-            ludo->nextTurn();
+            ludo.setConsecutiveSixes(0);
+            ludo.nextTurn();
         }
         return;
     }
 
-    int curSeat = ludo->getCurrentTurn() - 1;
-    auto* player = ludo->getPlayerEntity(curSeat);
+    int curSeat = ludo.getCurrentTurn() - 1;
+    auto* player = ludo.getPlayerEntity(curSeat);
     if (player && player->isAutonomous()) {
-        ludo->tickBotTimer(dt);
-        if (ludo->getBotTimer() <= 0.0f) {
-            auto cmd = player->getController()->decideAction(*ludo, static_cast<PlayerId>(curSeat + 1));
+        ludo.tickBotTimer(dt);
+        if (ludo.getBotTimer() <= 0.0f) {
+            auto cmd = player->getController()->decideAction(ludo, static_cast<PlayerId>(curSeat + 1));
             if (cmd) {
-                cmd->execute(*ludo, static_cast<PlayerId>(curSeat + 1));
+                cmd->execute(ludo, static_cast<PlayerId>(curSeat + 1));
             } else {
-                ludo->setConsecutiveSixes(0);
-                ludo->nextTurn();
+                ludo.setConsecutiveSixes(0);
+                ludo.nextTurn();
             }
         }
     }
 }
 
-void LudoGameOverState::onEnter(Game& /*game*/) {}
+void LudoGameOverState::onEnter(LudoGame& /*game*/) {}
 
 // ============================================================================
 // Strategy Pattern Implementations (Autonomous Bot Heuristic)
 // ============================================================================
 
 std::unique_ptr<ICommand> LudoBotController::decideAction(const Game& game, PlayerId id) {
-    const auto* ludo = dynamic_cast<const LudoGame*>(&game);
-    if (!ludo || ludo->isFinished()) return nullptr;
+    const auto& ludo = static_cast<const LudoGame&>(game);
+    if (ludo.isFinished()) return nullptr;
 
-    if (static_cast<int>(id) != ludo->getCurrentTurn()) {
+    if (static_cast<int>(id) != ludo.getCurrentTurn()) {
         return nullptr;
     }
 
-    if (!ludo->isDiceRolled()) {
+    if (!ludo.isDiceRolled()) {
         return std::make_unique<RollDiceCommand>();
     }
 
     int curSeat = static_cast<int>(id) - 1;
-    int dice = ludo->getCurrentDice();
-    int bestPawn = ludo->pickBestBotPawn(curSeat, dice);
+    int dice = ludo.getCurrentDice();
+    int bestPawn = ludo.pickBestBotPawn(curSeat, dice);
     if (bestPawn != -1) {
         return std::make_unique<MovePawnCommand>(bestPawn);
     }
@@ -227,15 +239,25 @@ void LudoGame::setQuickMode(bool q) {
     init();
 }
 
-void LudoGame::transitionTo(std::unique_ptr<IGamePhaseState> nextState) {
+void LudoGame::transitionTo(std::unique_ptr<ILudoState> nextState) {
     if (!nextState) return;
+    if (m_state) {
+        m_state->onExit(*this);
+    }
     m_state = std::move(nextState);
     m_state->onEnter(*this);
 }
 
-bool LudoGame::processCommand(PlayerId player, const ICommand& cmd) {
+bool LudoGame::processCommand(PlayerId player, const ILudoCommand& cmd) {
     if (m_state) {
         return m_state->handleCommand(*this, player, cmd);
+    }
+    return false;
+}
+
+bool LudoGame::processCommand(PlayerId player, const ICommand& cmd) {
+    if (m_state) {
+        return m_state->handleCommand(*this, player, static_cast<const ILudoCommand&>(cmd));
     }
     return false;
 }
@@ -408,6 +430,9 @@ bool LudoGame::executeMovePawn(int pawnIdx) {
                 m_winner = m_players[curSeat].id;
                 m_lastAction = m_players[curSeat].name + " won the match!";
                 transitionTo(std::make_unique<LudoGameOverState>());
+                if (m_listener) {
+                    m_listener->onGameFinished(static_cast<PlayerId>(m_winner));
+                }
                 return true;
             }
         } else if (p.state == PawnState::IN_HOME) {

@@ -56,6 +56,14 @@ _Avoid_: AI, CPU, Computer
 The lifecycle states of a Room: WAITING (open for Challengers), ACTIVE (authoritative game execution in progress), FINISHED (outcome resolved), and DISSOLVED (cleaned up and unmapped).
 _Avoid_: Status, Phase, State
 
+**GameEventListener**:
+An abstract GoF Observer interface implemented by Room and other orchestrators to receive push notifications of game outcomes (onGameFinished, onRoundFinished, onStateInvalidated) without polling.
+_Avoid_: GameObserver, StatusPoller, GameHook
+
+**PlayerSeat**:
+The 1-indexed relative table position (1 to 4) of a Player within a Room, mapped dynamically from the PlayerId / SessionId collection.
+_Avoid_: PlayerIndex, TableNumber, Slot
+
 **Callsign**:
 The memorable, non-numerical arcade identifier assigned to a Client Session upon first connection or chosen by the Player (e.g. Viper, Pilot, Neon, Rocket).
 _Avoid_: Nickname, Username, ScreenName
@@ -227,3 +235,31 @@ _Avoid_: TurnStatus, PlayerPhase, TurnBanner
 **MatchExitPrompt**:
 A defensive confirmation dialog rendered prior to detaching from an active multiplayer Duel or Party Room, warning the Player of match forfeiture.
 _Avoid_: ConfirmLeave, QuitDialog, ForfeitModal
+
+**FanoronaGame**:
+A polymorphic Game model implementing traditional Malagasy Fanoron-tsivy on a 5x9 intersection grid with approach and withdrawal captures, compulsory capture rules, and chained multi-captures.
+_Avoid_: FanoronaEngine, CheckersGame, MalagasyChess
+
+**FanoronTsivy**:
+The traditional 5x9 line board consisting of 45 intersections and alternating strong and weak nodes.
+_Avoid_: FanoronaBoard, NineGrid, BoardLayout
+
+**StrongNode**:
+An intersection in FanoronTsivy where row plus column index is even ((r + c) % 2 == 0), permitting 8-directional movement (orthogonal and diagonal).
+_Avoid_: DiagonalNode, EightWayNode, StrongCell
+
+**WeakNode**:
+An intersection in FanoronTsivy where row plus column index is odd ((r + c) % 2 != 0), restricting movement strictly to 4 orthogonal directions.
+_Avoid_: OrthoNode, FourWayNode, WeakCell
+
+**ApproachCapture**:
+A capture mechanic (*kafa*) executed when a stone advances directly adjacent to an opponent's line of contiguous pieces, eliminating the entire line along the vector of motion.
+_Avoid_: PercussionCapture, AdvanceTake, PushCapture
+
+**WithdrawalCapture**:
+A capture mechanic (*telo*) executed when a stone moves directly away from an opponent's line of contiguous pieces that was adjacent before the move, eliminating the line along the opposite vector of motion.
+_Avoid_: AspirationCapture, RetreatTake, PullCapture
+
+**MultiCapture**:
+The successive chaining of captures within a single turn by the same active stone, subject to direction changes without backtracking or revisiting previously occupied intersections.
+_Avoid_: ComboCapture, ChainTake, RelayMove

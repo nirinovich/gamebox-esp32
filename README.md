@@ -1,6 +1,6 @@
 # ESP32 Game Hub 🎮
 
-An authoritative, headless game engine implemented in modern C++17 for the ESP32-S3 microcontroller. It hosts solo and real-time multiplayer games (Snake and Tic-Tac-Toe) served over a local Wi-Fi Access Point and captive portal via WebSockets.
+An authoritative, headless game engine implemented in modern C++17 for the ESP32-S3 microcontroller. It hosts solo and real-time multiplayer games (Malagasy Tsipy Dominoes, Ludo, and Malagasy Katro) served over a local Wi-Fi Access Point and captive portal via WebSockets.
 
 Clients connect with any standard mobile or desktop web browser—no app installation required.
 
@@ -94,9 +94,14 @@ pio device monitor
 ```
 ├── include/              # Public headers (Core engine, games, room management)
 ├── src/
-│   ├── core/             # Portable C++17 domain logic (Session, Room, Snake, TicTacToe)
+│   ├── core/             # Portable C++17 domain logic (Session, Room, HostEngine, RoomState)
 │   ├── desktop/          # Native desktop server (HTTP & WebSocket for PC testing)
 │   └── esp32/            # ESP32 FreeRTOS tasks, Wi-Fi SoftAP, DNS captive portal
+├── games/                # Co-located games (host simulation + client renderers)
+│   ├── domino/           # Malagasy Tsipy Dominoes
+│   ├── katro/            # Traditional Malagasy Katro Mancala
+│   └── ludo/             # Ludo cross-and-circle board game
+├── frontend/             # Single-page ClientShell (Preact/React, Canvas 2D)
 ├── docs/                 # Documentation suite & ADRs
 │   ├── architecture/     # Complete architectural deep dives & lifecycle guides
 │   ├── adr/              # Architectural Decision Records (ADRs)

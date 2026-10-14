@@ -7,14 +7,20 @@
 #include "Game.hpp"
 #include "GameRegistry.hpp"
 #include "RoomState.hpp"
+#include "GameEventListener.hpp"
 
 namespace gamehub {
 namespace core {
 
-class Room {
+class Room : public GameEventListener {
 public:
     Room(const std::string& code, GameId gameId, const std::string& hostName = "Player 1", size_t maxPlayers = 2);
-    virtual ~Room() = default;
+    ~Room() override = default;
+
+    // GameEventListener interface
+    void onGameFinished(PlayerId winner) override;
+    void onRoundFinished(PlayerId roundWinner, int pointsAwarded) override;
+    void onStateInvalidated() override;
 
     void init();
     void tick(float dt);
@@ -36,6 +42,7 @@ public:
     size_t getMaxPlayers() const { return m_maxPlayers; }
     void setMaxPlayers(size_t max) { m_maxPlayers = max; }
     const std::vector<PlayerId>& getPlayers() const { return m_players; }
+    int getPlayerSeat(PlayerId id) const;
 
     // GoF State Pattern methods
     RoomLifecycle getLifecycle() const;

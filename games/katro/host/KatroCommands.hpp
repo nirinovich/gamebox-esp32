@@ -11,12 +11,20 @@ namespace core {
 
 class KatroGame;
 
-class SowPitCommand : public ICommand {
+class IKatroCommand : public ICommand {
+public:
+    ~IKatroCommand() override = default;
+
+    bool execute(Game& game, PlayerId playerId) const override;
+    virtual bool executeOnKatro(KatroGame& game, PlayerId playerId) const = 0;
+};
+
+class SowPitCommand : public IKatroCommand {
 public:
     explicit SowPitCommand(int cell, KatroDirection dir = KatroDirection::CLOCKWISE, bool hasDir = false)
         : m_cell(cell), m_dir(dir), m_hasDir(hasDir) {}
 
-    bool execute(Game& game, PlayerId playerId) const override;
+    bool executeOnKatro(KatroGame& game, PlayerId playerId) const override;
     std::string getType() const override { return "sow"; }
 
     int getCell() const { return m_cell; }
