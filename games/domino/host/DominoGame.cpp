@@ -410,7 +410,7 @@ void DominoGame::handleInput(PlayerId player, const std::string& input) {
 }
 
 std::string DominoGame::serializeState() const {
-    return serializeStateForPlayer(0);
+    return serializeStateForPlayer(1);
 }
 
 std::string DominoGame::serializeStateForPlayer(PlayerId id) const {

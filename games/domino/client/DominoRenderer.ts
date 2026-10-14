@@ -193,8 +193,60 @@ export class DominoRenderer implements IGameRenderer {
       });
     }
 
-    // Ambiguous Choice Prompt Overlay
-    if (isAmbiguousChoice) {
+    // Action Prompts & Buttons Area
+    const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
+    const count = myHand.length;
+    const isMyTurn = state?.turn === myPlayerNum && !state?.finished && !state?.round_finished;
+    const canPlayAny = myHand.some(
+      (t: number[]) =>
+        !hasEnds ||
+        t[0] === lEnd ||
+        t[1] === lEnd ||
+        t[0] === rEnd ||
+        t[1] === rEnd
+    );
+
+    if (isMyTurn && !canPlayAny && count > 0) {
+      // Tactile Pass Turn Button
+      ctx.save();
+      ctx.fillStyle = '#dc2626';
+      ctx.shadowColor = 'rgba(220, 38, 38, 0.45)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(130, 248, 140, 28, 6);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+
+      ctx.strokeStyle = '#f87171';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 12px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✋ No Moves: Pass Turn', 200, 266);
+      ctx.restore();
+    } else if (state?.round_finished && !state?.finished) {
+      // Next Round Button
+      ctx.save();
+      ctx.fillStyle = '#0284c7';
+      ctx.shadowColor = 'rgba(2, 132, 199, 0.45)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.roundRect(130, 248, 140, 28, 6);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 12px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Next Round ►', 200, 266);
+      ctx.restore();
+    } else if (isAmbiguousChoice) {
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fef08a';
       ctx.font = '700 12px system-ui, sans-serif';
@@ -210,9 +262,6 @@ export class DominoRenderer implements IGameRenderer {
     ctx.stroke();
 
     // Player Hand Tray
-    const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
-    const count = myHand.length;
-
     ctx.textAlign = 'left';
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 11px system-ui, sans-serif';
@@ -225,12 +274,16 @@ export class DominoRenderer implements IGameRenderer {
       ctx.fillText(`Round Finished · Winner: P${state.round_winner || 'None'} (+${state.round_points || 0} pts)`, 386, 298);
     }
 
-    if (count > 0) {
+    if (count === 0) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '700 13px system-ui, sans-serif';
+      ctx.fillText(state?.round_finished ? '🀄 Domino! Hand Emptied' : 'No tiles held in hand', 200, 345);
+    } else {
       const tileW = Math.min(44, Math.max(34, Math.floor(376 / count)));
       const tileH = 68;
       const totalW = count * tileW;
       const startX = Math.max(12, Math.floor((400 - totalW) / 2));
-      const isMyTurn = state?.turn === myPlayerNum && !state?.finished && !state?.round_finished;
 
       myHand.forEach((t: number[], i: number) => {
         const tx = startX + i * tileW;
@@ -352,6 +405,37 @@ export class DominoRenderer implements IGameRenderer {
         this.dispatch({ cmd: 'play', index: this.selectedTileIdx, end: 'right' });
         this.selectedTileIdx = -1;
         this.choiceNeeded = false;
+        return;
+      }
+    }
+
+    // Check Pass Turn or Next Round button (Y: 245 to 280, X: 125 to 275)
+    if (y >= 245 && y <= 280 && x >= 125 && x <= 275) {
+      if (state?.round_finished && !state?.finished) {
+        sound.click();
+        haptic(20);
+        this.dispatch({ cmd: 'next_round' });
+        return;
+      }
+      const myPlayerNum = this.myPlayerNum;
+      const myHand = (state?.hands && state.hands[myPlayerNum]) || [];
+      const count = myHand.length;
+      const lEnd = state?.left_end;
+      const rEnd = state?.right_end;
+      const hasEnds = lEnd !== undefined && lEnd !== -1 && rEnd !== undefined && rEnd !== -1;
+      const isMyTurn = state?.turn === myPlayerNum && !state?.finished && !state?.round_finished;
+      const canPlayAny = myHand.some(
+        (t: number[]) =>
+          !hasEnds ||
+          t[0] === lEnd ||
+          t[1] === lEnd ||
+          t[0] === rEnd ||
+          t[1] === rEnd
+      );
+      if (isMyTurn && !canPlayAny && count > 0) {
+        sound.click();
+        haptic(20);
+        this.dispatch({ cmd: 'pass' });
         return;
       }
     }

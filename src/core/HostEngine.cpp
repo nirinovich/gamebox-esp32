@@ -270,7 +270,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         itS->second->setRoom(room);
         m_sessionPlayerMap[sessionId] = 1;
 
-        std::string reply = room ? room->serializeState() : "{\"type\":\"error\",\"msg\":\"Room capacity reached\"}";
+        std::string reply = room ? room->serializeStateForPlayer(1) : "{\"type\":\"error\",\"msg\":\"Room capacity reached\"}";
         if (m_network && !reply.empty()) {
             m_network->sendToClient(sessionId, reply);
         }
@@ -291,7 +291,7 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
             broadcastStateToRoom(activeRoom);
             return "";
         } else {
-            std::string reply = activeRoom->serializeState();
+            std::string reply = activeRoom->serializeStateForPlayer(playerNum);
             if (m_network) m_network->sendToClient(sessionId, reply);
             return reply;
         }
@@ -325,7 +325,7 @@ void HostEngine::tick(float dt) {
                 broadcastStateToRoom(r);
             } else if (!r->getPlayers().empty()) {
                 if (m_network) {
-                    m_network->sendToClient(r->getPlayers()[0], r->serializeState());
+                    m_network->sendToClient(r->getPlayers()[0], r->serializeStateForPlayer(1));
                 }
             }
         }

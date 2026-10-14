@@ -409,6 +409,7 @@ std::string LudoGame::serializeState() const {
 std::string LudoGame::serializeStateForPlayer(PlayerId /*id*/) const {
     std::ostringstream oss;
     oss << "{";
+    oss << "\"type\":\"state\",";
     oss << "\"game\":\"ludo\",";
     oss << "\"is_quick\":" << (m_isQuick ? "true" : "false") << ",";
     oss << "\"pawn_count\":" << m_pawnCount << ",";

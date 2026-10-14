@@ -19,7 +19,7 @@ Room::Room(const std::string& code, GameId gameId, const std::string& hostName, 
             m_maxPlayers = 2;
         }
     }
-    if (m_game) {
+    if (m_game && m_maxPlayers > 1) {
         m_game->setPlayerCount(static_cast<int>(m_maxPlayers));
     }
 }

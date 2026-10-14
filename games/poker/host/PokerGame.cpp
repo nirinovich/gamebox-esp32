@@ -978,6 +978,7 @@ std::string PokerGame::serializeState() const {
 std::string PokerGame::serializeStateForPlayer(PlayerId id) const {
     std::ostringstream oss;
     oss << "{";
+    oss << "\"type\":\"state\",";
     oss << "\"game\":\"poker\",";
     
     static const char* streetNames[] = {
