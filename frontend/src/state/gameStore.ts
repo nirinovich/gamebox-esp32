@@ -34,7 +34,7 @@ export const playerName = signal<string>(getStorage('gamebox_name', 'Guest'));
 export const soundMuted = signal<boolean>(getStorage('gamebox_muted', 'false') === 'true');
 export const crtFilter = signal<boolean>(getStorage('gamebox_crt', 'false') === 'true');
 export const currentView = signal<ViewState>('LOBBY');
-export const selectedTab = signal<GameCategory>('ALL');
+export const selectedTab = signal<GameCategory>('SOLO');
 export const activeRoom = signal<ActiveRoomState | null>(null);
 export const roomDirectory = signal<RoomDirectoryEntry[]>([]);
 export const gameState = signal<any | null>(null);

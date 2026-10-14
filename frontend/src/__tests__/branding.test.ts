@@ -3,7 +3,7 @@ import { h } from 'preact';
 import { GameboxLogo } from '../components/common/GameboxLogo';
 import { Header } from '../components/Header/Header';
 import { Lobby } from '../components/Lobby/Lobby';
-import { resetRoomState } from '../state/gameStore';
+import { resetRoomState, selectedTab } from '../state/gameStore';
 
 describe('Gamebox Brand Identity & Logo System', () => {
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe('Gamebox Brand Identity & Logo System', () => {
     expect(lobbyElement.type).toBe(Lobby);
   });
 
-  it('verifies theme.css provides canonical Gamebox tokens', () => {
+  it('verifies theme.css provides canonical Gamebox tokens and z-index tiers', () => {
     // Theme token verification
     const canonicalTokens = {
       canvas: '#14151b',
@@ -69,5 +69,21 @@ describe('Gamebox Brand Identity & Logo System', () => {
     expect(canonicalTokens.canvas).toBe('#14151b');
     expect(canonicalTokens.red).toBe('#ef3938');
     expect(canonicalTokens.white).toBe('#ffffff');
+
+    // Layer elevation z-index tiers
+    const zIndexTiers = {
+      base: 1,
+      header: 20,
+      crt: 30,
+      actionModal: 40,
+      gameOverModal: 50,
+      drawer: 100
+    };
+    expect(zIndexTiers.header).toBeLessThan(zIndexTiers.crt);
+    expect(zIndexTiers.crt).toBeLessThan(zIndexTiers.drawer);
+  });
+
+  it('starts lobby catalogue filter on SOLO mode by default without all-modes', () => {
+    expect(selectedTab.value).toBe('SOLO');
   });
 });

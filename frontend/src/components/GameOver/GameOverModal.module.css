@@ -11,7 +11,7 @@
   justify-content: center;
   padding: 24px;
   text-align: center;
-  z-index: 50;
+  z-index: var(--z-gameover-modal, 50);
   animation: modalFade 200ms var(--ease);
 }
 

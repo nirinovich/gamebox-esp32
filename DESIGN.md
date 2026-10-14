@@ -33,6 +33,18 @@ Gamebox uses a disciplined, high-contrast console palette anchored by three prim
 | `--gb-border-highlight` | `rgba(255, 255, 255, 0.32)` | Hover borders, elevated focus |
 | `--gb-border-red` | `#ef3938` | Selected state border, active input border |
 
+### Layer Elevation Z-Index Tiers
+| Token | Level | Semantic Role |
+| :--- | :--- | :--- |
+| `--z-base` | `1` | Root page container `#app` and base document flow |
+| `--z-profile` | `10` | Player nickname input bar |
+| `--z-header` | `20` | Fixed / sticky top navigation and status controls |
+| `--z-crt` | `30` | Ambient CRT scanline overlay (`body.crt-active::after`) |
+| `--z-action-modal` | `40` | In-canvas tactical decision prompt (`ActionModal`) |
+| `--z-gameover-modal` | `50` | In-canvas game conclusion screen (`GameOverModal`) |
+| `--z-drawer` | `100` | Hall of Fame stats and trophy drawer overlay (`TrophyDrawer`) |
+| `--z-modal` | `200` | Critical system alerts and blocking dialogs |
+
 ---
 
 ## 2. Typography & Hierarchy

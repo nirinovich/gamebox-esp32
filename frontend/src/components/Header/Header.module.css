@@ -11,6 +11,8 @@
   border: 1px solid var(--gb-border-crisp);
   border-radius: var(--radius-lg);
   margin-bottom: 12px;
+  position: relative;
+  z-index: var(--z-header, 20);
 }
 
 .logoWrap {
@@ -120,6 +122,8 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--gb-border-crisp);
   margin-bottom: 12px;
+  position: relative;
+  z-index: var(--z-profile, 10);
 }
 
 .profileLabel {

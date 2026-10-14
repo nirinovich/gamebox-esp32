@@ -88,7 +88,7 @@ Implement the Gamebox visual identity and design system from A to Z across the c
   - Streamline the Player profile nickname badge into a high-contrast obsidian input block.
 - **Lobby**:
   - Hero showcase banner at the top of the lobby highlighting the Gamebox Launchbox insignia, system operational tag, and instant action cues.
-  - High-contrast category filter tabs (`All Modes`, `Solo AI`, `2P Duel`, `Parlor Table`) with crisp red active underlines and zero fuzzy glow.
+  - High-contrast category filter tabs (`Solo AI`, `2P Duel`, `Parlor Table`) defaulting to Solo AI with crisp red active underlines and zero fuzzy glow.
   - Redesigned 4-letter Room Code submission bar featuring an arcade-terminal aesthetic and tactile join trigger.
   - Live Room Directory list with clean status pips, clear player counts, and solid join buttons.
   - Game Directory catalogue displaying high-contrast game cards with distinctive category badges.

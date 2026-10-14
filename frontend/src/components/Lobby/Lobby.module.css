@@ -59,6 +59,7 @@
   flex: 1;
   padding: 7px 0;
   border: none;
+  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--gb-text-secondary);
   font-size: 0.78rem;
@@ -76,7 +77,7 @@
 .tabBtnActive {
   background: var(--gb-surface-2);
   color: var(--gb-white);
-  border-bottom: 2px solid var(--gb-red);
+  border-bottom-color: var(--gb-red);
 }
 
 /* Join Code Bar */
