@@ -8,13 +8,14 @@ import {
 } from '../state/gameStore';
 import { gameSocket } from '../services/GameSocket';
 import { Header, showExitPrompt } from '../components/Header/Header';
-import { GameHud } from '../components/GameHud/GameHud';
+import { GameHud, roomCodeCopied } from '../components/GameHud/GameHud';
 import { MatchExitPrompt } from '../components/common/MatchExitPrompt';
 
 describe('In-Game UX, Navigation Lifecycle, and HUD Turn Guidance', () => {
   beforeEach(() => {
     resetRoomState();
     showExitPrompt.value = false;
+    roomCodeCopied.value = false;
     currentView.value = 'LOBBY';
     playerName.value = 'Viper';
     vi.restoreAllMocks();
@@ -27,12 +28,12 @@ describe('In-Game UX, Navigation Lifecycle, and HUD Turn Guidance', () => {
       const json = JSON.stringify(vnode);
 
       expect(json).toContain('GAMEBOX');
-      expect(json).not.toContain('⏴ LEAVE');
+      expect(json).not.toContain('leaveBtn');
       expect(json).toContain('profileBar');
       expect(json).toContain('Player Callsign');
     });
 
-    it('replaces logo text with [ ⏴ LEAVE ] and unmounts profile bar in GAME view', () => {
+    it('replaces logo text with [ LEAVE ] and unmounts profile bar in GAME view', () => {
       currentView.value = 'GAME';
       activeRoom.value = {
         code: 'SOLO',
@@ -45,7 +46,8 @@ describe('In-Game UX, Navigation Lifecycle, and HUD Turn Guidance', () => {
       const vnode = Header();
       const json = JSON.stringify(vnode);
 
-      expect(json).toContain('⏴ LEAVE');
+      expect(json).toContain('leaveBtn');
+      expect(json).toContain('LEAVE');
       expect(json).not.toContain('logoText');
       // Profile bar must be completely unmounted from the DOM
       expect(json).not.toContain('profileBar');
@@ -58,7 +60,8 @@ describe('In-Game UX, Navigation Lifecycle, and HUD Turn Guidance', () => {
       const vnode = Header();
       const json = JSON.stringify(vnode);
 
-      expect(json).toContain('⏴ LEAVE');
+      expect(json).toContain('leaveBtn');
+      expect(json).toContain('LEAVE');
       expect(json).not.toContain('profileBar');
     });
 
@@ -147,7 +150,7 @@ describe('In-Game UX, Navigation Lifecycle, and HUD Turn Guidance', () => {
       const json = JSON.stringify(vnode);
 
       expect(json).toContain('FORFEIT MATCH?');
-      expect(json).toContain('Leaving this active multiplayer duel will concede victory');
+      expect(json).toContain('Leaving will concede victory to your opponent.');
       expect(json).toContain('FORFEIT & LEAVE');
       expect(json).toContain('CANCEL');
     });
@@ -337,6 +340,37 @@ describe('In-Game UX, Navigation Lifecycle, and HUD Turn Guidance', () => {
 
       await roomCodeBtn.props.onClick();
       expect(writeTextMock).toHaveBeenCalledWith('KTRX');
+    });
+
+    it('does not set copied state if clipboard write fails', async () => {
+      const writeTextMock = vi.fn().mockRejectedValue(new Error('Permission denied'));
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: writeTextMock },
+        configurable: true,
+        writable: true
+      });
+
+      activeRoom.value = {
+        code: 'KTRX',
+        isHost: true,
+        gameType: 'katro_pvp',
+        playerNum: 1,
+        opponentName: 'Rocket'
+      };
+      gameState.value = {
+        type: 'state',
+        turn: 1,
+        scores: [0, 0]
+      };
+
+      const vnode = GameHud();
+      const hud = (vnode as any).props.children[0];
+      const hudCenter = hud.props.children[1];
+      const roomCodeBtn = hudCenter.props.children[1];
+
+      await roomCodeBtn.props.onClick();
+      expect(writeTextMock).toHaveBeenCalledWith('KTRX');
+      expect(roomCodeCopied.value).toBe(false);
     });
   });
 });

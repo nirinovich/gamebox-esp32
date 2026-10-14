@@ -92,6 +92,11 @@
   transform: scale(0.96);
 }
 
+.btnForfeit:focus-visible {
+  outline: 2px solid var(--gb-red);
+  outline-offset: 2px;
+}
+
 .btnCancel {
   flex: 1;
   background: var(--gb-surface-2);
@@ -113,4 +118,9 @@
 
 .btnCancel:active {
   transform: scale(0.96);
+}
+
+.btnCancel:focus-visible {
+  outline: 2px solid var(--gb-red);
+  outline-offset: 2px;
 }

@@ -47,16 +47,13 @@ export function GameHud() {
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(room.code);
+        roomCodeCopied.value = true;
+        setTimeout(() => {
+          roomCodeCopied.value = false;
+        }, 1500);
       }
-      roomCodeCopied.value = true;
-      setTimeout(() => {
-        roomCodeCopied.value = false;
-      }, 1500);
     } catch {
-      roomCodeCopied.value = true;
-      setTimeout(() => {
-        roomCodeCopied.value = false;
-      }, 1500);
+      // Do not set copied state if clipboard write rejected
     }
   };
 
@@ -94,7 +91,7 @@ export function GameHud() {
               title="Click to copy Room Code"
               aria-label={`Room Code: ${room.code}`}
             >
-              <span className={styles.codeText}>{roomCodeCopied.value ? 'COPIED!' : room.code}</span>
+              <span className={styles.codeText}>{roomCodeCopied.value ? 'COPIED' : room.code}</span>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />

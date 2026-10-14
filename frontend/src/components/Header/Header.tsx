@@ -27,8 +27,8 @@ export function Header() {
   const room = activeRoom.value;
 
   const handleLeaveClick = () => {
-    const isSolo = room?.code === 'SOLO' || view === 'WAITING';
-    if (isSolo) {
+    const canExitDirectly = !room || room.code === 'SOLO' || view === 'WAITING';
+    if (canExitDirectly) {
       gameSocket.leaveRoom();
     } else {
       showExitPrompt.value = true;
@@ -103,7 +103,10 @@ export function Header() {
               type="button"
               aria-label="Leave Match"
             >
-              ⏴ LEAVE
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              <span>LEAVE</span>
             </button>
           )}
         </div>

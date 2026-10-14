@@ -96,7 +96,6 @@
   letter-spacing: 0.06em;
   color: var(--gb-text-secondary);
   text-transform: uppercase;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .statusActive {
@@ -132,7 +131,7 @@
 
 .roomCodeBadge:focus-visible {
   outline: 2px solid var(--gb-red);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 
 .codeText {

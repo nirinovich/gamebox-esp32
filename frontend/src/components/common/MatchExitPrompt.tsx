@@ -21,7 +21,7 @@ export function MatchExitPrompt({ onConfirm, onCancel }: MatchExitPromptProps) {
           <h3 id="forfeit-title" className={styles.modalTitle}>FORFEIT MATCH?</h3>
         </div>
         <p className={styles.modalDesc}>
-          Leaving this active multiplayer duel will concede victory to your opponent and return you to the lobby.
+          Leaving will concede victory to your opponent.
         </p>
         <div className={styles.modalActions}>
           <button className={styles.btnForfeit} onClick={onConfirm} type="button">
