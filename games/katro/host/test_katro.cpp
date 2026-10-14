@@ -24,6 +24,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <set>
 #include "KatroGame.hpp"
 
 using namespace gamehub::core;
@@ -396,8 +397,83 @@ int main() {
         pass("Scénario 10 : Détection de la fin de partie et désignation du vainqueur");
     }
 
+    // =========================================================================
+    // Test 11 : Bot adverse — Sélection d'un coup aléatoire parmi les coups disponibles
+    //
+    // 1. Sur plateau standard 4×4 : toutes les cases de Nord (8..15) ont des graines.
+    //    Le bot doit toujours renvoyer une case valide entre 8 et 15.
+    //    Sur 50 tirages, plusieurs cases différentes doivent être sélectionnées
+    //    (preuve d'un tirage aléatoire et non statique).
+    // 2. Sur un plateau restreint où seules deux cases de Nord ont des graines (ex: 10 et 14),
+    //    le bot ne doit tirer qu'exclusivement l'une de ces deux cases.
+    // 3. Quand Nord n'a aucune graine disponible, computeBotMove() renvoie -1.
+    // =========================================================================
+    {
+        KatroGame game(true, 4, 2);
+        std::set<int> distinctMoves;
+
+        for (int i = 0; i < 50; ++i) {
+            int move = game.computeBotMove();
+            assert(move >= 8 && move <= 15 && "Le coup du bot doit être dans le camp de Nord (8..15)");
+            assert(game.getSeedCount(move) > 0 && "La case choisie doit contenir des graines");
+            distinctMoves.insert(move);
+        }
+        assert(distinctMoves.size() > 1 && "Le bot doit effectuer des choix aléatoires variés parmi les coups disponibles");
+
+        // Cas restreint : seulement les cases 10 et 14 disponibles
+        std::vector<int> b(16, 0);
+        b[0]  = 2;  // Sud
+        b[10] = 3;  // Nord
+        b[14] = 1;  // Nord
+        game.setBoard(b);
+
+        for (int i = 0; i < 20; ++i) {
+            int move = game.computeBotMove();
+            assert((move == 10 || move == 14) && "Le bot ne peut choisir qu'une case disponible non vide");
+        }
+
+        // Cas vide : aucune graine chez Nord
+        std::vector<int> bEmpty(16, 0);
+        bEmpty[0] = 5;
+        game.setBoard(bEmpty);
+        assert(game.computeBotMove() == -1 && "computeBotMove doit renvoyer -1 si aucune case n'est disponible");
+
+        pass("Scénario 11 : Coup aléatoire disponible pour le bot adverse (Nord)");
+    }
+
+    // =========================================================================
+    // Test 12 : Mode Solo — Cycle de jeu complet avec mise à jour du bot via update()
+    //
+    // - P1 joue un coup (Sud). Le tour passe à Nord (P2).
+    // - L'appel à update() après BOT_DELAY_SEC déclenche automatiquement le coup aléatoire du bot.
+    // - Le tour repasse à Sud (1) ou la partie se termine.
+    // - La séquence de coups (m_moveSeq) s'incrémente.
+    // =========================================================================
+    {
+        KatroGame soloGame(true, 4, 2);
+        assert(soloGame.getTurn() == 1);
+        int seqStart = soloGame.getMoveSeq();
+
+        // Sud joue la case 0
+        bool ok = soloGame.playTurn(0, 1, KatroDirection::CLOCKWISE);
+        assert(ok);
+        assert(soloGame.getTurn() == 2 && "Le tour doit passer au bot (Nord, 2)");
+        assert(soloGame.getMoveSeq() > seqStart && "La séquence de coup de P1 a été enregistrée");
+
+        int seqAfterP1 = soloGame.getMoveSeq();
+
+        // Simule l'avancement du temps dans la boucle de tick (0.7 seconde > 0.6s)
+        soloGame.update(0.7f);
+
+        // Le bot doit avoir joué son coup aléatoire
+        assert(soloGame.getMoveSeq() > seqAfterP1 && "Le coup du bot doit incrémenter la séquence de déplacement");
+        assert(soloGame.getTurn() == 1 || soloGame.isFinished() && "Après le coup du bot, c'est à P1 ou fin de partie");
+
+        pass("Scénario 12 : Exécution automatique du coup du bot en mode solo via update()");
+    }
+
     std::cout << "============================================================\n";
-    std::cout << "[SUCCÈS] Tous les 10 scénarios de tests ont réussi avec succès !\n";
+    std::cout << "[SUCCÈS] Tous les 12 scénarios de tests ont réussi avec succès !\n";
     std::cout << "============================================================\n";
     return 0;
 }

@@ -2,6 +2,7 @@
 #include <gamehub/core/GameRegistry.hpp>
 #include <sstream>
 #include <algorithm>
+#include <random>
 
 namespace {
 std::unique_ptr<gamehub::core::Game> createKatroSolo() {
@@ -324,34 +325,33 @@ void KatroGame::checkEndCondition() {
         m_winner   = 1;  // Sud gagne
     }
 }
-
 int KatroGame::computeBotMove() const {
-    int bestCell  = -1;
-    int bestGain  = -9999;
+    std::vector<int> availableMoves;
     int startNord = 2 * m_board.getCols();
     int endNord   = m_board.getTotalCells();
 
     for (int cell = startNord; cell < endNord; ++cell) {
-        if (m_board.getSeedCount(cell) <= 0) continue;
-
-        // Simulation sur copie
-        KatroGame sim(false, m_board.getCols(), m_board.getInitialSeeds());
-        sim.setBoard(m_board.toSeedVector());
-        sim.m_turn     = 2;
-        sim.m_finished = false;
-
-        int seedsBefore = sim.countPlayerSeeds(KatroPlayer::NORTH);
-        sim.playTurn(cell, 2, m_defaultDirection);
-        int seedsAfter  = sim.countPlayerSeeds(KatroPlayer::NORTH);
-        int gain        = seedsAfter - seedsBefore;
-
-        if (gain > bestGain || (gain == bestGain && (bestCell == -1 || m_board.getSeedCount(cell) > m_board.getSeedCount(bestCell)))) {
-            bestGain = gain;
-            bestCell = cell;
+        if (m_board.getSeedCount(cell) > 0) {
+            availableMoves.push_back(cell);
         }
     }
 
-    return bestCell;
+    if (availableMoves.empty()) {
+        return -1;
+    }
+
+    // Sélection aléatoire uniforme d'un coup parmi les coups disponibles
+    static std::mt19937 rng([]() {
+        try {
+            std::random_device rd;
+            return rd();
+        } catch (...) {
+            return 1337u;
+        }
+    }());
+
+    std::uniform_int_distribution<size_t> dist(0, availableMoves.size() - 1);
+    return availableMoves[dist(rng)];
 }
 
 } // namespace core

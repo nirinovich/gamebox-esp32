@@ -320,11 +320,14 @@ void HostEngine::tick(float dt) {
         bool isRealTime = r->getGame() && r->getGame()->isRealTime();
 
         if (isRealTime) {
+            int prevSeq = r->getMoveSeq();
             r->tick(dt);
-            if (r->getMaxPlayers() > 1) {
-                broadcastStateToRoom(r);
-            } else if (!r->getPlayers().empty()) {
-                if (m_network) {
+            int newSeq = r->getMoveSeq();
+
+            if (newSeq > prevSeq || newSeq == 0) {
+                if (r->getMaxPlayers() > 1) {
+                    broadcastStateToRoom(r);
+                } else if (!r->getPlayers().empty() && m_network) {
                     m_network->sendToClient(r->getPlayers()[0], r->serializeStateForPlayer(1));
                 }
             }

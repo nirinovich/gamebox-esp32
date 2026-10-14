@@ -19,6 +19,7 @@ public:
     virtual int getWinner() const = 0;
     virtual void setPlayerCount(int /*count*/) {}
     virtual bool isRealTime() const { return false; }
+    virtual int getMoveSeq() const { return 0; }
 };
 
 } // namespace core
