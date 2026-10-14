@@ -8,15 +8,15 @@
 
 .btnAction {
   flex: 1;
-  background: var(--surface, #1e293b);
-  color: var(--text, #f8fafc);
-  border: 1px solid var(--border, #334155);
+  background: var(--gb-surface-2);
+  color: var(--gb-white);
+  border: 1px solid var(--gb-border-crisp);
   font-weight: 800;
   font-size: 0.85rem;
   padding: 10px 18px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: opacity 140ms, transform 140ms, background 140ms;
+  transition: opacity 140ms var(--ease), transform 140ms var(--ease), background 140ms var(--ease);
 }
 
 .btnAction:disabled {
@@ -25,30 +25,31 @@
 }
 
 .btnAction:not(:disabled):hover {
-  opacity: 0.92;
+  background: var(--gb-surface-3);
+  border-color: var(--gb-border-highlight);
   transform: translateY(-1px);
 }
 
 .btnPrimary {
-  background: var(--p1-cyan, #06b6d4);
-  color: #090d16;
+  background: var(--gb-red);
+  color: var(--gb-white);
   border: none;
 }
 
 .btnHighlight {
-  background: #0284c7;
-  color: #ffffff;
-  border: 1px solid #38bdf8;
+  background: var(--gb-red);
+  color: var(--gb-white);
+  border: 1px solid var(--gb-white);
   animation: actionPulse 1.2s infinite alternate ease-in-out;
 }
 
 @keyframes actionPulse {
   from {
     transform: scale(1);
-    box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+    opacity: 0.9;
   }
   to {
-    transform: scale(1.02);
-    box-shadow: 0 0 18px rgba(56, 189, 248, 0.85);
+    transform: scale(1.03);
+    opacity: 1;
   }
 }

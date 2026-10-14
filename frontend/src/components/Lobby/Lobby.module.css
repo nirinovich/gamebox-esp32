@@ -9,13 +9,11 @@
 .heroShowcase {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   background: var(--gb-surface-1);
   border: 1px solid var(--gb-border-crisp);
-  border-left: 4px solid var(--gb-red);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 16px 18px;
 }
 
 .heroEmblem {
@@ -28,36 +26,11 @@
 .heroContent {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-}
-
-.heroBadge {
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--gb-red);
-  background: var(--gb-red-dim);
-  border: 1px solid rgba(239, 57, 56, 0.25);
-  padding: 2px 7px;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: fit-content;
-  margin-bottom: 2px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.heroDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--gb-red);
-  box-shadow: 0 0 5px var(--gb-red);
+  gap: 4px;
 }
 
 .heroTitle {
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 900;
   letter-spacing: 0.12em;
   color: var(--gb-white);
@@ -66,7 +39,7 @@
 }
 
 .heroSubtitle {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: var(--gb-text-secondary);
   font-weight: 500;
 }
@@ -104,7 +77,6 @@
   background: var(--gb-surface-2);
   color: var(--gb-white);
   border-bottom: 2px solid var(--gb-red);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* Join Code Bar */
@@ -314,25 +286,20 @@
   height: 8px;
   border-radius: 50%;
   background: var(--gb-red);
-  box-shadow: 0 0 0 0 rgba(239, 57, 56, 0.7);
-  animation: radarPulse 1.8s infinite;
+  animation: radarPulse 1.8s ease-in-out infinite;
   display: inline-block;
   margin-right: 6px;
   flex-shrink: 0;
 }
 
 @keyframes radarPulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 57, 56, 0.7);
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.7;
   }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 7px rgba(239, 57, 56, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(239, 57, 56, 0);
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
   }
 }
 

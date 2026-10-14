@@ -17,8 +17,7 @@
   justify-content: center;
   cursor: pointer;
   touch-action: manipulation;
-  transition: background 80ms, color 80ms, transform 80ms, box-shadow 80ms;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 80ms, color 80ms, transform 80ms;
   user-select: none;
 }
 
@@ -32,7 +31,6 @@
   color: var(--gb-white);
   border-color: var(--gb-red);
   transform: scale(0.92);
-  box-shadow: 0 0 16px var(--gb-red-glow);
 }
 
 .dpadUp {

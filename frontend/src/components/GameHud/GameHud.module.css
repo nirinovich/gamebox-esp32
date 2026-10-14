@@ -66,7 +66,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--p1-cyan);
-  box-shadow: 0 0 6px var(--p1-cyan);
 }
 
 .dotPink {
@@ -74,7 +73,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--p2-pink);
-  box-shadow: 0 0 6px var(--p2-pink);
 }
 
 .botDot {
@@ -82,7 +80,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--bot-amber);
-  box-shadow: 0 0 6px var(--bot-amber);
 }
 
 .hudP3Wrap {
@@ -92,7 +89,7 @@
   align-items: center;
   gap: 8px;
   font-size: 0.74rem;
-  color: #c084fc;
+  color: var(--gb-amber);
   font-weight: 700;
   margin-top: -4px;
   margin-bottom: 6px;
@@ -102,6 +99,5 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #c084fc;
-  box-shadow: 0 0 6px #c084fc;
+  background: var(--gb-amber);
 }

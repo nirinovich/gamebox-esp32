@@ -37,7 +37,7 @@
 .handle {
   width: 40px;
   height: 4px;
-  background: #475569;
+  background: var(--gb-surface-3);
   border-radius: 2px;
   margin: 0 auto 16px;
 }
@@ -53,16 +53,16 @@
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: var(--text);
+  color: var(--gb-white);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .closeBtn {
-  background: #1e293b;
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
+  background: var(--gb-surface-2);
+  border: 1px solid var(--gb-border-crisp);
+  color: var(--gb-text-secondary);
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -74,8 +74,8 @@
 }
 
 .closeBtn:hover {
-  background: #334155;
-  color: var(--text);
+  background: var(--gb-surface-3);
+  color: var(--gb-white);
 }
 
 .tierCard {
@@ -151,19 +151,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(30, 41, 59, 0.4);
+  background: var(--gb-surface-2);
+  border: 1px solid var(--gb-border-subtle);
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
 }
 
 .gameRowName {
   font-weight: 600;
+  color: var(--gb-white);
 }
 
 .gameRowScore {
-  color: var(--text-secondary);
+  color: var(--gb-text-secondary);
   font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .footerActions {
@@ -173,10 +176,10 @@
 
 .btnReset {
   background: transparent;
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--gb-red);
+  border: 1px solid rgba(239, 57, 56, 0.3);
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -184,8 +187,8 @@
 }
 
 .btnReset:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
+  background: var(--gb-red-dim);
+  border-color: var(--gb-red);
 }
 
 .confirmRow {
@@ -195,22 +198,22 @@
 }
 
 .btnConfirm {
-  background: #ef4444;
-  color: white;
+  background: var(--gb-red);
+  color: var(--gb-white);
   border: none;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
 }
 
 .btnCancel {
-  background: #334155;
-  color: var(--text);
+  background: var(--gb-surface-3);
+  color: var(--gb-white);
   border: none;
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.8rem;
   cursor: pointer;
 }

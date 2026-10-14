@@ -83,14 +83,43 @@ Components must use `<GameboxLogo />` (`src/components/common/GameboxLogo.tsx`):
 
 ---
 
-## 5. Anti-Slop Charter (Strict Bans)
+## 5. Anti-Slop Charter & Impeccable Craft Floor
 
-To ensure Gamebox maintains an award-winning, console-grade interface and never degrades into generic AI-generated slop, the following patterns are **BANNED ENTIRELY**:
+To ensure Gamebox maintains an award-winning, console-grade interface and never degrades into generic AI-generated slop, all contributors and agents must enforce the Impeccable Craft Floor rules across two strict checklists: **Verify** and **Refuse**.
 
-1. 🚫 **NO AI Gradient Soup**: Do NOT use generic purple/magenta/blue multi-stop gradients (`linear-gradient(135deg, #667eea, #764ba2)` or neon violet nebulas). Surfaces must be solid matte obsidian or subtle dark slate tiers.
-2. 🚫 **NO Blurry Pastel Dropshadows**: Do NOT use diffuse colorful box-shadows or glowing halos around random cards. Shadows must be dark and grounding (`rgba(0, 0, 0, 0.4)`).
-3. 🚫 **NO Low-Contrast Disabled-Looking Grey Text**: All primary text must be stark white (`#ffffff`). Secondary text must have verified WCAG AA contrast against `#14151b`. Never use washed-out `#4b5563` on black backgrounds.
-4. 🚫 **NO Bubblegum Pill Rounding**: Do NOT apply oversized border-radiuses (`24px` or `9999px`) to rectangular cards, inputs, or standard buttons. Gamebox uses precise, sharp geometric corners (`4px` to `8px`). Only circular icon pips and status pills may use full rounding.
-5. 🚫 **NO Emojis as UI Icons**: Do NOT use system emojis (🎮, 🎲, 🏆) as primary UI icons or buttons. Use crisp vector SVGs or the project's `<Icon />` and `<GameboxLogo />` components.
-6. 🚫 **NO Unbranded Accent Colors**: Do NOT introduce random cyan, magenta, emerald, or indigo accent colors into layout shells or navigation. The sole brand accent is Gamebox Red (`#ef3938`). (Secondary colors are permitted solely inside individual game canvas grids for piece differentiation).
-7. 🚫 **NO External Resource Dependencies**: Do NOT import Google Fonts, external CDN scripts, or remote image URLs. All code and assets must be self-contained within the single-file client build for offline ESP32 captive portal deployment.
+### The Refusal Charter (Banned Patterns)
+
+The following anti-patterns are strictly prohibited:
+
+1. 🚫 **NO Kickers or Eyebrows Above Headings**: This is an absolute ban: no brief earns it back. The heading carries its own weight; delete the label and let the heading speak. Never place a category pill or uppercase micro-badge directly above an `<h1>` or `<h2>`.
+2. 🚫 **NO Ghost Cards**: Declare elevation ONCE, border or shadow. A 1px border under a wide soft shadow is the ghost card. Use solid matte obsidian surface tiers (`--gb-surface-1/2/3`) with crisp structural borders (`--gb-border-crisp`), not floating diffuse shadows.
+3. 🚫 **NO Zero-Offset Colored Halos**: A zero-offset colored halo (`box-shadow: 0 0 12px var(--color)`) is cheap decoration, not depth. Shadows carry an offset and a soft blur or are omitted entirely in favor of crisp borders.
+4. 🚫 **NO Colored Accent Borders on Cards**: A colored `border-left` or `border-right` above 1px on cards, list items, callouts, or alerts is an AI template habit. Cards use uniform 1px structural outlines.
+5. 🚫 **NO AI Gradient Soup**: Do NOT use generic purple/magenta/blue multi-stop gradients (`linear-gradient(135deg, #667eea, #764ba2)` or neon violet nebulas). Surfaces must be solid matte obsidian or subtle dark slate tiers.
+6. 🚫 **NO Gradient Text**: Emphasis comes from weight, size, or stark contrast white against matte dark surfaces.
+7. 🚫 **NO Bubblegum Pill Rounding**: Do NOT apply oversized border-radiuses (`24px` or `9999px`) to rectangular cards, inputs, or standard buttons. Gamebox uses precise, sharp geometric corners (`var(--radius-sm)` = 4px, `var(--radius-md)` = 8px). Card radii stay at 12–16px; pills are strictly for small icon pips.
+8. 🚫 **NO Low-Contrast Disabled-Looking Grey Text**: All primary text must be stark white (`#ffffff`). Secondary text must have verified WCAG AA contrast against `#14151b`. Never use washed-out `#4b5563` on black backgrounds.
+9. 🚫 **NO Emojis as UI Icons**: Do NOT use system emojis (🎮, 🎲, 🏆) as primary UI icons or buttons. Use crisp vector SVGs or the project's `<Icon />` and `<GameboxLogo />` components.
+10. 🚫 **NO Unbranded Accent Colors**: Do NOT introduce random cyan, magenta, emerald, or indigo accent colors into layout shells or navigation. The sole brand accent is Gamebox Red (`#ef3938`). (Secondary colors are permitted solely inside individual game canvas grids for piece differentiation).
+11. 🚫 **NO Monospace as a Costume**: Monospace is reserved for actual code, telemetry, room codes, timers, and scores. Never use monospace as a costume for "technical" on standard labels or body copy.
+12. 🚫 **NO Hard Offset Shadows Outside Neobrutalism**: Hard offset shadows (`box-shadow: 4px 4px 0`) outside a world that is actually neobrutalist are costumes, not depth systems.
+13. 🚫 **NO External Resource Dependencies**: Do NOT import Google Fonts, external CDN scripts, or remote image URLs. All code and assets must be self-contained within the single-file client build for offline ESP32 captive portal deployment.
+
+### The Verification Checklist (Built Quality Floor)
+
+Before completing any UI task, verify every built result against these mechanical checks:
+
+- **Contrast**: Body and placeholder text $\ge$ 4.5:1, large text $\ge$ 3:1. On colored surfaces tint secondary text from that hue or the foreground; never gray.
+- **Themed Browser Surfaces**: The parts you did not draw still carry the design:
+  - Text selection: `::selection { background: var(--gb-red); color: var(--gb-white); }`
+  - Caret color: `input, textarea { caret-color: var(--gb-red); }`
+  - Custom scrollbars: `::-webkit-scrollbar` with track `var(--gb-bg-canvas)` and thumb `var(--gb-surface-3)`.
+  - Focus rings: `:focus-visible { outline: 2px solid var(--gb-red); outline-offset: 2px; }`
+  - Tabular numerals: `.tabular-nums` / `font-variant-numeric: tabular-nums` for timers, ping, scores.
+  - Underline offset: `text-underline-offset: 0.2em;`
+- **Depth**: Elevation declared once. Surface color tiers define stacking; shadows carry grounding offset and soft blur when present.
+- **Spacing**: Tight groups, generous separation, more space above a heading than below it.
+- **Type**: Body measure 65–75ch, display max 6rem, tracking floor `-0.04em` (`-0.02` to `-0.03em` for tight console headings), balanced headings.
+- **Motion**: One authored moment (e.g. rocket launch), not scattered effects and not one identical entrance on every section. Exponential ease-out from an already-visible default.
+- **States**: Hover, disabled, loading, error, empty. Plus real content, working controls, responsive composition, keyboard focus.
+- **Copy**: Controls name their action (`JOIN`, `CREATE MATCH`); errors name the problem and recovery.

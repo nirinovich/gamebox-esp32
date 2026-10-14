@@ -45,10 +45,6 @@ export function Lobby() {
           <GameboxLogo variant="full" size={60} animated={true} />
         </div>
         <div className={styles.heroContent}>
-          <div className={styles.heroBadge}>
-            <span className={styles.heroDot} />
-            <span>CONSOLE CORE ONLINE</span>
-          </div>
           <h1 className={styles.heroTitle}>GAMEBOX</h1>
           <p className={styles.heroSubtitle}>Authoritative Multiplayer Arcade Engine</p>
         </div>

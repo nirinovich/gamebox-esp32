@@ -1,8 +1,9 @@
 .modalOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(7, 11, 20, 0.75);
+  background: rgba(20, 21, 27, 0.85);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,14 +12,13 @@
 }
 
 .modalCard {
-  background: var(--surface, #1e293b);
-  border: 1px solid var(--border, #334155);
-  border-radius: var(--radius-md, 8px);
-  padding: 16px;
+  background: var(--gb-surface-1);
+  border: 1px solid var(--gb-border-crisp);
+  border-radius: var(--radius-md);
+  padding: 18px;
   width: 90%;
   max-width: 320px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .promptTitle {
@@ -26,7 +26,7 @@
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.05em;
-  color: var(--p1-cyan, #38bdf8);
+  color: var(--gb-white);
 }
 
 .choicesGrid {
@@ -36,20 +36,24 @@
 }
 
 .choiceBtn {
-  background: #0284c7;
-  color: #ffffff;
+  background: var(--gb-red);
+  color: var(--gb-white);
   border: none;
   font-weight: 800;
   font-size: 0.9rem;
   padding: 10px 14px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: opacity 120ms, transform 120ms;
+  transition: background 120ms var(--ease), transform 120ms var(--ease);
 }
 
 .choiceBtn:hover {
-  opacity: 0.92;
+  background: var(--gb-red-hover);
   transform: translateY(-1px);
+}
+
+.choiceBtn:active {
+  transform: scale(0.96);
 }
 
 @keyframes fadeIn {
