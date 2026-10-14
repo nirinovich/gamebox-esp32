@@ -145,7 +145,7 @@ The client-side 2D presentation component managing cell dimensioning, coordinate
 _Avoid_: BoardRenderer, GridComponent, ScreenGrid
 
 **AssetPacker**:
-The native host C++ utility in tools/asset_packer.cpp compressing the single-file ClientShell into an RFC 1952 Gzip stream embedded into WebAssets.hpp.
+The native host C++ utility in tools/asset_packer.cpp compressing the single-file ClientShell into an RFC 1952 Gzip stream via the in-tree miniz library embedded into WebAssets.hpp.
 _Avoid_: AssetScript, PythonGenerator, WebBuilder
 
 **CaptiveProbe**:

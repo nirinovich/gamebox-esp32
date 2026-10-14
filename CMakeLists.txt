@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" GAMEBOX_VERSION_STR)
 string(STRIP "${GAMEBOX_VERSION_STR}" GAMEBOX_VERSION_STR)
 
-project(ESP32GameHub VERSION ${GAMEBOX_VERSION_STR} LANGUAGES CXX)
+project(ESP32GameHub VERSION ${GAMEBOX_VERSION_STR} LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,8 +27,17 @@ add_library(gamehub_core OBJECT
 target_include_directories(gamehub_core PUBLIC include games)
 
 # Test executables
+# miniz in-tree vendor dependency
+add_library(miniz STATIC
+    third_party/miniz/miniz.c
+    third_party/miniz/miniz_tdef.c
+    third_party/miniz/miniz_tinfl.c
+    third_party/miniz/miniz_zip.c
+)
+target_include_directories(miniz PUBLIC third_party/miniz)
+
 add_executable(test_tracer_bullet tests/test_tracer_bullet.cpp)
-target_link_libraries(test_tracer_bullet PRIVATE gamehub_core)
+target_link_libraries(test_tracer_bullet PRIVATE gamehub_core miniz)
 
 add_executable(test_room_manager tests/test_room_manager.cpp)
 target_link_libraries(test_room_manager PRIVATE gamehub_core)
@@ -103,8 +112,8 @@ endif()
 add_executable(asset_packer
     tools/asset_packer.cpp
 )
-
-target_include_directories(asset_packer PRIVATE tools include)
+target_link_libraries(asset_packer PRIVATE miniz)
+target_include_directories(asset_packer PRIVATE tools include third_party/miniz)
 
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/include/gamehub/web/WebAssets.hpp"

@@ -1,5 +1,8 @@
 # Native C++ Asset Packer and Gzip Flash Compression
 
+> [!NOTE]
+> **Status**: Superseded by [ADR 0022](0022-replace-hand-rolled-compression-with-miniz.md) (adopted industry-standard `miniz` single-file library for RFC 1951 Deflate and RFC 1952 Gzip compression, excising hand-rolled `GzipCompressor.hpp`).
+
 ## Context
 1. **Auxiliary Python Build Dependency**: Gamebox previously depended on an auxiliary Python script (`scripts/generate_web_assets.py`) to convert `frontend/dist/index.html` into an embedded C++ header (`WebAssets.hpp`). For an academic Computer Science project evaluated as a pure C++ systems capstone, relying on an external Python interpreter weakened the 100% C++ toolchain promise.
 2. **Flash Memory Consumption on ESP32-S3**: The uncompressed single-file web client bundle was 105 KB. Embedded directly into microcontroller flash memory (`PROGMEM`) as an uncompressed hex byte array, it consumed substantial flash storage that could otherwise be preserved for additional game modes, bot heuristics, and firmware partitions.

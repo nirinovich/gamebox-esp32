@@ -6,7 +6,121 @@
 #include <iomanip>
 #include <cstdint>
 #include <cassert>
-#include <gamehub/util/GzipCompressor.hpp>
+#include <stdexcept>
+#include <miniz.h>
+
+namespace {
+
+std::vector<uint8_t> compressToGzip(const std::vector<uint8_t>& input) {
+    // 1. Raw Deflate compression using miniz
+    mz_stream stream{};
+    int status = mz_deflateInit2(&stream, MZ_BEST_COMPRESSION, MZ_DEFLATED, -MZ_DEFAULT_WINDOW_BITS, 9, MZ_DEFAULT_STRATEGY);
+    if (status != MZ_OK) {
+        throw std::runtime_error("mz_deflateInit2 failed with status " + std::to_string(status));
+    }
+
+    mz_ulong maxDeflateSize = mz_compressBound(static_cast<mz_ulong>(input.size()));
+    std::vector<uint8_t> deflateBuf(maxDeflateSize);
+
+    stream.next_in = input.data();
+    stream.avail_in = static_cast<unsigned int>(input.size());
+    stream.next_out = deflateBuf.data();
+    stream.avail_out = static_cast<unsigned int>(deflateBuf.size());
+
+    status = mz_deflate(&stream, MZ_FINISH);
+    if (status != MZ_STREAM_END) {
+        mz_deflateEnd(&stream);
+        throw std::runtime_error("mz_deflate failed to finish, status " + std::to_string(status));
+    }
+    size_t deflateSize = stream.total_out;
+    mz_deflateEnd(&stream);
+
+    // 2. Compute CRC-32 and input size for RFC 1952 Gzip trailer
+    mz_ulong crc = mz_crc32(0, input.data(), input.size());
+    uint32_t isize = static_cast<uint32_t>(input.size());
+
+    // 3. Assemble RFC 1952 Gzip container:
+    // Header (10 bytes) + Deflate Payload + Trailer (8 bytes: CRC-32 + ISIZE)
+    std::vector<uint8_t> gzip;
+    gzip.reserve(10 + deflateSize + 8);
+
+    // 10-byte Gzip Header
+    gzip.push_back(0x1F); // ID1
+    gzip.push_back(0x8B); // ID2
+    gzip.push_back(0x08); // CM = Deflate
+    gzip.push_back(0x00); // FLG = 0
+    gzip.push_back(0x00); // MTIME byte 0
+    gzip.push_back(0x00); // MTIME byte 1
+    gzip.push_back(0x00); // MTIME byte 2
+    gzip.push_back(0x00); // MTIME byte 3
+    gzip.push_back(0x02); // XFL = 2 (maximum compression)
+    gzip.push_back(0xFF); // OS = 255 (unknown / generic)
+
+    // Deflate stream
+    gzip.insert(gzip.end(), deflateBuf.data(), deflateBuf.data() + deflateSize);
+
+    // Trailer: CRC-32 (4 bytes little-endian)
+    gzip.push_back(static_cast<uint8_t>(crc & 0xFF));
+    gzip.push_back(static_cast<uint8_t>((crc >> 8) & 0xFF));
+    gzip.push_back(static_cast<uint8_t>((crc >> 16) & 0xFF));
+    gzip.push_back(static_cast<uint8_t>((crc >> 24) & 0xFF));
+
+    // Trailer: ISIZE (4 bytes little-endian)
+    gzip.push_back(static_cast<uint8_t>(isize & 0xFF));
+    gzip.push_back(static_cast<uint8_t>((isize >> 8) & 0xFF));
+    gzip.push_back(static_cast<uint8_t>((isize >> 16) & 0xFF));
+    gzip.push_back(static_cast<uint8_t>((isize >> 24) & 0xFF));
+
+    return gzip;
+}
+
+std::vector<uint8_t> decompressGzip(const std::vector<uint8_t>& gzipBytes) {
+    if (gzipBytes.size() < 18) {
+        throw std::runtime_error("Gzip payload too short (minimum 18 bytes)");
+    }
+    if (gzipBytes[0] != 0x1F || gzipBytes[1] != 0x8B || gzipBytes[2] != 0x08) {
+        throw std::runtime_error("Invalid Gzip header magic bytes");
+    }
+
+    size_t trailerOffset = gzipBytes.size() - 8;
+    uint32_t expectedCrc = static_cast<uint32_t>(gzipBytes[trailerOffset]) |
+                          (static_cast<uint32_t>(gzipBytes[trailerOffset + 1]) << 8) |
+                          (static_cast<uint32_t>(gzipBytes[trailerOffset + 2]) << 16) |
+                          (static_cast<uint32_t>(gzipBytes[trailerOffset + 3]) << 24);
+    uint32_t expectedSize = static_cast<uint32_t>(gzipBytes[trailerOffset + 4]) |
+                           (static_cast<uint32_t>(gzipBytes[trailerOffset + 5]) << 8) |
+                           (static_cast<uint32_t>(gzipBytes[trailerOffset + 6]) << 16) |
+                           (static_cast<uint32_t>(gzipBytes[trailerOffset + 7]) << 24);
+
+    std::vector<uint8_t> decompressed(expectedSize);
+    mz_stream stream{};
+    int status = mz_inflateInit2(&stream, -MZ_DEFAULT_WINDOW_BITS);
+    if (status != MZ_OK) {
+        throw std::runtime_error("mz_inflateInit2 failed with status " + std::to_string(status));
+    }
+
+    stream.next_in = gzipBytes.data() + 10;
+    stream.avail_in = static_cast<unsigned int>(gzipBytes.size() - 18);
+    stream.next_out = decompressed.data();
+    stream.avail_out = static_cast<unsigned int>(decompressed.size());
+
+    status = mz_inflate(&stream, MZ_FINISH);
+    if (status != MZ_STREAM_END) {
+        mz_inflateEnd(&stream);
+        throw std::runtime_error("mz_inflate failed, status " + std::to_string(status));
+    }
+    mz_inflateEnd(&stream);
+
+    mz_ulong actualCrc = mz_crc32(0, decompressed.data(), decompressed.size());
+    if (actualCrc != expectedCrc) {
+        throw std::runtime_error("CRC-32 checksum mismatch: expected " + std::to_string(expectedCrc) +
+                                 ", got " + std::to_string(actualCrc));
+    }
+
+    return decompressed;
+}
+
+} // namespace
 
 int main(int argc, char* argv[]) {
     std::filesystem::path inputPath = "frontend/dist/index.html";
@@ -38,14 +152,26 @@ int main(int argc, char* argv[]) {
     in.close();
 
     size_t uncompressedSize = rawBytes.size();
-    std::vector<uint8_t> gzipBytes = gamehub::util::GzipCompressor::compress(rawBytes);
+    std::vector<uint8_t> gzipBytes;
+    try {
+        gzipBytes = compressToGzip(rawBytes);
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR] Compression with miniz failed: " << e.what() << std::endl;
+        return 1;
+    }
+
     size_t compressedSize = gzipBytes.size();
     float ratio = 100.0f * (1.0f - static_cast<float>(compressedSize) / static_cast<float>(uncompressedSize));
 
-    // Verify round-trip integrity immediately at pack time
-    std::vector<uint8_t> decompressed = gamehub::util::GzipCompressor::decompress(gzipBytes);
-    if (decompressed != rawBytes) {
-        std::cerr << "[ERROR] AssetPacker round-trip verification failed: decompressed payload does not match raw bytes!" << std::endl;
+    // Verify round-trip integrity immediately at pack time using miniz inflate
+    try {
+        std::vector<uint8_t> decompressed = decompressGzip(gzipBytes);
+        if (decompressed != rawBytes) {
+            std::cerr << "[ERROR] AssetPacker round-trip verification failed: decompressed payload does not match raw bytes!" << std::endl;
+            return 1;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "[ERROR] AssetPacker round-trip verification failed: " << e.what() << std::endl;
         return 1;
     }
 
@@ -66,6 +192,7 @@ int main(int argc, char* argv[]) {
     out << "namespace web {\n\n";
     out << "/**\n";
     out << " * Embedded RFC 1952 Gzip-compressed ClientShell single-page application.\n";
+    out << " * Compressed using industry-standard miniz (RFC 1951 Deflate).\n";
     out << " * Flash memory footprint: " << compressedSize << " bytes (compressed from " << uncompressedSize << " bytes).\n";
     out << " */\n";
     out << "class WebAssets {\n";
@@ -125,12 +252,12 @@ int main(int argc, char* argv[]) {
     out << "} // namespace gamehub\n";
     out.close();
 
-    std::cout << "[AssetPacker] Successfully packed: " << inputPath.string() << std::endl;
-    std::cout << "              Uncompressed: " << std::dec << uncompressedSize << " bytes" << std::endl;
-    std::cout << "              Gzip Payload: " << compressedSize << " bytes ("
+    std::cout << "[AssetPacker (miniz)] Successfully packed: " << inputPath.string() << std::endl;
+    std::cout << "                      Uncompressed: " << std::dec << uncompressedSize << " bytes" << std::endl;
+    std::cout << "                      Gzip Payload: " << compressedSize << " bytes ("
               << std::fixed << std::setprecision(1) << ratio << "% flash reduction)" << std::endl;
-    std::cout << "              Round-trip  : Verified byte-for-byte exact match" << std::endl;
-    std::cout << "              Generated   : " << outputPath.string() << std::endl;
+    std::cout << "                      Round-trip  : Verified byte-for-byte exact match (miniz inflate)" << std::endl;
+    std::cout << "                      Generated   : " << outputPath.string() << std::endl;
 
     return 0;
 }
