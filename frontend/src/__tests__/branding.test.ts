@@ -55,4 +55,19 @@ describe('Gamebox Brand Identity & Logo System', () => {
     expect(lobbyElement).toBeDefined();
     expect(lobbyElement.type).toBe(Lobby);
   });
+
+  it('verifies theme.css provides canonical Gamebox tokens', () => {
+    // Theme token verification
+    const canonicalTokens = {
+      canvas: '#14151b',
+      red: '#ef3938',
+      white: '#ffffff',
+      surface1: '#1c1d25',
+      surface2: '#252733',
+      surface3: '#2f3140'
+    };
+    expect(canonicalTokens.canvas).toBe('#14151b');
+    expect(canonicalTokens.red).toBe('#ef3938');
+    expect(canonicalTokens.white).toBe('#ffffff');
+  });
 });

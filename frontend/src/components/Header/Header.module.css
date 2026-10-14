@@ -28,7 +28,7 @@
 .logoText {
   font-weight: 900;
   font-size: 1.05rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   color: var(--gb-text-primary);
   text-transform: uppercase;
 }

@@ -65,6 +65,35 @@ export const GameboxLogo: FunctionalComponent<GameboxLogoProps> = ({
     );
   }
 
+  // Shared Launchbox Wireframe Geometry
+  const renderLaunchboxWireframe = () => (
+    <g
+      fill="none"
+      stroke={boxColor}
+      strokeWidth="4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {/* Back-left open flap */}
+      <polyline points="33,48 24,42 38,34 50,42" />
+      {/* Back-right open flap */}
+      <polyline points="87,48 96,42 82,34 70,42" />
+
+      {/* Lower cube front-left face */}
+      <polygon points="60,67 33,52 33,83 60,98" />
+      {/* Lower cube front-right face */}
+      <polygon points="60,67 87,52 87,83 60,98" />
+
+      {/* Center vertical corner dividing front faces */}
+      <line x1="60" y1="67" x2="60" y2="98" />
+
+      {/* Front-left open flap */}
+      <polygon points="60,67 33,52 24,60 51,75" />
+      {/* Front-right open flap */}
+      <polygon points="60,67 87,52 96,60 69,75" />
+    </g>
+  );
+
   // Pure SVG Box Variant: Geometric Launchbox Only
   if (variant === 'box') {
     return (
@@ -77,31 +106,7 @@ export const GameboxLogo: FunctionalComponent<GameboxLogoProps> = ({
         role="img"
         aria-label="Gamebox Launchbox Mark"
       >
-        <g
-          fill="none"
-          stroke={boxColor}
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {/* Back-left open flap */}
-          <polyline points="33,48 24,42 38,34 50,42" />
-          {/* Back-right open flap */}
-          <polyline points="87,48 96,42 82,34 70,42" />
-
-          {/* Lower cube front-left face */}
-          <polygon points="60,67 33,52 33,83 60,98" />
-          {/* Lower cube front-right face */}
-          <polygon points="60,67 87,52 87,83 60,98" />
-
-          {/* Center vertical corner dividing front faces */}
-          <line x1="60" y1="67" x2="60" y2="98" />
-
-          {/* Front-left open flap */}
-          <polygon points="60,67 33,52 24,60 51,75" />
-          {/* Front-right open flap */}
-          <polygon points="60,67 87,52 96,60 69,75" />
-        </g>
+        {renderLaunchboxWireframe()}
       </svg>
     );
   }
@@ -138,31 +143,7 @@ export const GameboxLogo: FunctionalComponent<GameboxLogoProps> = ({
       </g>
 
       {/* Isometric Open Launchbox */}
-      <g
-        fill="none"
-        stroke={boxColor}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {/* Back-left open flap */}
-        <polyline points="33,48 24,42 38,34 50,42" />
-        {/* Back-right open flap */}
-        <polyline points="87,48 96,42 82,34 70,42" />
-
-        {/* Lower cube front-left face */}
-        <polygon points="60,67 33,52 33,83 60,98" />
-        {/* Lower cube front-right face */}
-        <polygon points="60,67 87,52 87,83 60,98" />
-
-        {/* Center vertical corner dividing front faces */}
-        <line x1="60" y1="67" x2="60" y2="98" />
-
-        {/* Front-left open flap */}
-        <polygon points="60,67 33,52 24,60 51,75" />
-        {/* Front-right open flap */}
-        <polygon points="60,67 87,52 96,60 69,75" />
-      </g>
+      {renderLaunchboxWireframe()}
     </svg>
   );
 };

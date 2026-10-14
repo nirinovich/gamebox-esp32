@@ -18,7 +18,7 @@
   width: 100%;
   max-width: 480px;
   background: var(--gb-surface-1);
-  border-top: 2px solid var(--gb-red);
+  border-top: 1px solid var(--gb-border-crisp);
   border-left: 1px solid var(--gb-border-crisp);
   border-right: 1px solid var(--gb-border-crisp);
   border-radius: 20px 20px 0 0;

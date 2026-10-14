@@ -3,7 +3,7 @@
   --gb-black: #14151b;
   --gb-red: #ef3938;
   --gb-red-hover: #f15251;
-  --gb-red-dim: rgba(239, 57, 56, 0.16);
+  --gb-red-dim: rgba(239, 57, 56, 0.14);
   --gb-white: #ffffff;
 
   /* Matte Console Elevation Tiers */
@@ -20,13 +20,13 @@
   --gb-border-accent: #ef3938;
   --gb-accent-red: #ef3938;
   --gb-accent-red-hover: #f15251;
-  --gb-accent-red-dim: rgba(239, 57, 56, 0.16);
+  --gb-accent-red-dim: rgba(239, 57, 56, 0.14);
 
   /* Stark Contrast Typography */
   --gb-text-primary: #ffffff;
   --gb-text-secondary: #9e9fa8;
   --gb-text-tertiary: #656775;
-  --gb-text-muted: #656775;
+  --gb-text-muted: #626473;
 
   /* Functional Status & Player Pips */
   --gb-success: #22c55e;
