@@ -2,9 +2,17 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#ifdef _WIN32
+#include <crtdbg.h>
+#endif
 #include "DominoGame.hpp"
 
 int main() {
+#ifdef _WIN32
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
     std::cout << "[TEST] Running Malagasy Tsipy Domino Authoritative Engine Tests..." << std::endl;
 
     using namespace gamehub::core;

@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_definitions(GAMEBOX_VERSION="${GAMEBOX_VERSION_STR}")
+if (MSVC)
+    add_compile_options(/FS)
+endif()
 
 include_directories(include games)
 
@@ -21,7 +24,6 @@ add_library(gamehub_core OBJECT
     src/core/HostEngine.cpp
     games/domino/host/DominoGame.cpp
     games/katro/host/KatroGame.cpp
-    games/poker/host/PokerGame.cpp
     games/ludo/host/LudoGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include games)
@@ -57,6 +59,7 @@ if (WIN32)
 else()
     target_link_libraries(test_desktop_server PRIVATE gamehub_core pthread)
 endif()
+target_include_directories(test_desktop_server PRIVATE third_party/httplib)
 
 add_executable(test_game_registry tests/test_game_registry.cpp)
 target_link_libraries(test_game_registry PRIVATE gamehub_core)
@@ -85,9 +88,9 @@ add_executable(test_katro games/katro/host/test_katro.cpp)
 target_link_libraries(test_katro PRIVATE gamehub_core)
 add_test(NAME ColocatedKatroTest COMMAND test_katro)
 
-add_executable(test_poker games/poker/host/test_poker.cpp)
-target_link_libraries(test_poker PRIVATE gamehub_core)
-add_test(NAME ColocatedPokerTest COMMAND test_poker)
+add_executable(test_core_oop_patterns tests/test_core_oop_patterns.cpp)
+target_link_libraries(test_core_oop_patterns PRIVATE gamehub_core)
+add_test(NAME CoreOopPatternsTest COMMAND test_core_oop_patterns)
 
 add_executable(test_ludo games/ludo/host/test_ludo.cpp)
 target_link_libraries(test_ludo PRIVATE gamehub_core)
@@ -107,6 +110,7 @@ else()
     )
     target_link_libraries(gamehub_desktop PRIVATE gamehub_core pthread)
 endif()
+target_include_directories(gamehub_desktop PRIVATE third_party/httplib)
 
 # Native C++ Asset Packer tool
 add_executable(asset_packer

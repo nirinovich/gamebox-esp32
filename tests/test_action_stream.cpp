@@ -20,6 +20,7 @@ int main() {
     // 1. Verify Domino action stream
     DominoGame game(true, 2, 100);
     game.init();
+    game.setTurn(1);
 
     std::string s1 = game.serializeStateForPlayer(1);
     assert(s1.find("\"available_actions\":[") != std::string::npos);

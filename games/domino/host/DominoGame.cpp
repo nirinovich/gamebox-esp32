@@ -1,23 +1,42 @@
 #include "DominoGame.hpp"
 #include <gamehub/core/GameRegistry.hpp>
+#include <iostream>
 #include <sstream>
 #include <algorithm>
-#include <random>
-#include <charconv>
 
-namespace {
-std::unique_ptr<gamehub::core::Game> createDominoSolo() {
-    return std::make_unique<gamehub::core::DominoGame>(true, 2);
-}
-std::unique_ptr<gamehub::core::Game> createDominoDuel() {
-    return std::make_unique<gamehub::core::DominoGame>(false, 2);
-}
-std::unique_ptr<gamehub::core::Game> createDominoPvp() {
-    return std::make_unique<gamehub::core::DominoGame>(false, 3);
-}
-}
+namespace gamehub {
+namespace core {
 
-REGISTER_GAME("domino_solo", DominoSolo, &createDominoSolo, {
+// Static self-registration in GameRegistry
+REGISTER_GAME("domino_pvp", DominoPvp, []() -> std::unique_ptr<Game> {
+    return std::make_unique<DominoGame>(false, 2, 100);
+}, {
+    gamehub::core::GameId("domino_pvp"),
+    "Dominoes Duel",
+    "DUEL",
+    "Double-six Malagasy Tsipy Dominoes 1v1",
+    2, 2,
+    gamehub::core::InputFlag::ACTION_BUTTONS,
+    "domino_duel",
+    true
+})
+
+REGISTER_GAME("domino", DominoDuelAlias, []() -> std::unique_ptr<Game> {
+    return std::make_unique<DominoGame>(false, 2, 100);
+}, {
+    gamehub::core::GameId("domino"),
+    "Dominoes Duel",
+    "DUEL",
+    "Double-six Malagasy Tsipy Dominoes 1v1",
+    2, 2,
+    gamehub::core::InputFlag::ACTION_BUTTONS,
+    "domino_duel",
+    true
+})
+
+REGISTER_GAME("domino_solo", DominoSolo, []() -> std::unique_ptr<Game> {
+    return std::make_unique<DominoGame>(true, 2, 100);
+}, {
     gamehub::core::GameId("domino_solo"),
     "Dominoes Solo",
     "SOLO",
@@ -28,103 +47,276 @@ REGISTER_GAME("domino_solo", DominoSolo, &createDominoSolo, {
     false
 })
 
-REGISTER_GAME("domino_duel", DominoDuel, &createDominoDuel, {
-    gamehub::core::GameId("domino_duel"),
-    "Domino Duel",
-    "DUEL",
-    "2P Malagasy Tsipy Dominoes duel with Deadwood & Rebon",
-    2, 2,
-    gamehub::core::InputFlag::ACTION_BUTTONS,
-    "domino_solo",
-    true
-})
+// ============================================================================
+// Command Pattern Implementations (Double Dispatch)
+// ============================================================================
 
-REGISTER_GAME("domino_pvp", DominoPvp, &createDominoPvp, {
-    gamehub::core::GameId("domino_pvp"),
-    "Malagasy Domino Table",
-    "PARTY",
-    "2-4P Malagasy Tsipy Dominoes with Rebon & TargetScore",
-    2, 4,
-    gamehub::core::InputFlag::ACTION_BUTTONS,
-    "domino_pvp",
-    false
-})
+bool PlayTileCommand::execute(Game& game, PlayerId playerId) const {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino) return false;
+    return domino->processCommand(playerId, *this);
+}
 
-namespace gamehub {
-namespace core {
+bool PassTurnCommand::execute(Game& game, PlayerId playerId) const {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino) return false;
+    return domino->processCommand(playerId, *this);
+}
+
+bool ChooseEndCommand::execute(Game& game, PlayerId playerId) const {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino) return false;
+    return domino->processCommand(playerId, *this);
+}
+
+// ============================================================================
+// State Pattern Implementations
+// ============================================================================
+
+void DominoPlayState::onEnter(Game& /*game*/) {}
+
+bool DominoPlayState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino) return false;
+
+    int pidx = static_cast<int>(playerId) - 1;
+    if (pidx < 0 || pidx >= domino->getNumPlayers()) return false;
+    if (domino->getTurn() != pidx + 1) return false;
+
+    if (command.getType() == "play") {
+        const auto* playCmd = dynamic_cast<const PlayTileCommand*>(&command);
+        if (!playCmd) return false;
+
+        int tileIdx = playCmd->getIndex();
+        const auto& hand = domino->getHand(pidx);
+        if (tileIdx < 0 || static_cast<size_t>(tileIdx) >= hand.size()) return false;
+
+        const auto& tile = hand.getTile(tileIdx);
+        int lEnd = domino->getLeftEnd();
+        int rEnd = domino->getRightEnd();
+
+        bool canL = (lEnd == -1) || tile.matches(lEnd);
+        bool canR = (rEnd == -1) || tile.matches(rEnd);
+
+        if (!canL && !canR) return false;
+
+        // Ambiguous choice when tile can attach to both distinct ends
+        if (canL && canR && lEnd != rEnd && playCmd->getEndChoice().empty()) {
+            domino->transitionTo(std::make_unique<DominoPendingChoiceState>(pidx, tileIdx));
+            return true;
+        }
+
+        std::string chosen = playCmd->getEndChoice();
+        if (chosen.empty()) {
+            chosen = canR ? "right" : "left";
+        }
+
+        return domino->executePlayTile(pidx, tileIdx, chosen);
+    } else if (command.getType() == "pass") {
+        if (domino->canPlayerPlay(pidx)) {
+            return false; // Passing is forbidden if a legal move exists
+        }
+        domino->executePassTurn(pidx);
+        return true;
+    }
+
+    return false;
+}
+
+void DominoPlayState::update(Game& game, float /*dt*/) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino || domino->isFinished() || domino->isRoundFinished()) return;
+
+    int curPidx = domino->getTurn() - 1;
+    auto* player = domino->getPlayer(curPidx);
+    if (player && player->isAutonomous()) {
+        auto action = player->getController()->decideAction(game, static_cast<PlayerId>(curPidx + 1));
+        if (action) {
+            action->execute(game, static_cast<PlayerId>(curPidx + 1));
+        }
+    }
+}
+
+void DominoPendingChoiceState::onEnter(Game& game) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (domino) {
+        domino->setPendingChoice(m_playerIndex, m_tileIndex);
+    }
+}
+
+bool DominoPendingChoiceState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino) return false;
+
+    int pidx = static_cast<int>(playerId) - 1;
+    if (pidx != m_playerIndex) return false;
+
+    if (command.getType() == "choose_end") {
+        const auto* chooseCmd = dynamic_cast<const ChooseEndCommand*>(&command);
+        if (!chooseCmd) return false;
+
+        std::string choice = chooseCmd->getChoice();
+        int tileIdx = m_tileIndex;
+
+        domino->clearPendingChoice();
+        domino->transitionTo(std::make_unique<DominoPlayState>());
+        return domino->executePlayTile(pidx, tileIdx, choice);
+    }
+
+    return false;
+}
+
+void DominoRoundOverState::onEnter(Game& game) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (domino) {
+        domino->setLastAction("Round Finished");
+    }
+}
+
+bool DominoRoundOverState::handleCommand(Game& game, PlayerId /*playerId*/, const ICommand& command) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (!domino) return false;
+
+    if (command.getType() == "play" || command.getType() == "start_round") {
+        domino->startNewRound();
+        return true;
+    }
+    return false;
+}
+
+void DominoGameOverState::onEnter(Game& game) {
+    auto* domino = dynamic_cast<DominoGame*>(&game);
+    if (domino) {
+        domino->setLastAction("Match Concluded");
+    }
+}
+
+// ============================================================================
+// Strategy Pattern Implementation
+// ============================================================================
+
+std::unique_ptr<ICommand> DominoBotController::decideAction(const Game& game, PlayerId id) {
+    const auto* domino = dynamic_cast<const DominoGame*>(&game);
+    if (!domino) return nullptr;
+
+    int bidx = static_cast<int>(id) - 1;
+    if (bidx < 0 || bidx >= domino->getNumPlayers()) return nullptr;
+
+    const auto& hand = domino->getHand(bidx);
+    int lEnd = domino->getLeftEnd();
+    int rEnd = domino->getRightEnd();
+
+    int bestIdx = -1;
+    int bestPips = -1;
+    std::string bestEnd = "right";
+
+    for (size_t i = 0; i < hand.size(); ++i) {
+        const auto& t = hand.getTile(i);
+        bool canL = (lEnd == -1) || t.matches(lEnd);
+        bool canR = (rEnd == -1) || t.matches(rEnd);
+
+        if (canL || canR) {
+            int p = t.pips();
+            if (t.left == t.right) p += 100; // Prefer doubles
+
+            if (p > bestPips) {
+                bestPips = p;
+                bestIdx = static_cast<int>(i);
+                bestEnd = canR ? "right" : "left";
+            }
+        }
+    }
+
+    if (bestIdx != -1) {
+        return std::make_unique<PlayTileCommand>(bestIdx, bestEnd);
+    } else {
+        return std::make_unique<PassTurnCommand>();
+    }
+}
+
+// ============================================================================
+// DominoGame Implementation
+// ============================================================================
 
 DominoGame::DominoGame(bool isSolo, int numPlayers, int targetScore)
-    : m_isSolo(isSolo), m_numPlayers(std::clamp(numPlayers, 2, 4)), m_targetScore(targetScore > 0 ? targetScore : 100) {
-    init();
+    : m_isSolo(isSolo), m_numPlayers(numPlayers), m_targetScore(targetScore), m_hands(4) {
+    if (m_numPlayers < 2) m_numPlayers = 2;
+    if (m_numPlayers > 4) m_numPlayers = 4;
+    m_state = std::make_unique<DominoPlayState>();
 }
 
 void DominoGame::setNumPlayers(int n) {
-    int clamped = std::clamp(n, 2, 4);
-    if (clamped == m_numPlayers) return;
-    m_numPlayers = clamped;
-    init();
+    if (n >= 2 && n <= 4) {
+        m_numPlayers = n;
+        init();
+    }
+}
+
+void DominoGame::transitionTo(std::unique_ptr<IGamePhaseState> nextState) {
+    if (m_state) {
+        m_state->onExit(*this);
+    }
+    m_state = std::move(nextState);
+    if (m_state) {
+        m_state->onEnter(*this);
+    }
+}
+
+bool DominoGame::processCommand(PlayerId player, const ICommand& cmd) {
+    if (!m_state) return false;
+    return m_state->handleCommand(*this, player, cmd);
 }
 
 void DominoGame::init() {
+    m_finished = false;
+    m_winner = 0;
+    m_round = 1;
+    m_roundFinished = false;
+    m_roundWinner = 0;
+    m_roundPointsAwarded = 0;
+    m_rebonPool = 0;
+    m_consecutivePasses = 0;
+    m_lastAction = "Match started";
+
     for (int i = 0; i < 4; ++i) {
         m_cumulativeScores[i] = 0;
     }
-    m_rebonPool = 0;
-    m_round = 1;
-    m_finished = false;
-    m_winner = 0;
+
+    // Configure Player strategy entities
+    m_players.clear();
+    for (int i = 0; i < m_numPlayers; ++i) {
+        std::unique_ptr<PlayerController> ctrl;
+        std::string name;
+        if (m_isSolo && i > 0) {
+            ctrl = std::make_unique<DominoBotController>();
+            name = (m_numPlayers > 2) ? ("Bot " + std::to_string(i)) : "Bot";
+        } else {
+            ctrl = std::make_unique<HumanController>();
+            name = "Player " + std::to_string(i + 1);
+        }
+        m_players.push_back(std::make_unique<Player>(static_cast<PlayerId>(i + 1), name, std::move(ctrl)));
+    }
+
     startNewRound();
 }
 
 void DominoGame::startNewRound() {
-    m_board.clear();
-    m_deadwood.clear();
-    for (int i = 0; i < 4; ++i) m_hands[i].clear();
     m_roundFinished = false;
     m_roundWinner = 0;
     m_roundPointsAwarded = 0;
     m_consecutivePasses = 0;
-    m_lastAction.clear();
+    clearPendingChoice();
+    m_board.clear();
 
-    // 1. Generate full Double-Six 28-tile set
-    std::vector<DominoTile> allTiles;
-    allTiles.reserve(28);
-    for (int i = 0; i <= 6; ++i) {
-        for (int j = i; j <= 6; ++j) {
-            allTiles.push_back({i, j});
-        }
-    }
-
-    // 2. Deterministic shuffle
-    static std::mt19937 rng(42);
-    std::shuffle(allTiles.begin(), allTiles.end(), rng);
-
-    // 3. Deal exactly 7 tiles per player
-    int tileIdx = 0;
-    for (int p = 0; p < m_numPlayers; ++p) {
-        for (int t = 0; t < 7 && tileIdx < (int)allTiles.size(); ++t) {
-            m_hands[p].push_back(allTiles[tileIdx++]);
-        }
-    }
-
-    // 4. Remaining tiles form inaccessible Deadwood (14 in 2P, 7 in 3P, 0 in 4P)
-    while (tileIdx < (int)allTiles.size()) {
-        m_deadwood.push_back(allTiles[tileIdx++]);
-    }
-
-    // 5. Determine opening lead (highest double held)
+    m_tileSet.shuffleAndDeal(m_numPlayers, m_hands, m_rng);
     determineOpeningLead();
-
-    if (m_isSolo && !m_finished && !m_roundFinished && m_turn != 1) {
-        executeBotTurns();
-    }
+    transitionTo(std::make_unique<DominoPlayState>());
 }
 
 void DominoGame::determineOpeningLead() {
-    // Check doubles from [6|6] down to [0|0]
     for (int d = 6; d >= 0; --d) {
         for (int p = 0; p < m_numPlayers; ++p) {
-            for (const auto& t : m_hands[p]) {
+            for (const auto& t : m_hands[p].getTiles()) {
                 if (t.left == d && t.right == d) {
                     m_turn = p + 1;
                     return;
@@ -133,278 +325,142 @@ void DominoGame::determineOpeningLead() {
         }
     }
 
-    // Fallback if no doubles held in player hands: highest pip sum
-    int maxPips = -1;
-    int bestP = 0;
+    int highestPips = -1;
+    int leadPlayer = 1;
     for (int p = 0; p < m_numPlayers; ++p) {
-        for (const auto& t : m_hands[p]) {
-            if (t.pips() > maxPips) {
-                maxPips = t.pips();
-                bestP = p;
+        for (const auto& t : m_hands[p].getTiles()) {
+            if (t.pips() > highestPips) {
+                highestPips = t.pips();
+                leadPlayer = p + 1;
             }
         }
     }
-    m_turn = bestP + 1;
+    m_turn = leadPlayer;
 }
 
-void DominoGame::update(float /*dt*/) {
-    if (m_isSolo && !m_finished && !m_roundFinished && m_turn != 1) {
-        executeBotTurns();
-    }
-}
-
-int DominoGame::getLeftEnd() const {
-    if (m_board.empty()) return -1;
-    return m_board.front().left;
-}
-
-int DominoGame::getRightEnd() const {
-    if (m_board.empty()) return -1;
-    return m_board.back().right;
-}
-
-bool DominoGame::canPlayerPlay(int pidx) const {
-    if (pidx < 0 || pidx >= m_numPlayers) return false;
-    if (m_board.empty()) return !m_hands[pidx].empty();
-    int l = getLeftEnd();
-    int r = getRightEnd();
-    for (const auto& t : m_hands[pidx]) {
-        if (t.matches(l) || t.matches(r)) return true;
-    }
-    return false;
-}
-
-bool DominoGame::playTile(int pidx, int tileIdx, const std::string& endChoice) {
-    if (pidx < 0 || pidx >= m_numPlayers) return false;
-    if (tileIdx < 0 || tileIdx >= (int)m_hands[pidx].size()) return false;
-    if (m_roundFinished || m_finished) return false;
-
-    DominoTile tile = m_hands[pidx][tileIdx];
-
-    if (m_board.empty()) {
-        m_board.push_back(tile);
-    } else {
-        int l = getLeftEnd();
-        int r = getRightEnd();
-        bool playLeft = (endChoice == "left");
-        bool playRight = (endChoice == "right");
-
-        if (!playLeft && !playRight) {
-            if (tile.matches(r)) playRight = true;
-            else if (tile.matches(l)) playLeft = true;
-            else return false;
-        }
-
-        if (playLeft) {
-            if (tile.right == l) {
-                m_board.push_front(tile);
-            } else if (tile.left == l) {
-                tile.flip();
-                m_board.push_front(tile);
-            } else if (playRight && tile.matches(r)) {
-                if (tile.left == r) {
-                    m_board.push_back(tile);
-                } else {
-                    tile.flip();
-                    m_board.push_back(tile);
-                }
-            } else {
-                return false;
-            }
-        } else { // playRight
-            if (tile.left == r) {
-                m_board.push_back(tile);
-            } else if (tile.right == r) {
-                tile.flip();
-                m_board.push_back(tile);
-            } else if (tile.matches(l)) {
-                if (tile.right == l) {
-                    m_board.push_front(tile);
-                } else {
-                    tile.flip();
-                    m_board.push_front(tile);
-                }
-            } else {
-                return false;
-            }
-        }
-    }
-
-    // Remove played tile
-    m_hands[pidx].erase(m_hands[pidx].begin() + tileIdx);
-    m_consecutivePasses = 0;
-
-    // Check Round Win (Hand emptied: "Domino" / "Lany")
-    if (m_hands[pidx].empty()) {
-        int oppPips = 0;
-        for (int p = 0; p < m_numPlayers; ++p) {
-            if (p != pidx) {
-                for (const auto& t : m_hands[p]) oppPips += t.pips();
-            }
-        }
-        int awarded = oppPips + m_rebonPool;
-        m_rebonPool = 0;
-        m_cumulativeScores[pidx] += awarded;
-        m_roundWinner = pidx + 1;
-        m_roundPointsAwarded = awarded;
-        m_roundFinished = true;
-
-        if (m_cumulativeScores[pidx] >= m_targetScore) {
-            m_finished = true;
-            m_winner = pidx + 1;
-        }
-        return true;
-    }
-
-    m_turn = (m_turn % m_numPlayers) + 1;
-    return true;
-}
-
-void DominoGame::passTurn(int pidx) {
-    if (pidx < 0 || pidx >= m_numPlayers) return;
-    if (m_roundFinished || m_finished) return;
-
-    // Strict Malagasy rule: passing only allowed when player has zero legal moves
-    if (canPlayerPlay(pidx)) return;
-
-    m_consecutivePasses++;
-    if (m_consecutivePasses >= m_numPlayers) {
-        checkBlockedWin();
-        return;
-    }
-    m_turn = (m_turn % m_numPlayers) + 1;
-}
-
-void DominoGame::checkBlockedWin() {
-    m_roundFinished = true;
-    int minPips = 9999;
-    int lowestPlayer = 0;
-    int tieCount = 0;
-
-    int playerPips[4]{0, 0, 0, 0};
-    int totalRemainingPips = 0;
-
-    for (int p = 0; p < m_numPlayers; ++p) {
-        for (const auto& t : m_hands[p]) {
-            playerPips[p] += t.pips();
-        }
-        totalRemainingPips += playerPips[p];
-        if (playerPips[p] < minPips) {
-            minPips = playerPips[p];
-            lowestPlayer = p;
-            tieCount = 1;
-        } else if (playerPips[p] == minPips) {
-            tieCount++;
-        }
-    }
-
-    if (tieCount == 1) {
-        // Unique lowest pip holder wins opponents' pips + rollover rebon
-        int oppPips = totalRemainingPips - minPips;
-        int awarded = oppPips + m_rebonPool;
-        m_rebonPool = 0;
-        m_cumulativeScores[lowestPlayer] += awarded;
-        m_roundWinner = lowestPlayer + 1;
-        m_roundPointsAwarded = awarded;
-
-        if (m_cumulativeScores[lowestPlayer] >= m_targetScore) {
-            m_finished = true;
-            m_winner = lowestPlayer + 1;
-        }
-    } else {
-        // Tie on lowest pip sum: Rebon rollover to next round!
-        m_rebonPool += totalRemainingPips;
-        m_roundWinner = 0;
-        m_roundPointsAwarded = 0;
-    }
-}
-
-void DominoGame::executeBotTurns() {
-    while (m_isSolo && !m_finished && !m_roundFinished && m_turn != 1) {
-        int bidx = m_turn - 1;
-        std::string botName = (m_numPlayers > 2) ? ("Bot " + std::to_string(bidx)) : "Bot";
-
-        int bestIdx = -1;
-        int bestPips = -1;
-        std::string bestEnd = "right";
-
-        int l = getLeftEnd();
-        int r = getRightEnd();
-
-        for (int i = 0; i < (int)m_hands[bidx].size(); ++i) {
-            const auto& t = m_hands[bidx][i];
-            if (m_board.empty()) {
-                if (t.pips() > bestPips) { bestPips = t.pips(); bestIdx = i; }
-            } else {
-                if (t.matches(r) && t.pips() > bestPips) {
-                    bestPips = t.pips(); bestIdx = i; bestEnd = "right";
-                } else if (t.matches(l) && t.pips() > bestPips) {
-                    bestPips = t.pips(); bestIdx = i; bestEnd = "left";
-                }
-            }
-        }
-
-        if (bestIdx != -1) {
-            DominoTile played = m_hands[bidx][bestIdx];
-            playTile(bidx, bestIdx, bestEnd);
-            m_lastAction = botName + " played [" + std::to_string(played.left) + "|" + std::to_string(played.right) + "]";
-        } else {
-            passTurn(bidx);
-            m_lastAction = botName + " passed turn";
-        }
+void DominoGame::update(float dt) {
+    if (m_state) {
+        m_state->update(*this, dt);
     }
 }
 
 void DominoGame::handleInput(PlayerId player, const std::string& input) {
-    if (m_finished) return;
+    auto cmd = m_commandFactory.createCommand(input);
+    if (cmd) {
+        cmd->execute(*this, player);
+    }
+}
 
-    // Handle next round trigger when a hand has finished
-    if (m_roundFinished) {
-        if (input.find("\"next_round\"") != std::string::npos || input.find("\"cmd\":\"next_round\"") != std::string::npos) {
-            startNewRound();
-        }
-        return;
+bool DominoGame::canPlayerPlay(int pidx) const {
+    if (pidx < 0 || pidx >= m_numPlayers) return false;
+    return m_hands[pidx].canMatchAny(m_board.getLeftEnd(), m_board.getRightEnd());
+}
+
+void DominoGame::advanceTurn() {
+    m_turn = (m_turn % m_numPlayers) + 1;
+}
+
+bool DominoGame::executePlayTile(int pidx, int tileIdx, const std::string& endChoice) {
+    if (pidx < 0 || pidx >= m_numPlayers) return false;
+    if (tileIdx < 0 || static_cast<size_t>(tileIdx) >= m_hands[pidx].size()) return false;
+
+    DominoTile tile = m_hands[pidx].getTile(tileIdx);
+    if (!m_board.placeTile(tile, endChoice)) {
+        return false;
     }
 
-    int pidx = (int)player - 1;
-    if (pidx < 0 || pidx >= m_numPlayers) return;
-    if ((int)player != m_turn) return;
+    m_hands[pidx].removeTile(tileIdx);
+    m_consecutivePasses = 0;
 
-    // TargetScore configuration
-    if (input.find("\"set_target\"") != std::string::npos) {
-        auto tPos = input.find("\"target\":");
-        if (tPos != std::string::npos) {
-            int newTarget = 100;
-            std::from_chars(input.data() + tPos + 9, input.data() + input.size(), newTarget);
-            setTargetScore(newTarget);
-        }
-        return;
-    }
+    auto* player = getPlayer(pidx);
+    std::string actor = player ? player->getName() : ("Player " + std::to_string(pidx + 1));
+    m_lastAction = actor + " played [" + std::to_string(tile.left) + "|" + std::to_string(tile.right) + "]";
 
-    if (input.find("\"play\"") != std::string::npos || input.find("\"cmd\":\"play\"") != std::string::npos) {
-        auto idxPos = input.find("\"index\":");
-        int tileIdx = -1;
-        if (idxPos != std::string::npos) {
-            std::from_chars(input.data() + idxPos + 8, input.data() + input.size(), tileIdx);
-        }
-        std::string endChoice = "right";
-        if (input.find("\"left\"") != std::string::npos) endChoice = "left";
-
-        if (tileIdx >= 0 && tileIdx < (int)m_hands[pidx].size()) {
-            DominoTile played = m_hands[pidx][tileIdx];
-            if (playTile(pidx, tileIdx, endChoice)) {
-                m_lastAction = "You played [" + std::to_string(played.left) + "|" + std::to_string(played.right) + "]";
-                clearPendingChoice();
-                if (m_isSolo && !m_finished && !m_roundFinished && m_turn != 1) {
-                    executeBotTurns();
-                }
+    // Check hand emptied win
+    if (m_hands[pidx].empty()) {
+        int oppPips = 0;
+        for (int p = 0; p < m_numPlayers; ++p) {
+            if (p != pidx) {
+                oppPips += m_hands[p].calculateTotalPips();
             }
         }
-    } else if (input.find("\"pass\"") != std::string::npos || input.find("\"cmd\":\"pass\"") != std::string::npos) {
-        passTurn(pidx);
-        m_lastAction = "You passed turn";
-        if (m_isSolo && !m_finished && !m_roundFinished && m_turn != 1) {
-            executeBotTurns();
+        int roundPoints = oppPips + m_rebonPool;
+        m_cumulativeScores[pidx] += roundPoints;
+        m_rebonPool = 0;
+
+        setRoundFinished(true, pidx + 1, roundPoints);
+        if (m_cumulativeScores[pidx] >= m_targetScore) {
+            setFinished(true, pidx + 1);
+            transitionTo(std::make_unique<DominoGameOverState>());
+        } else {
+            transitionTo(std::make_unique<DominoRoundOverState>());
+        }
+        return true;
+    }
+
+    advanceTurn();
+    return true;
+}
+
+void DominoGame::executePassTurn(int pidx) {
+    m_consecutivePasses++;
+    auto* player = getPlayer(pidx);
+    std::string actor = player ? player->getName() : ("Player " + std::to_string(pidx + 1));
+    m_lastAction = actor + " passed turn";
+
+    if (m_consecutivePasses >= m_numPlayers) {
+        checkBlockedWin();
+        return;
+    }
+
+    advanceTurn();
+}
+
+void DominoGame::checkBlockedWin() {
+    int minPips = 9999;
+    int winnerPidx = -1;
+    bool tie = false;
+
+    for (int p = 0; p < m_numPlayers; ++p) {
+        int pips = m_hands[p].calculateTotalPips();
+        if (pips < minPips) {
+            minPips = pips;
+            winnerPidx = p;
+            tie = false;
+        } else if (pips == minPips) {
+            tie = true;
+        }
+    }
+
+    if (tie) {
+        int totalTablePips = 0;
+        for (int p = 0; p < m_numPlayers; ++p) {
+            totalTablePips += m_hands[p].calculateTotalPips();
+        }
+        m_rebonPool += totalTablePips;
+        m_lastAction = "Round Blocked - Tie! " + std::to_string(totalTablePips) + " pts added to Rebon pool";
+
+        setRoundFinished(true, 0, 0);
+        transitionTo(std::make_unique<DominoRoundOverState>());
+    } else {
+        int oppPips = 0;
+        for (int p = 0; p < m_numPlayers; ++p) {
+            if (p != winnerPidx) {
+                oppPips += m_hands[p].calculateTotalPips();
+            }
+        }
+        int roundPoints = oppPips + m_rebonPool;
+        m_cumulativeScores[winnerPidx] += roundPoints;
+        m_rebonPool = 0;
+
+        m_lastAction = "Round Blocked - Player " + std::to_string(winnerPidx + 1) + " wins with lowest pips (" + std::to_string(minPips) + ")";
+        setRoundFinished(true, winnerPidx + 1, roundPoints);
+
+        if (m_cumulativeScores[winnerPidx] >= m_targetScore) {
+            setFinished(true, winnerPidx + 1);
+            transitionTo(std::make_unique<DominoGameOverState>());
+        } else {
+            transitionTo(std::make_unique<DominoRoundOverState>());
         }
     }
 }
@@ -414,87 +470,111 @@ std::string DominoGame::serializeState() const {
 }
 
 std::string DominoGame::serializeStateForPlayer(PlayerId id) const {
-    std::ostringstream oss;
-    oss << "{\"type\":\"state\",\"game\":\"domino\","
-        << "\"num_players\":" << m_numPlayers << ","
-        << "\"turn\":" << m_turn << ","
-        << "\"finished\":" << (m_finished ? "true" : "false") << ","
-        << "\"winner\":" << m_winner << ","
-        << "\"round\":" << m_round << ","
-        << "\"round_finished\":" << (m_roundFinished ? "true" : "false") << ","
-        << "\"round_winner\":" << m_roundWinner << ","
-        << "\"round_points\":" << m_roundPointsAwarded << ","
-        << "\"target_score\":" << m_targetScore << ","
-        << "\"rebon\":" << m_rebonPool << ","
-        << "\"scores\":["
-        << m_cumulativeScores[0] << "," << m_cumulativeScores[1] << ","
-        << m_cumulativeScores[2] << "," << m_cumulativeScores[3] << "],"
-        << "\"series_p1\":" << m_cumulativeScores[0] << ","
-        << "\"series_p2\":" << m_cumulativeScores[1] << ","
-        << "\"p1_count\":" << m_hands[0].size() << ","
-        << "\"p2_count\":" << m_hands[1].size() << ","
-        << "\"p3_count\":" << m_hands[2].size() << ","
-        << "\"p4_count\":" << m_hands[3].size() << ","
-        << "\"boneyard_count\":" << m_deadwood.size() << ","
-        << "\"deadwood_count\":" << m_deadwood.size() << ","
-        << "\"left_end\":" << getLeftEnd() << ","
-        << "\"right_end\":" << getRightEnd() << ",";
+    std::ostringstream ss;
+    ss << "{";
+    ss << "\"type\":\"state\",";
+    ss << "\"game\":\"domino\",";
+    ss << "\"num_players\":" << m_numPlayers << ",";
+    ss << "\"target_score\":" << m_targetScore << ",";
+    ss << "\"rebon\":" << m_rebonPool << ",";
+    ss << "\"round\":" << m_round << ",";
+    ss << "\"round_finished\":" << (m_roundFinished ? "true" : "false") << ",";
+    ss << "\"round_winner\":" << m_roundWinner << ",";
+    ss << "\"round_points_awarded\":" << m_roundPointsAwarded << ",";
+    ss << "\"is_solo\":" << (m_isSolo ? "true" : "false") << ",";
+    ss << "\"turn\":" << m_turn << ",";
+    ss << "\"finished\":" << (m_finished ? "true" : "false") << ",";
+    ss << "\"winner\":" << m_winner << ",";
+    ss << "\"left_end\":" << m_board.getLeftEnd() << ",";
+    ss << "\"right_end\":" << m_board.getRightEnd() << ",";
+    ss << "\"deadwood_count\":" << m_tileSet.getDeadwoodCount() << ",";
+    ss << "\"boneyard_count\":" << m_tileSet.getDeadwoodCount() << ",";
+    ss << "\"last_action\":\"" << m_lastAction << "\",";
 
-    // Board tiles
-    oss << "\"board\":[";
-    for (size_t i = 0; i < m_board.size(); ++i) {
-        if (i > 0) oss << ",";
-        oss << "[" << m_board[i].left << "," << m_board[i].right << "]";
+    ss << "\"cumulative_scores\":[";
+    for (int p = 0; p < m_numPlayers; ++p) {
+        ss << m_cumulativeScores[p];
+        if (p < m_numPlayers - 1) ss << ",";
     }
-    oss << "],";
+    ss << "],";
 
-    // Hands: Strictly mask opponents' hands
-    oss << "\"hands\":{";
+    for (int p = 0; p < m_numPlayers; ++p) {
+        ss << "\"p" << (p + 1) << "_count\":" << m_hands[p].size() << ",";
+    }
+
+    ss << "\"board\":[";
+    const auto& boardTiles = m_board.getTiles();
+    for (size_t i = 0; i < boardTiles.size(); ++i) {
+        ss << "[" << boardTiles[i].left << "," << boardTiles[i].right << "]";
+        if (i < boardTiles.size() - 1) ss << ",";
+    }
+    ss << "],";
+
+    // Hands: Strictly mask opponents' hands (Fog-of-War)
+    ss << "\"hands\":{";
     bool firstHand = true;
     for (int p = 0; p < m_numPlayers; ++p) {
         int pNum = p + 1;
-        // Expose hand if: (1) perspective id == pNum, or (2) id == 0 (debug/host), or (3) round finished
-        if (id == 0 || (int)id == pNum || m_roundFinished || m_finished) {
-            if (!firstHand) oss << ",";
+        if (id == 0 || static_cast<int>(id) == pNum || m_roundFinished || m_finished) {
+            if (!firstHand) ss << ",";
             firstHand = false;
-            oss << "\"" << pNum << "\":[";
-            for (size_t t = 0; t < m_hands[p].size(); ++t) {
-                if (t > 0) oss << ",";
-                oss << "[" << m_hands[p][t].left << "," << m_hands[p][t].right << "]";
+            ss << "\"" << pNum << "\":[";
+            const auto& pTiles = m_hands[p].getTiles();
+            for (size_t t = 0; t < pTiles.size(); ++t) {
+                if (t > 0) ss << ",";
+                ss << "[" << pTiles[t].left << "," << pTiles[t].right << "]";
             }
-            oss << "]";
+            ss << "]";
         }
     }
-    oss << "},";
+    ss << "},";
 
-    // ActionStream & Prompts
-    oss << "\"available_actions\":[";
-    bool canAct = ((int)id == m_turn && !m_finished && !m_roundFinished);
-    bool firstAction = true;
+    int clientPidx = static_cast<int>(id) - 1;
+    if (clientPidx >= 0 && clientPidx < m_numPlayers) {
+        ss << "\"my_hand\":[";
+        const auto& myTiles = m_hands[clientPidx].getTiles();
+        for (size_t i = 0; i < myTiles.size(); ++i) {
+            ss << "[" << myTiles[i].left << "," << myTiles[i].right << "]";
+            if (i < myTiles.size() - 1) ss << ",";
+        }
+        ss << "],";
+    } else {
+        ss << "\"my_hand\":[],";
+    }
 
-    if (canAct) {
-        int pidx = (int)id - 1;
-        if (canPlayerPlay(pidx)) {
-            oss << "{\"id\":\"play\",\"label\":\"Play Tile\",\"enabled\":true,\"style\":\"primary\"}";
-            firstAction = false;
+    if (m_pendingChoicePlayer == static_cast<int>(id) && m_pendingChoiceIdx != -1) {
+        ss << "\"pending_choice\":true,";
+        ss << "\"pending_tile_idx\":" << m_pendingChoiceIdx << ",";
+    } else {
+        ss << "\"pending_choice\":false,";
+    }
+
+    ss << "\"available_actions\":[";
+    bool needComma = false;
+    if (m_turn == static_cast<int>(id) && !m_roundFinished && !m_finished) {
+        if (m_pendingChoicePlayer == static_cast<int>(id) && m_pendingChoiceIdx != -1) {
+            ss << "{\"id\":\"choose_left\",\"action\":\"choose_end\",\"label\":\"Place Left\",\"params\":{\"choice\":\"left\"}},";
+            ss << "{\"id\":\"choose_right\",\"action\":\"choose_end\",\"label\":\"Place Right\",\"params\":{\"choice\":\"right\"}}";
+            needComma = true;
         } else {
-            oss << "{\"id\":\"pass\",\"label\":\"Pass Turn\",\"enabled\":true,\"style\":\"highlight\"}";
-            firstAction = false;
+            bool hasPlayable = canPlayerPlay(clientPidx);
+            if (!hasPlayable) {
+                ss << "{\"id\":\"pass\",\"action\":\"pass\",\"label\":\"Pass Turn\"}";
+                needComma = true;
+            } else {
+                ss << "{\"id\":\"play\",\"action\":\"play\",\"label\":\"Play Tile\"}";
+                needComma = true;
+            }
         }
     }
-
     if (m_roundFinished && !m_finished) {
-        if (!firstAction) oss << ",";
-        oss << "{\"id\":\"next_round\",\"label\":\"Next Round\",\"enabled\":true,\"style\":\"primary\"}";
+        if (needComma) ss << ",";
+        ss << "{\"id\":\"play\",\"action\":\"play\",\"label\":\"Next Round\"}";
     }
-    oss << "],";
+    ss << "]";
 
-    if (!m_lastAction.empty()) {
-        oss << "\"last_action\":\"" << m_lastAction << "\",";
-    }
-
-    oss << "\"game_name\":\"Malagasy Dominoes\"}";
-    return oss.str();
+    ss << "}";
+    return ss.str();
 }
 
 } // namespace core

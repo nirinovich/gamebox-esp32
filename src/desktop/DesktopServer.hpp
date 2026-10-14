@@ -11,6 +11,13 @@
 #include <unordered_map>
 #include <gamehub/core/Session.hpp>
 
+namespace httplib {
+class Server;
+namespace ws {
+class WebSocket;
+}
+}
+
 namespace gamehub {
 namespace desktop {
 
@@ -37,19 +44,18 @@ public:
     void broadcast(const std::string& message);
 
 private:
-    void acceptLoop();
-    void handleClient(uintptr_t clientSocket, uint32_t sessionId);
-    
+    void setupRoutes(httplib::Server& server);
+
     uint16_t m_port;
     std::atomic<bool> m_running{false};
-    uintptr_t m_serverSocket{0};
-    std::thread m_acceptThread;
+    std::thread m_serverThread;
     std::atomic<uint32_t> m_nextSessionId{1};
     MessageHandler m_messageHandler;
     ConnectHandler m_connectHandler;
     DisconnectHandler m_disconnectHandler;
 
-    std::unordered_map<uint32_t, uintptr_t> m_clients;
+    std::unique_ptr<httplib::Server> m_server;
+    std::unordered_map<uint32_t, httplib::ws::WebSocket*> m_clients;
     std::mutex m_clientsMutex;
 };
 

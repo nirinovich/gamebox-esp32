@@ -56,6 +56,18 @@ _Avoid_: AI, CPU, Computer
 The lifecycle states of a Room: WAITING (open for Challengers), ACTIVE (authoritative game execution in progress), FINISHED (outcome resolved), and DISSOLVED (cleaned up and unmapped).
 _Avoid_: Status, Phase, State
 
+**Callsign**:
+The memorable, non-numerical arcade identifier assigned to a Client Session upon first connection or chosen by the Player (e.g. Viper, Pilot, Neon, Rocket).
+_Avoid_: Nickname, Username, ScreenName
+
+**QuickMatchMarquee**:
+The dynamic, actionable lobby launchpad providing single-tap initiation of a featured or recently executed Game without navigating the catalogue.
+_Avoid_: HeroBanner, PromoCard, Jumbotron
+
+**CartridgeRack**:
+The unified structural catalogue container presenting available Games with embedded player capacity identifiers and direct execution triggers.
+_Avoid_: GameList, CardList, DirectoryCards
+
 **AutoDetachment**:
 The Host mechanism that automatically cleans up and unbinds a Session from any prior Room when the Session initiates, joins, or leaves a Game.
 _Avoid_: ForceLeave, ResetConnection
@@ -85,20 +97,24 @@ The rollover jackpot point pool in MalagasyDominoGame accumulated when consecuti
 _Avoid_: Carryover, TieBonus, PotRoll
 
 **TexasHoldemGame**:
-A polymorphic Game model implementing No-Limit Texas Hold'em for 2 to 4 Players with private HoleCards, shared CommunityCards, pot accounting, and 7-card rank evaluation.
+[Archived per ADR-0022] A polymorphic Game model implementing No-Limit Texas Hold'em.
 _Avoid_: PokerGame, CardTable
 
-**HoleCards**:
-The two private face-down cards dealt exclusively to a Player and strictly masked from other Sessions until showdown.
-_Avoid_: Hand, PocketCards
+**KatroGame**:
+A polymorphic Game model implementing the 4-row traditional Malagasy board game (Katro) with sowing and capture mechanics.
+_Avoid_: MancalaGame, SowingGame
 
-**CommunityCards**:
-The up to five face-up shared cards dealt on the board across Flop, Turn, and River betting rounds.
-_Avoid_: BoardCards, TableCards
+**GamePhaseState**:
+An abstract behavioral state pattern representation encapsulating a distinct lifecycle or turn phase of a Game.
+_Avoid_: SubPhase, PhaseEnum, Stage
 
-**Pot**:
-The pool of chips wagered by Players across betting rounds awarded to the winning hand or split upon ties.
-_Avoid_: Kitty, ChipsPool
+**Command**:
+A polymorphic behavioral encapsulation of an intended player action dispatched to the active GamePhaseState.
+_Avoid_: ActionObject, InputPacket, EventMsg
+
+**CommandFactory**:
+A creational subsystem translating raw wire messages into concrete Command instances.
+_Avoid_: ActionParser, InputBuilder
 
 **LudoGame**:
 A polymorphic Game model implementing 2 to 4 Player cross-and-circle board mechanics featuring pawn collisions, yard rollout on 6, and safe zone navigation.
@@ -179,3 +195,7 @@ _Avoid_: ChoiceDialog, PromptPopup, CustomModal
 **ClientPlugin**:
 A self-contained client presentation bundle under `games/<game>/client/` exporting a renderer and lifecycle bindings discovered at build time via Vite globbing.
 _Avoid_: GameFrontend, RendererModule, ClientExtension
+
+**DesktopRunner**:
+The local PC executable running the authoritative HostEngine over an in-tree cpp-httplib HTTP and WebSocket server for development, testing, and hardware-free simulation.
+_Avoid_: LocalServer, DevServer, Simulator
