@@ -1,3 +1,4 @@
+import { signal } from '@preact/signals';
 import {
   connectionStatus,
   latencyMs,
@@ -7,16 +8,41 @@ import {
   soundMuted,
   toggleSound,
   crtFilter,
-  toggleCrt
+  toggleCrt,
+  currentView,
+  activeRoom
 } from '../../state/gameStore';
 import { showTrophyDrawer } from '../../state/hallOfFameStore';
 import { gameSocket } from '../../services/GameSocket';
 import { GameboxLogo } from '../common/GameboxLogo';
+import { MatchExitPrompt } from '../common/MatchExitPrompt';
 import styles from './Header.module.css';
+
+export const showExitPrompt = signal<boolean>(false);
 
 export function Header() {
   const status = connectionStatus.value;
   const ping = latencyMs.value;
+  const view = currentView.value;
+  const room = activeRoom.value;
+
+  const handleLeaveClick = () => {
+    const isSolo = room?.code === 'SOLO' || view === 'WAITING';
+    if (isSolo) {
+      gameSocket.leaveRoom();
+    } else {
+      showExitPrompt.value = true;
+    }
+  };
+
+  const handleConfirmForfeit = () => {
+    showExitPrompt.value = false;
+    gameSocket.leaveRoom();
+  };
+
+  const handleCancelForfeit = () => {
+    showExitPrompt.value = false;
+  };
 
   const handleNameInput = (e: Event) => {
     const val = (e.target as HTMLInputElement).value;
@@ -68,7 +94,18 @@ export function Header() {
           <span className={styles.logoIcon}>
             <GameboxLogo variant="glyph" size={24} animated={true} />
           </span>
-          <span className={styles.logoText}>GAMEBOX</span>
+          {view === 'LOBBY' ? (
+            <span className={styles.logoText}>GAMEBOX</span>
+          ) : (
+            <button
+              className={styles.leaveBtn}
+              onClick={handleLeaveClick}
+              type="button"
+              aria-label="Leave Match"
+            >
+              ⏴ LEAVE
+            </button>
+          )}
         </div>
 
         <div className={styles.headerControls}>
@@ -126,33 +163,42 @@ export function Header() {
         </div>
       </header>
 
-      <div className={styles.profileBar}>
-        <span className={styles.profileLabel}>Player</span>
-        <div className={styles.profileInputWrapper}>
-          <input
-            className={styles.profileInput}
-            type="text"
-            maxLength={14}
-            value={playerName.value}
-            onInput={handleNameInput}
-            onBlur={handleNameBlur}
-            onKeyDown={handleNameKeyDown}
-            placeholder="Callsign"
-            aria-label="Player Callsign"
-          />
-          <button
-            className={styles.shuffleBtn}
-            onClick={handleShuffle}
-            type="button"
-            title="Shuffle Callsign (↺)"
-            aria-label="Shuffle Callsign"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-          </button>
+      {view === 'LOBBY' && (
+        <div className={styles.profileBar}>
+          <span className={styles.profileLabel}>Player</span>
+          <div className={styles.profileInputWrapper}>
+            <input
+              className={styles.profileInput}
+              type="text"
+              maxLength={14}
+              value={playerName.value}
+              onInput={handleNameInput}
+              onBlur={handleNameBlur}
+              onKeyDown={handleNameKeyDown}
+              placeholder="Callsign"
+              aria-label="Player Callsign"
+            />
+            <button
+              className={styles.shuffleBtn}
+              onClick={handleShuffle}
+              type="button"
+              title="Shuffle Callsign (↺)"
+              aria-label="Shuffle Callsign"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {showExitPrompt.value && (
+        <MatchExitPrompt
+          onConfirm={handleConfirmForfeit}
+          onCancel={handleCancelForfeit}
+        />
+      )}
     </>
   );
 }

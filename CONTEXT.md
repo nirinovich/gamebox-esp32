@@ -116,6 +116,14 @@ _Avoid_: ActionObject, InputPacket, EventMsg
 A creational subsystem translating raw wire messages into concrete Command instances.
 _Avoid_: ActionParser, InputBuilder
 
+**GameEventListener**:
+An abstract observer interface receiving game outcome, turn progression, and score events dispatched from an authoritative Game.
+_Avoid_: GameCallback, MatchNotifier, EventHandler
+
+**PlayerSeat**:
+A strongly-typed value object encapsulating 0-based memory indexing and 1-based wire protocol translation for a Player.
+_Avoid_: SeatId, PlayerIndex, SeatNum
+
 **LudoGame**:
 A polymorphic Game model implementing 2 to 4 Player cross-and-circle board mechanics featuring pawn collisions, yard rollout on 6, and safe zone navigation.
 _Avoid_: Parchisi, Pachisi, TokenRace
@@ -207,3 +215,15 @@ _Avoid_: StateCache, AnimArray, EventQueue
 **MoveSequenceGating**:
 The transmission filtering mechanism on the HostEngine tick loop that only replicates state snapshots to clients when the game's move sequence number increments or when running continuous real-time simulations.
 _Avoid_: TickFilter, RateLimiter, DeltaThrottling
+
+**InGameHeader**:
+The contextual top navigation state in Header.tsx that replaces the static brand wordmark with an arcade exit trigger (`[ ⏴ LEAVE ]`) and hides the profile input while inside a Game or WaitingRoom.
+_Avoid_: NavToolbar, TopControls, GameNavbar
+
+**TurnGuidance**:
+The active visual state indicator in GameHud providing unequivocal turn status ("YOUR TURN" with a pulsing red pip vs "OPPONENT'S TURN" / "AI THINKING...") for turn-based parlor games.
+_Avoid_: TurnStatus, PlayerPhase, TurnBanner
+
+**MatchExitPrompt**:
+A defensive confirmation dialog rendered prior to detaching from an active multiplayer Duel or Party Room, warning the Player of match forfeiture.
+_Avoid_: ConfirmLeave, QuitDialog, ForfeitModal
