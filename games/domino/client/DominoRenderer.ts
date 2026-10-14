@@ -137,7 +137,14 @@ export class DominoRenderer implements IGameRenderer {
       ctx.textAlign = 'center';
       ctx.fillStyle = '#64748b';
       ctx.font = '500 13px system-ui, sans-serif';
-      ctx.fillText('Board is open. Tap highest double in hand to lead!', 200, 150);
+      const isLeadTurn = state?.turn === myPlayerNum;
+      ctx.fillText(
+        isLeadTurn
+          ? 'Board is open. Tap highest double in hand to lead!'
+          : 'Board is open. Opponent is leading the opening tile...',
+        200,
+        150
+      );
     } else {
       const maxPerRow = 7;
       const bTileW = 38;

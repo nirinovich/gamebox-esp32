@@ -13,6 +13,7 @@ std::unique_ptr<gamehub::core::Game> createPokerTable() {
 }
 }
 
+#if 0 // POKER DISABLED FOR NOW (per user request and ADR-0022)
 REGISTER_GAME("poker_solo", PokerSolo, &createPokerSolo, {
     gamehub::core::GameId("poker_solo"),
     "Texas Hold'em Solo",
@@ -34,6 +35,7 @@ REGISTER_GAME("poker_table", PokerTable, &createPokerTable, {
     "poker_table",
     false
 })
+#endif // POKER DISABLED FOR NOW
 
 namespace gamehub {
 namespace core {

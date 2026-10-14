@@ -24,7 +24,6 @@ add_library(gamehub_core OBJECT
     src/core/HostEngine.cpp
     games/domino/host/DominoGame.cpp
     games/katro/host/KatroGame.cpp
-    games/ludo/host/LudoGame.cpp
     games/fanorona/host/FanoronaGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include games)
@@ -92,10 +91,6 @@ add_test(NAME ColocatedKatroTest COMMAND test_katro)
 add_executable(test_core_oop_patterns tests/test_core_oop_patterns.cpp)
 target_link_libraries(test_core_oop_patterns PRIVATE gamehub_core)
 add_test(NAME CoreOopPatternsTest COMMAND test_core_oop_patterns)
-
-add_executable(test_ludo games/ludo/host/test_ludo.cpp)
-target_link_libraries(test_ludo PRIVATE gamehub_core)
-add_test(NAME ColocatedLudoTest COMMAND test_ludo)
 
 add_executable(test_fanorona games/fanorona/host/test_fanorona.cpp)
 target_link_libraries(test_fanorona PRIVATE gamehub_core)

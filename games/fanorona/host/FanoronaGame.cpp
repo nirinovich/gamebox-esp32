@@ -10,11 +10,11 @@ namespace core {
 
 namespace {
 std::unique_ptr<Game> createFanoronaSolo() {
-    return std::make_unique<FanoronaGame>(true, 2);
+    return std::make_unique<FanoronaGame>(true, 1);
 }
 
 std::unique_ptr<Game> createFanoronaDuel() {
-    return std::make_unique<FanoronaGame>(false, 2);
+    return std::make_unique<FanoronaGame>(false, 1);
 }
 } // namespace
 
@@ -40,27 +40,9 @@ REGISTER_GAME("fanorona_duel", FanoronaDuel, &createFanoronaDuel, {
     true
 })
 
-REGISTER_GAME("fanorona_pvp", FanoronaPvpAlias, &createFanoronaDuel, {
-    gamehub::core::GameId("fanorona_pvp"),
-    "Fanorona Duel",
-    "DUEL",
-    "Duel strategique malgache 5x9 par percussion et aspiration",
-    2, 2,
-    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
-    "fanorona_duel",
-    true
-})
+REGISTER_GAME_ALIAS("fanorona_pvp", FanoronaPvpAlias, &createFanoronaDuel)
 
-REGISTER_GAME("fanorona", FanoronaAlias, &createFanoronaSolo, {
-    gamehub::core::GameId("fanorona"),
-    "Fanorona Solo",
-    "SOLO",
-    "Jeu traditionnel malgache 5x9 vs Bot avec captures successives",
-    1, 1,
-    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
-    "fanorona_solo",
-    false
-})
+REGISTER_GAME_ALIAS("fanorona", FanoronaAlias, &createFanoronaSolo)
 
 FanoronaGame::FanoronaGame(bool isSolo, int startingPlayer)
     : m_isSolo(isSolo), m_startingPlayer(startingPlayer) {

@@ -8,32 +8,6 @@ namespace gamehub {
 namespace core {
 
 // Static self-registration in GameRegistry
-REGISTER_GAME("domino_pvp", DominoPvp, []() -> std::unique_ptr<Game> {
-    return std::make_unique<DominoGame>(false, 2, 100);
-}, {
-    gamehub::core::GameId("domino_pvp"),
-    "Dominoes Duel",
-    "DUEL",
-    "Double-six Malagasy Tsipy Dominoes 1v1",
-    2, 2,
-    gamehub::core::InputFlag::ACTION_BUTTONS,
-    "domino_duel",
-    true
-})
-
-REGISTER_GAME("domino", DominoDuelAlias, []() -> std::unique_ptr<Game> {
-    return std::make_unique<DominoGame>(false, 2, 100);
-}, {
-    gamehub::core::GameId("domino"),
-    "Dominoes Duel",
-    "DUEL",
-    "Double-six Malagasy Tsipy Dominoes 1v1",
-    2, 2,
-    gamehub::core::InputFlag::ACTION_BUTTONS,
-    "domino_duel",
-    true
-})
-
 REGISTER_GAME("domino_solo", DominoSolo, []() -> std::unique_ptr<Game> {
     return std::make_unique<DominoGame>(true, 2, 100);
 }, {
@@ -45,6 +19,27 @@ REGISTER_GAME("domino_solo", DominoSolo, []() -> std::unique_ptr<Game> {
     gamehub::core::InputFlag::ACTION_BUTTONS,
     "domino_solo",
     false
+})
+
+REGISTER_GAME("domino_duel", DominoDuel, []() -> std::unique_ptr<Game> {
+    return std::make_unique<DominoGame>(false, 2, 100);
+}, {
+    gamehub::core::GameId("domino_duel"),
+    "Dominoes Duel",
+    "DUEL",
+    "Double-six Malagasy Tsipy Dominoes 1v1",
+    2, 2,
+    gamehub::core::InputFlag::ACTION_BUTTONS,
+    "domino_duel",
+    true
+})
+
+REGISTER_GAME_ALIAS("domino_pvp", DominoPvpAlias, []() -> std::unique_ptr<Game> {
+    return std::make_unique<DominoGame>(false, 2, 100);
+})
+
+REGISTER_GAME_ALIAS("domino", DominoAlias, []() -> std::unique_ptr<Game> {
+    return std::make_unique<DominoGame>(false, 2, 100);
 })
 
 // ============================================================================
@@ -139,16 +134,22 @@ bool DominoPlayState::handleCommand(DominoGame& domino, PlayerId playerId, const
     return command.executeOnDomino(domino, playerId);
 }
 
-void DominoPlayState::update(DominoGame& domino, float /*dt*/) {
+void DominoPlayState::update(DominoGame& domino, float dt) {
     if (domino.isFinished() || domino.isRoundFinished()) return;
 
     int curPidx = domino.getTurn() - 1;
     auto* player = domino.getPlayer(curPidx);
     if (player && player->isAutonomous()) {
-        auto action = player->getController()->decideAction(domino, static_cast<PlayerId>(curPidx + 1));
-        if (action) {
-            action->execute(domino, static_cast<PlayerId>(curPidx + 1));
+        domino.tickBotTimer(dt);
+        if (domino.getBotTimer() >= domino.getBotDelay()) {
+            domino.resetBotTimer();
+            auto action = player->getController()->decideAction(domino, static_cast<PlayerId>(curPidx + 1));
+            if (action) {
+                action->execute(domino, static_cast<PlayerId>(curPidx + 1));
+            }
         }
+    } else {
+        domino.resetBotTimer();
     }
 }
 
@@ -304,6 +305,8 @@ void DominoGame::startNewRound() {
     m_consecutivePasses = 0;
     clearPendingChoice();
     m_board.clear();
+    resetBotTimer();
+    m_moveSeq++;
 
     m_tileSet.shuffleAndDeal(m_numPlayers, m_hands, m_rng);
     determineOpeningLead();
@@ -368,6 +371,8 @@ bool DominoGame::executePlayTile(int pidx, int tileIdx, const std::string& endCh
 
     m_hands[pidx].removeTile(tileIdx);
     m_consecutivePasses = 0;
+    m_moveSeq++;
+    resetBotTimer();
 
     auto* player = getPlayer(pidx);
     std::string actor = player ? player->getName() : ("Player " + std::to_string(pidx + 1));
@@ -401,6 +406,8 @@ bool DominoGame::executePlayTile(int pidx, int tileIdx, const std::string& endCh
 
 void DominoGame::executePassTurn(int pidx) {
     m_consecutivePasses++;
+    m_moveSeq++;
+    resetBotTimer();
     auto* player = getPlayer(pidx);
     std::string actor = player ? player->getName() : ("Player " + std::to_string(pidx + 1));
     m_lastAction = actor + " passed turn";

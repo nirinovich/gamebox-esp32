@@ -45,7 +45,7 @@ public:
     static constexpr int NUM_INTERSECTIONS = 45;
     static constexpr int CENTER_NODE = 22; // row 2, col 4
 
-    explicit FanoronaGame(bool isSolo = false, int startingPlayer = 2);
+    explicit FanoronaGame(bool isSolo = false, int startingPlayer = 1);
     ~FanoronaGame() override = default;
 
     // Game interface

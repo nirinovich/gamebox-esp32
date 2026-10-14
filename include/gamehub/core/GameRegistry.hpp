@@ -94,6 +94,7 @@ struct GameDescriptor {
     InputFlag inputTemplate{InputFlag::NONE};
     const char* icon{""};
     bool isDuel{false};
+    bool isAlias{false};
 };
 
 using GameCreateFn = std::unique_ptr<Game>(*)();
@@ -160,6 +161,17 @@ private:
     static const bool _reg_##regTag = []() { \
         ::gamehub::core::GameDescriptor desc __VA_ARGS__; \
         desc.id = ::gamehub::core::GameId(idStr); \
+        desc.isAlias = false; \
+        return ::gamehub::core::GameRegistry::instance().registerGame(desc, factoryFn); \
+    }(); \
+    }
+
+#define REGISTER_GAME_ALIAS(idStr, regTag, factoryFn) \
+    namespace { \
+    static const bool _reg_##regTag = []() { \
+        ::gamehub::core::GameDescriptor desc{}; \
+        desc.id = ::gamehub::core::GameId(idStr); \
+        desc.isAlias = true; \
         return ::gamehub::core::GameRegistry::instance().registerGame(desc, factoryFn); \
     }(); \
     }

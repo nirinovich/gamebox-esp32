@@ -83,9 +83,10 @@ std::string RoomManager::serializeCatalog() const {
     const auto& reg = GameRegistry::instance();
     bool first = true;
     for (size_t i = 0; i < reg.count(); ++i) {
+        const auto& d = reg.get(i).descriptor;
+        if (d.isAlias) continue;
         if (!first) oss << ",";
         first = false;
-        const auto& d = reg.get(i).descriptor;
         oss << "{\"id\":\"" << d.id.c_str() << "\","
             << "\"title\":\"" << (d.title ? d.title : "") << "\","
             << "\"category\":\"" << (d.category ? d.category : "SOLO") << "\","

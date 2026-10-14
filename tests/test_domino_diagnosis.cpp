@@ -7,6 +7,7 @@
 #endif
 #include <gamehub/core/HostEngine.hpp>
 #include <gamehub/core/INetworkAdapter.hpp>
+#include <gamehub/core/Room.hpp>
 
 class MockNetwork : public gamehub::core::INetworkAdapter {
 public:
@@ -85,13 +86,13 @@ int main() {
         std::cout << "Sent to " << m.sid << ": " << m.text.substr(0, std::min<size_t>(m.text.size(), 80)) << std::endl;
     }
 
-    // Now Alice tries to play a tile
+    // Check who has opening lead
+    int leadSid = (res2.find("\"turn\":2") != std::string::npos) ? 2 : 1;
     net.clear();
-    std::cout << "Alice plays tile 0..." << std::endl;
-    engine.onClientMessage(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
-    std::string stateAfterPlay = net.lastFor(1);
-    std::cout << "State after play for P1: " << stateAfterPlay.substr(0, std::min<size_t>(stateAfterPlay.size(), 120)) << std::endl;
-    EXPECT(stateAfterPlay.find("\"turn\":2") != std::string::npos, "Alice's play should advance turn to 2");
+    std::cout << "Player " << leadSid << " plays tile 0..." << std::endl;
+    engine.onClientMessage(leadSid, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+    std::string stateAfterPlay = net.lastFor(leadSid);
+    std::cout << "State after play: " << stateAfterPlay.substr(0, std::min<size_t>(stateAfterPlay.size(), 120)) << std::endl;
     EXPECT(stateAfterPlay.find("\"left_end\":-1") == std::string::npos, "Board should have left_end set after play");
 
     // Scenario 2: 3-Player Domino Game
@@ -109,19 +110,18 @@ int main() {
     engine.onClientMessage(30, "{\"cmd\":\"join\",\"code\":\"" + code3 + "\"}");
 
     std::cout << "Total messages sent on P3 join: " << net.sent.size() << std::endl;
-    for (const auto& m : net.sent) {
-        std::cout << "Msg to " << m.sid << ": " << m.text.substr(0, std::min<size_t>(m.text.size(), 100)) << std::endl;
-    }
 
-    // P1 plays
+    // Whoever has opening lead plays
+    std::string p10State = net.lastFor(10);
+    int leadSid2 = 10;
+    if (p10State.find("\"turn\":2") != std::string::npos) leadSid2 = 20;
+    else if (p10State.find("\"turn\":3") != std::string::npos) leadSid2 = 30;
+
     net.clear();
-    engine.onClientMessage(10, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
-    std::cout << "P10 played. Messages sent: " << net.sent.size() << std::endl;
-    for (const auto& m : net.sent) {
-        std::cout << "P10 play msg to " << m.sid << ": " << m.text.substr(0, std::min<size_t>(m.text.size(), 80)) << std::endl;
-    }
+    engine.onClientMessage(leadSid2, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+    std::cout << "Lead played. Messages sent: " << net.sent.size() << std::endl;
 
-    // Scenario 3: Explicit 2-Player Domino Duel
+    // Scenario 3: Explicit 2-Player Domino Duel ('domino_duel')
     std::cout << "\n--- Test 3: Explicit 2-Player Domino Duel ('domino_duel') ---" << std::endl;
     engine.onClientConnect(40);
     engine.onClientConnect(50);
@@ -144,12 +144,92 @@ int main() {
     EXPECT(duelReady40, "P40 should receive room_ready automatically on 2nd join");
     EXPECT(duelReady50, "P50 should receive room_ready automatically on 2nd join");
 
-    // P40 plays immediately
+    // Whoever has lead plays
+    std::string p40State = net.lastFor(40);
+    int leadSid3 = (p40State.find("\"turn\":2") != std::string::npos) ? 50 : 40;
     net.clear();
-    engine.onClientMessage(40, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
-    std::string stateDuelAfterPlay = net.lastFor(40);
-    EXPECT(stateDuelAfterPlay.find("\"turn\":2") != std::string::npos, "P40 play should advance turn to 2");
+    engine.onClientMessage(leadSid3, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+    std::string stateDuelAfterPlay = net.lastFor(leadSid3);
     EXPECT(stateDuelAfterPlay.find("\"left_end\":-1") == std::string::npos, "Board left_end should be set");
+
+    // Scenario 4: Domino Solo vs Bot Execution
+    std::cout << "\n--- Test 4: Domino Solo vs Bot ('domino_solo') ---" << std::endl;
+    engine.onClientConnect(60);
+    net.clear();
+    engine.onClientMessage(60, "{\"cmd\":\"start\",\"game\":\"domino_solo\"}");
+    std::string soloInit = net.lastFor(60);
+    EXPECT(!soloInit.empty(), "Client should receive initial state for solo domino");
+
+    gamehub::core::Room* soloRoom = engine.getRoomManager().findRoomByPlayer(60);
+    EXPECT(soloRoom != nullptr, "Solo room must exist");
+    EXPECT(soloRoom->getGame() != nullptr, "Solo room game must exist");
+    EXPECT(soloRoom->getGame()->isRealTime(), "DominoGame must be real-time so HostEngine can tick bots");
+
+    // Advance engine ticks. If Bot has opening lead, Bot should play autonomously!
+    net.clear();
+    for (int t = 0; t < 20; ++t) {
+        engine.tick(0.066f);
+    }
+
+    std::string stateAfterTicks = net.lastFor(60);
+    if (soloInit.find("\"turn\":2") != std::string::npos) {
+        // Bot had opening turn: Bot must have played!
+        EXPECT(!stateAfterTicks.empty(), "State must have been broadcast after Bot move");
+        EXPECT(stateAfterTicks.find("\"board\":[]") == std::string::npos, "Board must not be empty after Bot opening move");
+        EXPECT(stateAfterTicks.find("\"turn\":1") != std::string::npos, "Turn must advance to Player 1 after Bot move");
+    } else {
+        // Player 1 had opening turn: Player 1 plays, then Bot ticks and plays
+        net.clear();
+        engine.onClientMessage(60, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+        std::string p1PlayState = net.lastFor(60);
+        EXPECT(p1PlayState.find("\"turn\":2") != std::string::npos, "Turn must advance to Bot (2) after P1 play");
+        net.clear();
+        for (int t = 0; t < 20; ++t) {
+            engine.tick(0.066f);
+        }
+        std::string botPlayState = net.lastFor(60);
+        EXPECT(!botPlayState.empty(), "State must be sent to client after Bot ticks and moves");
+        EXPECT(botPlayState.find("\"turn\":1") != std::string::npos, "Turn must return to Player 1 after Bot move");
+    }
+
+    // Scenario 5: Catalog Check (No Poker, No Duplicate Games)
+    std::cout << "\n--- Test 5: Catalog Check (No Poker, No Duplicates) ---" << std::endl;
+    std::string cat = engine.getRoomManager().serializeCatalog();
+    EXPECT(cat.find("poker") == std::string::npos, "Catalog must not contain poker");
+    EXPECT(cat.find("Texas Hold") == std::string::npos, "Catalog must not contain Texas Hold'em");
+
+    // Check duplicate titles per category
+    std::vector<std::string> ids;
+    size_t pos = 0;
+    while ((pos = cat.find("\"id\":\"", pos)) != std::string::npos) {
+        size_t endPos = cat.find("\"", pos + 6);
+        std::string id = cat.substr(pos + 6, endPos - (pos + 6));
+        for (const auto& existing : ids) {
+            EXPECT(existing != id, "Duplicate game ID in catalog: " + id);
+        }
+        ids.push_back(id);
+        pos = endPos;
+    }
+
+    std::vector<std::pair<std::string, std::string>> titleCats; // {title, category}
+    pos = 0;
+    while ((pos = cat.find("{\"id\":\"", pos)) != std::string::npos) {
+        size_t titlePos = cat.find("\"title\":\"", pos);
+        size_t titleEnd = cat.find("\"", titlePos + 9);
+        std::string title = cat.substr(titlePos + 9, titleEnd - (titlePos + 9));
+
+        size_t catPos = cat.find("\"category\":\"", pos);
+        size_t catEnd = cat.find("\"", catPos + 12);
+        std::string category = cat.substr(catPos + 12, catEnd - (catPos + 12));
+
+        for (const auto& tc : titleCats) {
+            if (tc.first == title && tc.second == category) {
+                EXPECT(false, "Duplicate title in category " + category + ": " + title);
+            }
+        }
+        titleCats.push_back({title, category});
+        pos = catEnd;
+    }
 
     std::cout << "[DIAGNOSIS] Completed all scenarios without crashing!" << std::endl;
     return 0;

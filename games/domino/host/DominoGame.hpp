@@ -32,6 +32,16 @@ public:
     bool isFinished() const override { return m_finished; }
     int getWinner() const override { return m_winner; }
     void setPlayerCount(int count) override { setNumPlayers(count); }
+    bool isRealTime() const override { return true; }
+    int getMoveSeq() const override { return m_moveSeq; }
+
+    // --- Bot Timing & Delay ---
+    float getBotTimer() const { return m_botTimer; }
+    void tickBotTimer(float dt) { m_botTimer += dt; }
+    void resetBotTimer() { m_botTimer = 0.0f; }
+    float getBotDelay() const { return m_botDelay; }
+    void setBotDelay(float d) { m_botDelay = d; }
+    static constexpr float BOT_DELAY_SEC = 0.5f;
 
     // --- State & Command Dispatch Seams ---
     void transitionTo(std::unique_ptr<IDominoState> nextState);
@@ -134,6 +144,10 @@ private:
     int m_roundPointsAwarded{0};
     int m_rebonPool{0};
     int m_cumulativeScores[4]{0, 0, 0, 0};
+
+    int m_moveSeq{0};
+    float m_botTimer{0.0f};
+    float m_botDelay{0.5f};
 
     int m_pendingChoicePlayer{0};
     int m_pendingChoiceIdx{-1};

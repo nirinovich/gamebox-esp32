@@ -170,4 +170,130 @@ describe('FanoronaRenderer', () => {
     renderer.handlePointerDown(225, 295);
     expect(dispatchMock).toHaveBeenCalledWith({ cmd: 'end_turn' });
   });
+
+  it('handles 1v1 duel opening move from Player 2 (claires)', () => {
+    const renderer = new FanoronaRenderer();
+    const dispatchMock = vi.fn();
+    renderer.init(undefined, undefined, dispatchMock, 2);
+    renderer.resize(400, 400);
+
+    const initialBoard = [
+      1,1,1,1,1,1,1,1,1,
+      1,1,1,1,1,1,1,1,1,
+      2,1,2,1,0,2,1,2,1,
+      2,2,2,2,2,2,2,2,2,
+      2,2,2,2,2,2,2,2,2
+    ];
+
+    const state = {
+      game: 'fanorona',
+      turn: 2,
+      finished: false,
+      board: initialBoard
+    };
+
+    const dummyCtx = createMockCtx();
+    renderer.render(state, dummyCtx);
+
+    const layout = renderer.getBoardLayout();
+    const x31 = layout.startX + 4 * layout.step;
+    const y31 = layout.startY + 3 * layout.step;
+
+    // Click own stone at 31
+    renderer.handlePointerDown(x31, y31);
+    expect(renderer.selectedNode).toBe(31);
+
+    // Click destination at 22
+    const x22 = layout.startX + 4 * layout.step;
+    const y22 = layout.startY + 2 * layout.step;
+    renderer.handlePointerDown(x22, y22);
+
+    expect(dispatchMock).toHaveBeenCalledWith({
+      cmd: 'move',
+      from: 31,
+      to: 22,
+      captureType: 'approach'
+    });
+  });
+
+  it('handles 1v1 duel opening move from Player 1 (Host / foncées)', () => {
+    const renderer = new FanoronaRenderer();
+    const dispatchMock = vi.fn();
+    renderer.init(undefined, undefined, dispatchMock, 1);
+    renderer.resize(400, 400);
+
+    const initialBoard = [
+      1,1,1,1,1,1,1,1,1,
+      1,1,1,1,1,1,1,1,1,
+      2,1,2,1,0,2,1,2,1,
+      2,2,2,2,2,2,2,2,2,
+      2,2,2,2,2,2,2,2,2
+    ];
+
+    const state = {
+      game: 'fanorona',
+      turn: 1,
+      finished: false,
+      must_capture: true,
+      board: initialBoard
+    };
+
+    const dummyCtx = createMockCtx();
+    renderer.render(state, dummyCtx);
+
+    const layout = renderer.getBoardLayout();
+    const x13 = layout.startX + 4 * layout.step;
+    const y13 = layout.startY + 1 * layout.step;
+
+    // Click own stone at 13 (r=1, c=4)
+    renderer.handlePointerDown(x13, y13);
+    expect(renderer.selectedNode).toBe(13);
+
+    // Click destination at 22 (r=2, c=4)
+    const x22 = layout.startX + 4 * layout.step;
+    const y22 = layout.startY + 2 * layout.step;
+    renderer.handlePointerDown(x22, y22);
+
+    expect(dispatchMock).toHaveBeenCalledWith({
+      cmd: 'move',
+      from: 13,
+      to: 22,
+      captureType: 'approach'
+    });
+  });
+
+  it('rejects selecting non-capturing stone when must_capture is active', () => {
+    const renderer = new FanoronaRenderer();
+    const dispatchMock = vi.fn();
+    renderer.init(undefined, undefined, dispatchMock, 1);
+    renderer.resize(400, 400);
+
+    const initialBoard = [
+      1,1,1,1,1,1,1,1,1,
+      1,1,1,1,1,1,1,1,1,
+      2,1,2,1,0,2,1,2,1,
+      2,2,2,2,2,2,2,2,2,
+      2,2,2,2,2,2,2,2,2
+    ];
+
+    const state = {
+      game: 'fanorona',
+      turn: 1,
+      finished: false,
+      must_capture: true,
+      board: initialBoard
+    };
+
+    const dummyCtx = createMockCtx();
+    renderer.render(state, dummyCtx);
+
+    const layout = renderer.getBoardLayout();
+    // Node 0 (corner): has no legal captures
+    const x0 = layout.startX;
+    const y0 = layout.startY;
+
+    renderer.handlePointerDown(x0, y0);
+    expect(renderer.selectedNode).toBe(-1);
+    expect(renderer.captureNotice).toContain('Capture obligatoire');
+  });
 });

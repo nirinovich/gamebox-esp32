@@ -60,6 +60,8 @@ export class FanoronaRenderer implements IGameRenderer {
   private lastProcessedMoveId = -1;
   private lastAnimTime = 0;
   private botTimer: any = null;
+  public captureNotice = '';
+  private captureNoticeTimeout: any = null;
   private optimisticMove: { from: number; to: number; captured: number[] } | null = null;
 
   constructor(juice?: CameraJuice) {
@@ -161,6 +163,19 @@ export class FanoronaRenderer implements IGameRenderer {
       }
     }
     return res;
+  }
+
+  public hasCapturesForStone(node: number, board: number[]): boolean {
+    if (!board || board[node] === 0) return false;
+    for (let target = 0; target < 45; target++) {
+      if (board[target] === 0 && this.isConnected(node, target)) {
+        if (this.getApproachCaptures(node, target, board).length > 0 ||
+            this.getWithdrawalCaptures(node, target, board).length > 0) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   public getBoardLayout() {
@@ -291,7 +306,7 @@ export class FanoronaRenderer implements IGameRenderer {
   private checkBotTurn(state: any) {
     if (!this.isSolo || !state || state.finished) return;
     if (state.turn === 2 && !this.botTimer) {
-      this.botTimer = window.setTimeout(() => {
+      this.botTimer = setTimeout(() => {
         this.botTimer = null;
         if (this.lastState && this.lastState.turn === 2 && !this.lastState.finished) {
           this.dispatch({ cmd: 'bot_move' });
@@ -454,6 +469,19 @@ export class FanoronaRenderer implements IGameRenderer {
 
         this.drawStoneSphere(ctx, nx, ny, radius, val);
         ctx.restore();
+
+        // Draw compulsory capture indicator ring if active
+        if (state?.turn === this.myPlayerNum && state?.must_capture && !state?.in_multi && val === this.myPlayerNum) {
+          if (this.hasCapturesForStone(i, state.board)) {
+            ctx.save();
+            ctx.strokeStyle = '#ef3938';
+            ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.arc(nx, ny, radius + 3, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
       }
     }
 
@@ -658,13 +686,16 @@ export class FanoronaRenderer implements IGameRenderer {
     // 11. HUD & Stone Counts
     ctx.textAlign = 'left';
     ctx.font = '800 11px ui-monospace, SFMono-Regular, monospace';
-    ctx.fillStyle = '#9e9fa8';
+    const isP1 = this.myPlayerNum === 1;
+    const isP2 = this.myPlayerNum === 2;
+    ctx.fillStyle = isP1 ? '#ffffff' : '#9e9fa8';
     const p1Count = state?.p1_count ?? 22;
     const p2Count = state?.p2_count ?? 22;
-    ctx.fillText(`FONCÉES: ${p1Count}`, 16, 24);
+    ctx.fillText(`FONCÉES: ${p1Count}${isP1 ? ' (VOUS)' : ''}`, 16, 24);
 
     ctx.textAlign = 'right';
-    ctx.fillText(`CLAIRES: ${p2Count}`, width - 16, 24);
+    ctx.fillStyle = isP2 ? '#ffffff' : '#9e9fa8';
+    ctx.fillText(`CLAIRES: ${p2Count}${isP2 ? ' (VOUS)' : ''}`, width - 16, 24);
 
     ctx.textAlign = 'center';
     let statusMsg = '';
@@ -675,10 +706,15 @@ export class FanoronaRenderer implements IGameRenderer {
       statusMsg = 'CAPTURE SUCCESSIVE OBLIGATOIRE';
       ctx.fillStyle = '#ef3938';
     } else if (state?.turn === this.myPlayerNum) {
-      statusMsg = 'À VOTRE TOUR';
-      ctx.fillStyle = '#ffffff';
+      if (state?.must_capture) {
+        statusMsg = 'CAPTURE OBLIGATOIRE - À VOTRE TOUR';
+        ctx.fillStyle = '#ef3938';
+      } else {
+        statusMsg = 'À VOTRE TOUR';
+        ctx.fillStyle = '#ffffff';
+      }
     } else {
-      statusMsg = this.isSolo ? 'LE BOT RÉFLÉCHIT...' : 'TOUR ADVERSE';
+      statusMsg = this.isSolo ? 'LE BOT RÉFLÉCHIT...' : (state?.turn === 1 ? 'TOUR DU JOUEUR 1 (FONCÉES)' : 'TOUR DU JOUEUR 2 (CLAIRES)');
       ctx.fillStyle = '#9e9fa8';
     }
     ctx.font = '800 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -705,6 +741,11 @@ export class FanoronaRenderer implements IGameRenderer {
       ctx.textAlign = 'center';
       ctx.fillText('TERMINER LE TOUR ⏵', width / 2, endBtnY + 15);
       ctx.restore();
+    } else if (this.captureNotice) {
+      ctx.font = '700 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillStyle = '#ef3938';
+      ctx.textAlign = 'center';
+      ctx.fillText(this.captureNotice, width / 2, height - 10);
     } else if (state?.last_action) {
       ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.fillStyle = '#656775';
@@ -805,6 +846,14 @@ export class FanoronaRenderer implements IGameRenderer {
 
     // Normal turn:
     if (state.board[clickedNode] === this.myPlayerNum) {
+      if (state.must_capture && !state.in_multi && !this.hasCapturesForStone(clickedNode, state.board)) {
+        sound.hit();
+        this.captureNotice = 'Capture obligatoire : sélectionnez une pièce pouvant capturer !';
+        if (this.captureNoticeTimeout) clearTimeout(this.captureNoticeTimeout);
+        this.captureNoticeTimeout = setTimeout(() => { this.captureNotice = ''; }, 2500);
+        return;
+      }
+      this.captureNotice = '';
       // Select own stone
       this.selectedNode = clickedNode;
       sound.place();
@@ -820,6 +869,14 @@ export class FanoronaRenderer implements IGameRenderer {
   private attemptMove(from: number, to: number, state: any) {
     const app = this.getApproachCaptures(from, to, state.board);
     const wit = this.getWithdrawalCaptures(from, to, state.board);
+
+    if (state?.must_capture && app.length === 0 && wit.length === 0) {
+      sound.hit();
+      this.captureNotice = 'Capture obligatoire : vous devez effectuer une prise !';
+      if (this.captureNoticeTimeout) clearTimeout(this.captureNoticeTimeout);
+      this.captureNoticeTimeout = setTimeout(() => { this.captureNotice = ''; }, 2500);
+      return;
+    }
 
     if (app.length > 0 && wit.length > 0) {
       // Dual choice needed!
@@ -847,6 +904,11 @@ export class FanoronaRenderer implements IGameRenderer {
       clearTimeout(this.botTimer);
       this.botTimer = null;
     }
+    if (this.captureNoticeTimeout) {
+      clearTimeout(this.captureNoticeTimeout);
+      this.captureNoticeTimeout = null;
+    }
+    this.captureNotice = '';
     this.movingStone = null;
     this.capturedStones = [];
     this.sparks = [];

@@ -1,6 +1,6 @@
 # ESP32 Game Hub 🎮
 
-An authoritative, headless game engine implemented in modern C++17 for the ESP32-S3 microcontroller. It hosts solo and real-time multiplayer games (Malagasy Tsipy Dominoes, Ludo, and Malagasy Katro) served over a local Wi-Fi Access Point and captive portal via WebSockets.
+An authoritative, headless game engine implemented in modern C++17 for the ESP32-S3 microcontroller. It hosts solo and real-time multiplayer games (Malagasy Tsipy Dominoes, Malagasy Katro, and traditional Fanorona) served over a local Wi-Fi Access Point and captive portal via WebSockets.
 
 Clients connect with any standard mobile or desktop web browser—no app installation required.
 
@@ -100,7 +100,8 @@ pio device monitor
 ├── games/                # Co-located games (host simulation + client renderers)
 │   ├── domino/           # Malagasy Tsipy Dominoes
 │   ├── katro/            # Traditional Malagasy Katro Mancala
-│   └── ludo/             # Ludo cross-and-circle board game
+│   ├── fanorona/         # Traditional Malagasy Fanoron-tsivy
+│   └── ludo/             # [Archived] Ludo cross-and-circle board game
 ├── frontend/             # Single-page ClientShell (Preact/React, Canvas 2D)
 ├── docs/                 # Documentation suite & ADRs
 │   ├── architecture/     # Complete architectural deep dives & lifecycle guides

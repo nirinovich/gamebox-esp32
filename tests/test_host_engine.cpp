@@ -173,11 +173,11 @@ int main() {
         assert(mockNet.hasMessageFor(301, "\"game\":\"katro\""));
         std::cout << "    Solo Katro execution verified." << std::endl;
 
-        // Solo Ludo
+        // Solo Fanorona
         mockNet.clear();
-        engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"ludo_solo\"}");
-        assert(mockNet.hasMessageFor(301, "\"game\":\"ludo\""));
-        std::cout << "    Solo Ludo execution verified." << std::endl;
+        engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"fanorona_solo\"}");
+        assert(mockNet.hasMessageFor(301, "\"game\":\"fanorona\""));
+        std::cout << "    Solo Fanorona execution verified." << std::endl;
         engine.onClientDisconnect(301);
     }
 
@@ -201,21 +201,44 @@ int main() {
         std::cout << "    Multiplayer Katro lifecycle verified." << std::endl;
     }
 
-    // --- 8. Multiplayer Ludo Table Lifecycle ---
+    // --- 8. Multiplayer Fanorona Duel Lifecycle & Moves ---
     {
-        std::cout << "  - Testing Multiplayer Ludo Table Lifecycle..." << std::endl;
-        // Ludo Quick Match
+        std::cout << "  - Testing Multiplayer Fanorona Duel Lifecycle..." << std::endl;
         mockNet.clear();
-        engine.onClientConnect(701);
-        engine.onClientConnect(702);
-        engine.onClientMessage(701, "{\"cmd\":\"create\",\"game\":\"ludo_quick\",\"host\":\"HostLudo\",\"players\":2}");
-        std::string ludoCode = mockNet.getLastMessageFor(701).substr(mockNet.getLastMessageFor(701).find("\"code\":\"") + 8, 4);
-        engine.onClientMessage(702, "{\"cmd\":\"join\",\"code\":\"" + ludoCode + "\"}");
-        assert(mockNet.hasMessageFor(701, "\"type\":\"room_ready\""));
-        assert(mockNet.hasMessageFor(702, "\"type\":\"room_ready\""));
-        engine.onClientDisconnect(701);
-        engine.onClientDisconnect(702);
-        std::cout << "    Multiplayer Ludo Quick Match lifecycle verified." << std::endl;
+        engine.onClientConnect(801);
+        engine.onClientConnect(802);
+        engine.onClientMessage(801, "{\"cmd\":\"create\",\"game\":\"fanorona_duel\",\"host\":\"HostFano\",\"max\":2}");
+        std::string fanoCode = mockNet.getLastMessageFor(801).substr(mockNet.getLastMessageFor(801).find("\"code\":\"") + 8, 4);
+        engine.onClientMessage(802, "{\"cmd\":\"join\",\"code\":\"" + fanoCode + "\"}");
+
+        assert(mockNet.hasMessageFor(801, "\"type\":\"room_ready\""));
+        assert(mockNet.hasMessageFor(802, "\"type\":\"room_ready\""));
+
+        std::string s801 = mockNet.getLastMessageFor(801);
+        std::string s802 = mockNet.getLastMessageFor(802);
+        assert(s801.find("\"game\":\"fanorona\"") != std::string::npos);
+        assert(s802.find("\"game\":\"fanorona\"") != std::string::npos);
+
+        std::cout << "    Fanorona initial state: s801=" << s801 << std::endl;
+        assert(s801.find("\"turn\":1") != std::string::npos);
+        assert(s802.find("\"turn\":1") != std::string::npos);
+
+        // Player 1 (Host) starts (m_turn = 1). Move from 13 to 22 (Approach capture of 31 and 40)
+        mockNet.clear();
+        engine.onClientMessage(801, "{\"cmd\":\"move\",\"from\":13,\"to\":22,\"captureType\":\"approach\"}");
+
+        std::string afterMoveP1 = mockNet.getLastMessageFor(801);
+        std::string afterMoveP2 = mockNet.getLastMessageFor(802);
+        std::cout << "    After P1 move: afterMoveP1=" << afterMoveP1 << std::endl;
+
+        // Verify turn switched to 2
+        assert(afterMoveP1.find("\"turn\":2") != std::string::npos);
+        assert(afterMoveP2.find("\"turn\":2") != std::string::npos);
+        assert(afterMoveP1.find("\"captured\":[31,40]") != std::string::npos);
+
+        engine.onClientDisconnect(801);
+        engine.onClientDisconnect(802);
+        std::cout << "    Multiplayer Fanorona Duel verified." << std::endl;
     }
 
     std::cout << "[SUCCESS] All HostEngine tests passed!" << std::endl;

@@ -40,7 +40,7 @@ int main() {
     // 2. Initial Setup Verification (Rule 3.2)
     // ----------------------------------------------------
     {
-        FanoronaGame game(false, 2);
+        FanoronaGame game(false, 1);
         const auto& board = game.getBoard();
 
         int p1Count = 0;
@@ -59,8 +59,8 @@ int main() {
             assert(board[18 + c] == expectedMid[c] && "Row 2 pattern must match W, B, W, B, ., W, B, W, B");
         }
 
-        // Verify starting player is initialized to 2 (traditional claires / White starts)
-        assert(game.getTurn() == 2 && "Starting player must be Player 2 (pierres claires)");
+        // Verify starting player is initialized to 1 (pierres foncées / Host starts)
+        assert(game.getTurn() == 1 && "Starting player must be Player 1 (pierres foncées / Host)");
 
         std::cout << "  [PASS] 3.2 Stones and deterministic initial position verified." << std::endl;
     }
@@ -273,7 +273,7 @@ int main() {
     // 9. Solo Mode vs Bot
     // ----------------------------------------------------
     {
-        // Solo mode: Player 1 (human), Player 2 (Bot starts)
+        // Solo mode: Player 1 (human), Player 2 (Bot starts if startingPlayer = 2)
         FanoronaGame soloGame(true, 2);
         // On init(), bot (Player 2) has taken opening move and turn passed to Player 1
         assert(soloGame.getTurn() == 1 && "In solo mode with Player 2 starting, Bot moves and yields turn to Player 1");
@@ -281,6 +281,12 @@ int main() {
 
         // Human responds with a legal move
         assert(soloGame.hasAnyLegalMoves(1) && "Human has legal moves");
+
+        // Solo mode: Player 1 (Human) starts by default
+        FanoronaGame humanSoloGame(true, 1);
+        assert(humanSoloGame.getTurn() == 1 && "In solo mode with Player 1 starting, Human starts");
+        assert(humanSoloGame.getPieceAt(22) == 0 && "Center node 22 is initially empty for Human opening");
+        assert(humanSoloGame.hasAnyLegalCaptures(1) && "Human has legal opening approach captures");
 
         std::cout << "  [PASS] Solo mode bot execution verified." << std::endl;
     }

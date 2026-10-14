@@ -133,7 +133,7 @@ A strongly-typed value object encapsulating 0-based memory indexing and 1-based 
 _Avoid_: SeatId, PlayerIndex, SeatNum
 
 **LudoGame**:
-A polymorphic Game model implementing 2 to 4 Player cross-and-circle board mechanics featuring pawn collisions, yard rollout on 6, and safe zone navigation.
+[Archived per user request] A polymorphic Game model implementing 2 to 4 Player cross-and-circle board mechanics featuring pawn collisions, yard rollout on 6, and safe zone navigation.
 _Avoid_: Parchisi, Pachisi, TokenRace
 
 **PawnYard**:

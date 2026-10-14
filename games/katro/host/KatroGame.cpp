@@ -24,18 +24,7 @@ REGISTER_GAME("katro_solo", KatroSolo, &createKatroSolo, {
     false
 })
 
-REGISTER_GAME("katro_pvp", KatroPvp, &createKatroPvp, {
-    gamehub::core::GameId("katro_pvp"),
-    "Katro Duel",
-    "DUEL",
-    "Duel tactique de semailles malgache 4x8",
-    2, 2,
-    gamehub::core::InputFlag::GRID_POINTER | gamehub::core::InputFlag::ACTION_BUTTONS,
-    "katro_pvp",
-    true
-})
-
-REGISTER_GAME("katro_duel", KatroDuelAlias, &createKatroPvp, {
+REGISTER_GAME("katro_duel", KatroDuel, &createKatroPvp, {
     gamehub::core::GameId("katro_duel"),
     "Katro Duel",
     "DUEL",
@@ -45,6 +34,8 @@ REGISTER_GAME("katro_duel", KatroDuelAlias, &createKatroPvp, {
     "katro_pvp",
     true
 })
+
+REGISTER_GAME_ALIAS("katro_pvp", KatroPvpAlias, &createKatroPvp)
 
 namespace gamehub {
 namespace core {

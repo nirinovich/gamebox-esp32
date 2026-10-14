@@ -172,6 +172,33 @@ int main() {
         std::cout << "  [PASS] Reaching TargetScore (60) successfully triggers match finish!" << std::endl;
     }
 
+    // 8. Autonomous Bot Solo Play
+    {
+        DominoGame soloGame(true, 2, 100);
+        soloGame.init();
+        assert(soloGame.isRealTime() == true);
+
+        int initialSeq = soloGame.getMoveSeq();
+        soloGame.setBotDelay(0.01f); // Quick delay for testing
+
+        // If bot has the turn on start (turn == 2), update should make it play
+        if (soloGame.getTurn() == 2) {
+            soloGame.update(0.05f);
+            assert(soloGame.getTurn() == 1);
+            assert(soloGame.getMoveSeq() > initialSeq);
+            assert(!soloGame.getBoard().getTiles().empty());
+        } else {
+            // Human has turn: play a tile, turn becomes 2, then update ticks bot
+            soloGame.handleInput(1, "{\"cmd\":\"play\",\"index\":0,\"end\":\"right\"}");
+            assert(soloGame.getTurn() == 2);
+            int seqAfterHuman = soloGame.getMoveSeq();
+            soloGame.update(0.05f);
+            assert(soloGame.getTurn() == 1 || soloGame.isRoundFinished());
+            assert(soloGame.getMoveSeq() > seqAfterHuman);
+        }
+        std::cout << "  [PASS] Autonomous Domino bot execution, real-time ticking, and moveSeq verified!" << std::endl;
+    }
+
     std::cout << "[SUCCESS] All Malagasy Tsipy Domino Tests Passed!" << std::endl;
     return 0;
 }
