@@ -199,3 +199,11 @@ _Avoid_: GameFrontend, RendererModule, ClientExtension
 **DesktopRunner**:
 The local PC executable running the authoritative HostEngine over an in-tree cpp-httplib HTTP and WebSocket server for development, testing, and hardware-free simulation.
 _Avoid_: LocalServer, DevServer, Simulator
+
+**SequentialAnimationBuffer**:
+A client-side state queue in a game renderer that sequences multi-step sowing, relay, or movement animations so states received in rapid succession play in strict chronological order without teleportation.
+_Avoid_: StateCache, AnimArray, EventQueue
+
+**MoveSequenceGating**:
+The transmission filtering mechanism on the HostEngine tick loop that only replicates state snapshots to clients when the game's move sequence number increments or when running continuous real-time simulations.
+_Avoid_: TickFilter, RateLimiter, DeltaThrottling
