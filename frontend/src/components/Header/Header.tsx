@@ -3,6 +3,7 @@ import {
   latencyMs,
   playerName,
   setPlayerName,
+  shufflePlayerName,
   soundMuted,
   toggleSound,
   crtFilter,
@@ -17,10 +18,31 @@ export function Header() {
   const status = connectionStatus.value;
   const ping = latencyMs.value;
 
-  const handleNameChange = (e: Event) => {
+  const handleNameInput = (e: Event) => {
     const val = (e.target as HTMLInputElement).value;
-    setPlayerName(val);
-    gameSocket.updateName(playerName.value);
+    playerName.value = val.slice(0, 14);
+    if (val.trim() && val.trim().toLowerCase() !== 'guest') {
+      setPlayerName(val);
+      gameSocket.updateName(playerName.value);
+    }
+  };
+
+  const handleNameBlur = () => {
+    if (!playerName.value.trim() || playerName.value.trim().toLowerCase() === 'guest') {
+      const next = shufflePlayerName();
+      gameSocket.updateName(next);
+    }
+  };
+
+  const handleNameKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleShuffle = () => {
+    const next = shufflePlayerName();
+    gameSocket.updateName(next);
   };
 
   const statusClass =
@@ -106,14 +128,30 @@ export function Header() {
 
       <div className={styles.profileBar}>
         <span className={styles.profileLabel}>Player</span>
-        <input
-          className={styles.profileInput}
-          type="text"
-          maxLength={14}
-          value={playerName.value}
-          onInput={handleNameChange}
-          placeholder="Enter nickname"
-        />
+        <div className={styles.profileInputWrapper}>
+          <input
+            className={styles.profileInput}
+            type="text"
+            maxLength={14}
+            value={playerName.value}
+            onInput={handleNameInput}
+            onBlur={handleNameBlur}
+            onKeyDown={handleNameKeyDown}
+            placeholder="Callsign"
+            aria-label="Player Callsign"
+          />
+          <button
+            className={styles.shuffleBtn}
+            onClick={handleShuffle}
+            type="button"
+            title="Shuffle Callsign (↺)"
+            aria-label="Shuffle Callsign"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+          </button>
+        </div>
       </div>
     </>
   );
