@@ -263,3 +263,15 @@ _Avoid_: AspirationCapture, RetreatTake, PullCapture
 **MultiCapture**:
 The successive chaining of captures within a single turn by the same active stone, subject to direction changes without backtracking or revisiting previously occupied intersections.
 _Avoid_: ComboCapture, ChainTake, RelayMove
+
+**CarvedPitBoard**:
+The client-side tactile wood/parchment board presentation for Katro with 4 rows of hollowed pits embedded into the base Obsidian canvas.
+_Avoid_: NeonGrid, WireframeBoard, BoardHoles
+
+**StoneSphere**:
+A pseudo-3D radial gradient sphere representing an authentic playing stone in Malagasy parlor games (Slate blue for South/Player 1 and Terracotta coral for North/Player 2).
+_Avoid_: SeedCircle, FlatPawn, TokenDisk
+
+**KatroSpark**:
+A high-velocity procedural particle emitted along capture vectors and screen shakes in Katro when seeds are cleared from an opponent's pit.
+_Avoid_: ParticleDot, CaptureFlash, GlowBurst

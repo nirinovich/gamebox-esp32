@@ -462,8 +462,8 @@ int main() {
 
         int seqAfterP1 = soloGame.getMoveSeq();
 
-        // Simule l'avancement du temps dans la boucle de tick (0.7 seconde > 0.6s)
-        soloGame.update(0.7f);
+        // Simule l'avancement du temps dans la boucle de tick (> BOT_DELAY_SEC)
+        soloGame.update(KatroGame::BOT_DELAY_SEC + 0.1f);
 
         // Le bot doit avoir joué son coup aléatoire
         assert(soloGame.getMoveSeq() > seqAfterP1 && "Le coup du bot doit incrémenter la séquence de déplacement");
