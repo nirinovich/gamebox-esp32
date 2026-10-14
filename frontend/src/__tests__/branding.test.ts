@@ -27,6 +27,11 @@ describe('Gamebox Brand Identity & Logo System', () => {
     expect(vnode.props['aria-label']).toBe('Gamebox Brand Logo');
     expect(vnode.props.viewBox).toBe('0 0 120 120');
     expect(vnode.props.width).toBe('64px');
+
+    // Verify correct layering: box wireframe is rendered first (behind), rocket is rendered second (in front)
+    const children = (vnode as any).props.children;
+    expect(children[0].props.stroke).toBeDefined();
+    expect(children[1].props.children[0].props.fill).toBe('#ef3938');
   });
 
   it('renders GameboxLogo box variant with geometric outline', () => {

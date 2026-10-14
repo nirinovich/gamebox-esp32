@@ -122,7 +122,10 @@ export const GameboxLogo: FunctionalComponent<GameboxLogoProps> = ({
       role="img"
       aria-label="Gamebox Brand Logo"
     >
-      {/* Launching Gamepad Rocket */}
+      {/* 1. Isometric Open Launchbox (Rendered behind rocket) */}
+      {renderLaunchboxWireframe()}
+
+      {/* 2. Launching Gamepad Rocket (Rendered in front of box) */}
       <g class={animated ? 'gb-rocket-launch' : undefined}>
         {/* Gamepad Body */}
         <path
@@ -141,9 +144,6 @@ export const GameboxLogo: FunctionalComponent<GameboxLogoProps> = ({
         <rect x="58.25" y="50" width="3.5" height="17" rx="1.75" fill={redColor} />
         <rect x="64" y="50" width="3.5" height="9" rx="1.75" fill={redColor} />
       </g>
-
-      {/* Isometric Open Launchbox */}
-      {renderLaunchboxWireframe()}
     </svg>
   );
 };
