@@ -5,5 +5,5 @@ export { KatroRenderer };
 
 export const plugin: ClientPlugin = {
   gameIds: ['katro', 'katro_solo', 'katro_duel', 'katro_pvp'],
-  createRenderer: () => new KatroRenderer(),
+  createRenderer: (juice?: any) => new KatroRenderer(juice),
 };

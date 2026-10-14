@@ -135,3 +135,5 @@ add_custom_command(
 add_custom_target(generate_assets
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/gamehub/web/WebAssets.hpp"
 )
+
+add_dependencies(gamehub_desktop generate_assets)

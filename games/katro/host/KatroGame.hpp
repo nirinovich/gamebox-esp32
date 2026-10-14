@@ -127,7 +127,7 @@ public:
 
     void checkEndCondition();
 
-    static constexpr float BOT_DELAY_SEC = 0.6f;
+    static constexpr float BOT_DELAY_SEC = 1.5f;
 
 private:
     bool m_isSolo{true};
