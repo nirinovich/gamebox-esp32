@@ -17,6 +17,8 @@ import {
   Diamond,
   Medal,
   Award,
+  Compass,
+  Boxes,
   LucideProps
 } from 'lucide-preact';
 
@@ -35,6 +37,8 @@ export type IconName =
   | 'battleship_pvp'
   | 'domino_solo'
   | 'domino_pvp'
+  | 'fanorona_solo'
+  | 'fanorona_duel'
   | 'cyber_master'
   | 'gold_champion'
   | 'silver_ace'
@@ -61,6 +65,8 @@ const ICON_MAP: Record<string, any> = {
   battleship_pvp: Crosshair,
   domino_solo: Grid2X2,
   domino_pvp: Dices,
+  fanorona_solo: Compass,
+  fanorona_duel: Boxes,
   cyber_master: Diamond,
   gold_champion: Trophy,
   silver_ace: Medal,

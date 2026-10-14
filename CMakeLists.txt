@@ -26,6 +26,7 @@ add_library(gamehub_core STATIC
     games/tron/host/TronGame.cpp
     games/battleship/host/BattleshipGame.cpp
     games/domino/host/DominoGame.cpp
+    games/fanorona/host/FanoronaGame.cpp
 )
 target_include_directories(gamehub_core PUBLIC include games)
 
@@ -102,6 +103,10 @@ add_test(NAME ColocatedBattleshipTest COMMAND test_battleship)
 add_executable(test_domino games/domino/host/test_domino.cpp)
 target_link_libraries(test_domino PRIVATE gamehub_core)
 add_test(NAME ColocatedDominoTest COMMAND test_domino)
+
+add_executable(test_fanorona games/fanorona/host/test_fanorona.cpp)
+target_link_libraries(test_fanorona PRIVATE gamehub_core)
+add_test(NAME ColocatedFanoronaTest COMMAND test_fanorona)
 
 # Desktop runner executable
 if (WIN32)

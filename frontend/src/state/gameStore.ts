@@ -143,6 +143,24 @@ export const GAME_CATALOGUE: GameMetadata[] = [
     tag: 'Party 3P',
     icon: 'domino_pvp',
     isDuel: false
+  },
+  {
+    key: 'fanorona_solo',
+    title: 'Fanorona Solo',
+    category: 'SOLO',
+    description: 'Jeu traditionnel malgache 5x9 vs Bot avec captures successives',
+    tag: 'Solo AI',
+    icon: 'fanorona_solo',
+    isDuel: false
+  },
+  {
+    key: 'fanorona_duel',
+    title: 'Fanorona Duel',
+    category: 'DUEL',
+    description: 'Duel stratégique malgache 5x9 par percussion et aspiration',
+    tag: '2P Duel',
+    icon: 'fanorona_duel',
+    isDuel: true
   }
 ];
 

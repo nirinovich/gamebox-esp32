@@ -133,6 +133,9 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
         } else if (rawMessage.find("\"domino_pvp\"") != std::string::npos) {
             gtype = GameType::DOMINO_PVP;
             maxPlayers = (rawMessage.find("\"players\":2") != std::string::npos || rawMessage.find("\"max\":2") != std::string::npos) ? 2 : 3;
+        } else if (rawMessage.find("\"fanorona_duel\"") != std::string::npos || rawMessage.find("\"fanorona_pvp\"") != std::string::npos) {
+            gtype = GameType::FANORONA_DUEL;
+            maxPlayers = 2;
         }
         std::string gname = gameTypeToString(gtype);
 
@@ -279,6 +282,8 @@ std::string HostEngine::onClientMessage(uint32_t sessionId, const std::string& r
             gtype = GameType::TRON_SOLO;
         } else if (rawMessage.find("\"battleship_solo\"") != std::string::npos) {
             gtype = GameType::BATTLESHIP_SOLO;
+        } else if (rawMessage.find("\"fanorona_solo\"") != std::string::npos) {
+            gtype = GameType::FANORONA_SOLO;
         }
 
         Room* room = m_roomManager.createSoloRoom(gtype, sessionId);

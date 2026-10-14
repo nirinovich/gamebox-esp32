@@ -10,6 +10,7 @@
 #include <tron/host/TronGame.hpp>
 #include <battleship/host/BattleshipGame.hpp>
 #include <domino/host/DominoGame.hpp>
+#include <fanorona/host/FanoronaGame.hpp>
 
 namespace gamehub {
 namespace core {
@@ -32,6 +33,8 @@ public:
             case GameType::BATTLESHIP_PVP:     return std::make_unique<BattleshipGame>(false);
             case GameType::DOMINO_SOLO:        return std::make_unique<DominoGame>(true, 2);
             case GameType::DOMINO_PVP:         return std::make_unique<DominoGame>(false, 3);
+            case GameType::FANORONA_SOLO:      return std::make_unique<FanoronaGame>(true, 2);
+            case GameType::FANORONA_DUEL:      return std::make_unique<FanoronaGame>(false, 2);
             default:                           return std::make_unique<SnakeGame>(false);
         }
     }

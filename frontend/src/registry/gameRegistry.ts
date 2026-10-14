@@ -6,6 +6,7 @@ import { TronRenderer } from '@games/tron/client';
 import { ConnectFourRenderer } from '@games/connectfour/client';
 import { BattleshipRenderer } from '@games/battleship/client';
 import { DominoRenderer } from '@games/domino/client';
+import { FanoronaRenderer } from '@games/fanorona/client';
 import { CameraJuice } from '../renderers/CameraJuice';
 
 export type RendererFactory = (juice?: CameraJuice) => IGameRenderer;
@@ -24,7 +25,9 @@ export const gameRendererMap: Record<string, RendererFactory> = {
   battleship_solo: () => new BattleshipRenderer(),
   battleship_pvp: () => new BattleshipRenderer(),
   domino_solo: () => new DominoRenderer(),
-  domino_pvp: () => new DominoRenderer()
+  domino_pvp: () => new DominoRenderer(),
+  fanorona_solo: (juice) => new FanoronaRenderer(juice),
+  fanorona_duel: (juice) => new FanoronaRenderer(juice)
 };
 
 export function getGameRenderer(gameType: string, juice?: CameraJuice): IGameRenderer {
@@ -39,5 +42,6 @@ export function getGameRenderer(gameType: string, juice?: CameraJuice): IGameRen
   if (gameType.includes('c4') || gameType.includes('connect')) return new ConnectFourRenderer(juice || new CameraJuice());
   if (gameType.includes('battleship')) return new BattleshipRenderer();
   if (gameType.includes('domino')) return new DominoRenderer();
+  if (gameType.includes('fanorona')) return new FanoronaRenderer(juice);
   return new TicTacToeRenderer();
 }

@@ -97,6 +97,10 @@ export function GameOverModal() {
     );
   }
 
+  if (state?.reason) {
+    message = state.reason;
+  }
+
   const handleRematch = () => {
     if (isSolo) {
       gameSocket.startSolo(room.gameType);

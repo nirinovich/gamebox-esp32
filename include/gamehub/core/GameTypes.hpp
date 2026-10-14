@@ -22,7 +22,9 @@ enum class GameType {
     BATTLESHIP_SOLO,
     BATTLESHIP_PVP,
     DOMINO_SOLO,
-    DOMINO_PVP
+    DOMINO_PVP,
+    FANORONA_SOLO,
+    FANORONA_DUEL
 };
 
 struct Point {
@@ -57,6 +59,8 @@ inline const char* gameTypeToString(GameType gt) {
         case GameType::BATTLESHIP_PVP: return "battleship_pvp";
         case GameType::DOMINO_SOLO: return "domino_solo";
         case GameType::DOMINO_PVP: return "domino_pvp";
+        case GameType::FANORONA_SOLO: return "fanorona_solo";
+        case GameType::FANORONA_DUEL: return "fanorona_duel";
         default: return "ttt_pvp";
     }
 }

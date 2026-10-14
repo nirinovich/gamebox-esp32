@@ -55,15 +55,15 @@ describe('GameStore and Reactive State Transitions', () => {
 
   it('filters game directory correctly based on category tab', () => {
     selectedTab.value = 'ALL';
-    expect(filteredGames.value.length).toBe(15);
+    expect(filteredGames.value.length).toBe(17);
 
     selectedTab.value = 'SOLO';
     expect(filteredGames.value.every(g => g.category === 'SOLO')).toBe(true);
-    expect(filteredGames.value.length).toBe(7);
+    expect(filteredGames.value.length).toBe(8);
 
     selectedTab.value = 'DUEL';
     expect(filteredGames.value.every(g => g.category === 'DUEL')).toBe(true);
-    expect(filteredGames.value.length).toBe(7);
+    expect(filteredGames.value.length).toBe(8);
 
     selectedTab.value = 'PARTY';
     expect(filteredGames.value.every(g => g.category === 'PARTY')).toBe(true);

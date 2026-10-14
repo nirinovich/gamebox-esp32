@@ -5,6 +5,7 @@
 #include <tron/host/TronGame.hpp>
 #include <battleship/host/BattleshipGame.hpp>
 #include <domino/host/DominoGame.hpp>
+#include <fanorona/host/FanoronaGame.hpp>
 
 int main() {
     std::cout << "[TEST] Running New Games test suite..." << std::endl;
@@ -210,6 +211,34 @@ int main() {
         std::string sPassReject = dominoPass.serializeState();
         assert(sPassReject.find("\"turn\":1") != std::string::npos); // Rejected: turn must remain 1
         std::cout << "    Domino pass rules verified (cannot pass when playable moves exist)." << std::endl;
+    }
+
+    // --- 6. Fanorona Tests ---
+    {
+        std::cout << "  - Testing FanoronaGame..." << std::endl;
+        gamehub::core::FanoronaGame fanorona(false, 2);
+        fanorona.init();
+        assert(!fanorona.isFinished());
+        assert(fanorona.getWinner() == 0);
+        assert(fanorona.getTurn() == 2 && "White (Player 2) starts traditionally");
+
+        // Verify state serialization
+        std::string state = fanorona.serializeState();
+        assert(state.find("\"game\":\"fanorona\"") != std::string::npos);
+        assert(state.find("\"p1_count\":22") != std::string::npos);
+        assert(state.find("\"p2_count\":22") != std::string::npos);
+        assert(state.find("\"turn\":2") != std::string::npos);
+
+        // Player 2 opening move (White moves from 21 or 29 to 22)
+        // From (3, 4) = node 31 moving Up to (2, 4) = node 22, approach capturing (1, 4) and (0, 4)
+        bool ok = fanorona.executeMove(2, 31, 22, "approach");
+        assert(ok && "Opening move with approach capture must succeed");
+        std::cout << "    Fanorona opening approach capture verified." << std::endl;
+
+        // Fanorona Solo mode vs Bot
+        gamehub::core::FanoronaGame soloFanorona(true, 2);
+        assert(soloFanorona.getTurn() == 1 && "In Solo mode, Bot plays opening move and yields turn to Player 1");
+        std::cout << "    Fanorona Solo mode autonomous bot execution verified." << std::endl;
     }
 
     std::cout << "[SUCCESS] All new game tests passed!" << std::endl;
