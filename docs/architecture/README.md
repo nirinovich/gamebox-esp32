@@ -46,10 +46,10 @@ Welcome to the internal engineering documentation for **Gamebox** (ESP32 Game Hu
    - In-tree RFC 1952 Gzip compression achieving ~73% flash footprint reduction.
    - Zero LittleFS/SPIFFS filesystem partitioning: embedding frontend directly into flash chunks.
 
-7. [**07. Dual-Target Desktop & Hardware Simulation**](./07-dual-target-desktop-and-simulation.md)
+7. [**07. Dual-Target: Desktop Runner & Physical ESP32 Hardware**](./07-dual-target-desktop-and-simulation.md)
    - Native desktop runner (`src/desktop/main.cpp`) for zero-hardware rapid development, CI, and grading.
    - CMake build system configuration vs. PlatformIO ESP32-S3 firmware build.
-   - Wokwi hardware simulation integration (`diagram.json`, `wokwi.toml`).
+   - Decoupled hardware-agnostic C++17 core engine architecture.
 
 ---
 

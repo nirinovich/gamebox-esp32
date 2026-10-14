@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reference 0001: Prusa i3 MK3S 0.4mm & PrusaSlicer Cheat Sheet</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+        padding: 0;
+      }
+      .course-container {
+        max-width: 100%;
+      }
+      .card, .pipeline-step, table.spec-table th {
+        border-color: #ccc;
+        background: #fafafa;
+        color: #000;
+      }
+      .footer-nav, .badge-red {
+        display: none;
+      }
+      a {
+        color: #000;
+        text-decoration: underline;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="course-container">
+    <header class="course-header">
+      <div class="badge-row">
+        <span class="badge badge-red">Reference 0001</span>
+        <span class="badge">Prusa i3 MK3S</span>
+        <span class="badge">0.4mm Nozzle</span>
+        <span class="badge">Cheat Sheet</span>
+      </div>
+      <h1>Prusa i3 MK3S & PrusaSlicer Reference</h1>
+      <p>Compressed operational reference and parameter cheat sheet for slicing and printing enclosures on the Original Prusa i3 MK3S.</p>
+    </header>
+
+    <section>
+      <h2>0.4mm Nozzle ("Buse") Rules of Thumb</h2>
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Value Range</th>
+            <th>ESP32 Enclosure Target</th>
+            <th>Engineering Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Nozzle Diameter</strong></td>
+            <td>0.40 mm</td>
+            <td>0.40 mm brass</td>
+            <td>Standard factory E3D V6 nozzle; optimal speed/detail ratio.</td>
+          </tr>
+          <tr>
+            <td><strong>Extrusion Width</strong></td>
+            <td>0.42 – 0.45 mm</td>
+            <td>0.45 mm default</td>
+            <td>Plastic squishes slightly wider than orifice for inter-track bonding.</td>
+          </tr>
+          <tr>
+            <td><strong>Min Layer Height</strong></td>
+            <td>0.05 mm</td>
+            <td>0.15 mm (fine detail)</td>
+            <td>Excessively thin layers cause heat creep and long print times.</td>
+          </tr>
+          <tr>
+            <td><strong>Standard Layer Height</strong></td>
+            <td>0.15 – 0.20 mm</td>
+            <td><strong>0.20 mm QUALITY</strong></td>
+            <td>Ideal balance of dimensional accuracy for snap-fits and speed.</td>
+          </tr>
+          <tr>
+            <td><strong>Max Layer Height</strong></td>
+            <td>0.30 mm (75% limit)</td>
+            <td>0.30 mm (rough draft)</td>
+            <td>Exceeding 75-80% nozzle diameter prevents layer squish and causes delamination.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>PrusaSlicer Quick Shortcuts</h2>
+      <div class="card">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Shortcut</th>
+              <th>What It Does For Your Enclosure</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Import 3D Model</strong></td>
+              <td><kbd>Ctrl</kbd> + <kbd>I</kbd></td>
+              <td>Loads <code>ESP32-S3.stl</code> onto the virtual heatbed.</td>
+            </tr>
+            <tr>
+              <td><strong>Place on Face</strong></td>
+              <td><kbd>F</kbd></td>
+              <td><strong>Crucial:</strong> Click the open or bottom face to lay it flat on the bed.</td>
+            </tr>
+            <tr>
+              <td><strong>Auto-Center / Arrange</strong></td>
+              <td><kbd>A</kbd></td>
+              <td>Positions model in bed center for best thermal uniformity.</td>
+            </tr>
+            <tr>
+              <td><strong>Rotate Model</strong></td>
+              <td><kbd>R</kbd></td>
+              <td>Shows rotational rings with 45° step increments.</td>
+            </tr>
+            <tr>
+              <td><strong>Scale Model</strong></td>
+              <td><kbd>S</kbd></td>
+              <td>Adjusts scale (keep at 100% for CAD-accurate PCB fits).</td>
+            </tr>
+            <tr>
+              <td><strong>Slice Toolpaths</strong></td>
+              <td><kbd>Ctrl</kbd> + <kbd>G</kbd></td>
+              <td>Generates G-code preview showing every extruded line.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>ESP32-S3 Case Slicing Recipe (PLA)</h2>
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">STEP 1</div>
+          <div class="step-title">Profile Preset</div>
+          <div class="step-desc">Select <strong>0.20mm QUALITY</strong> and <strong>Original Prusa i3 MK3S</strong>.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">STEP 2</div>
+          <div class="step-title">Perimeters</div>
+          <div class="step-desc">Set to <strong>3 Perimeters</strong>. Case rigidity comes from walls, not infill.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">STEP 3</div>
+          <div class="step-title">Infill</div>
+          <div class="step-desc"><strong>15% Gyroid</strong>. Isotropic mechanical strength without nozzle vibration.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">STEP 4</div>
+          <div class="step-title">Organic Supports</div>
+          <div class="step-desc">Enable <em>Supports: Everywhere</em> with style <strong>Organic</strong> for port overhangs.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Hardware Pre-Flight Checklist (i3 MK3S)</h2>
+      <div class="card-callout">
+        <ol>
+          <li><strong>Clean the Smooth PEI Bed:</strong> Wipe cold sheet thoroughly with a paper towel and 90%+ Isopropyl Alcohol (IPA). Never touch the print area with bare fingers (grease kills adhesion).</li>
+          <li><strong>Inspect Nozzle Tip:</strong> Ensure no cold hardened plastic glob hangs from the 0.4mm nozzle before mesh bed leveling runs.</li>
+          <li><strong>Insert SD Card:</strong> Export G-code from PrusaSlicer to the SD card, eject safely, and insert into the printer's side slot.</li>
+          <li><strong>Select & Print:</strong> Rotate the silver click wheel to <code>Print from SD</code> and click your file.</li>
+          <li><strong>Audit Layer 1 (Live Z):</strong> Watch the first layer go down. Extruded lines must be smooth, flat, and connected without gaps (too high) or gouging the bed (too low).</li>
+        </ol>
+      </div>
+    </section>
+
+    <footer class="footer-nav">
+      <a href="../lessons/0001-mastering-prusa-i3-mk3s-and-prusaslicer.html" class="action-link">← Return to Lesson 0001</a>
+      <a href="https://help.prusa3d.com/category/original-prusa-i3-mk3s_246" target="_blank" class="action-link primary">Official Prusa Handbook ↗</a>
+    </footer>
+  </div>
+</body>
+</html>

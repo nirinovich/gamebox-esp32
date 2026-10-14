@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0001: Prusa i3 MK3S (0.4mm Nozzle) & PrusaSlicer Basics</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="course-container">
+    <header class="course-header">
+      <div class="badge-row">
+        <span class="badge badge-red">Lesson 0001</span>
+        <span class="badge">Hardware: Prusa i3 MK3S</span>
+        <span class="badge">Nozzle: 0.4mm Brass</span>
+        <span class="badge">Target: ESP32-S3 Case</span>
+      </div>
+      <h1>From 3D File to Physical Enclosure</h1>
+      <p>A hands-on, beginner-friendly guide to understanding your Prusa i3 MK3S 0.4mm nozzle, manipulating your case model in PrusaSlicer, and printing your first functional part.</p>
+    </header>
+
+    <!-- First Eureka Moment: File Clarification -->
+    <section>
+      <h2>1. The File Mystery: .SRT vs .STL</h2>
+      <div class="card-callout alert-red">
+        <p><strong>First Good News:</strong> You mentioned having an <code>.SRT</code> file. In digital media, an <code>.srt</code> file is a video subtitle file! In 3D printing, the universal format is <strong><code>.STL</code></strong> (Stereolithography / Standard Triangle Language), which contains the 3D surface mesh.</p>
+        <p>We already inspected your machine: your real file is waiting for you right here in your downloads:<br>
+        <code>C:\Users\Nikita\Downloads\ESP32-S3.stl</code> (337 KB).</p>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">STAGE 1</div>
+          <div class="step-title">3D Model (.STL)</div>
+          <div class="step-desc">Pure 3D geometry of your ESP32-S3 box. Has no concept of layers, temperatures, or motors.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">STAGE 2</div>
+          <div class="step-title">PrusaSlicer</div>
+          <div class="step-desc">The software translator. Slices the 3D model into horizontal 0.20 mm cross-sections.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">STAGE 3</div>
+          <div class="step-title">G-Code (.GCODE)</div>
+          <div class="step-desc">Machine instructions file exported to SD card: coordinates, speeds, and extrusion volumes.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">STAGE 4</div>
+          <div class="step-title">Prusa i3 MK3S</div>
+          <div class="step-desc">Executes the G-code by heating to 215°C and laying molten plastic onto the heated PEI bed.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: The 0.4mm Nozzle -->
+    <section>
+      <h2>2. What You Must Know About the 0.4mm Nozzle ("Buse")</h2>
+      <p>The <strong>0.4 mm brass nozzle</strong> mounted on the E3D V6 hotend of your i3 MK3S is the gold standard of 3D printing. Understanding its physics prevents 95% of beginner mistakes:</p>
+      
+      <div class="card">
+        <ul>
+          <li><strong>The Extrusion Geometry:</strong> The nozzle opening is a 0.40 mm circle. When the direct-drive extruder pushes 1.75 mm filament through the 215°C heater block, the nozzle squishes the bead against the layer below, producing an <em>extrusion width</em> of approximately <strong>0.45 mm</strong>.</li>
+          <li><strong>The 75% Golden Rule of Layer Height:</strong> A bead of molten plastic must be pressed flat to bond with the layer beneath it. If your layer height is too high, the plastic bead stays round like spaghetti and fails to stick. Therefore, <strong>never exceed 75% of your nozzle diameter</strong>:
+            <br><code>0.40 mm × 0.75 = 0.30 mm max layer height</code>.
+          </li>
+          <li><strong>The Sweet Spot for Cases (0.20mm QUALITY):</strong> For an ESP32-S3 case with screw posts, snap tabs, and USB-C port cutouts, <strong>0.20 mm Quality</strong> gives tight dimensional tolerances and crisp overhangs while printing quickly.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Section 3: Manipulating in PrusaSlicer -->
+    <section>
+      <h2>3. Step-by-Step: Manipulating the Case in PrusaSlicer</h2>
+      <p>Follow these exact steps to prepare your ESP32-S3 case:</p>
+
+      <ol>
+        <li>
+          <strong>Set Up the Triple Presets (Top-Right Panel):</strong>
+          <br>Ensure these three dropdowns are selected:
+          <ul>
+            <li><strong>Print settings:</strong> <code>0.20mm QUALITY</code></li>
+            <li><strong>Filament:</strong> <code>Prusament PLA</code> or <code>Generic PLA</code> (PLA is rigid, odorless, and does not warp)</li>
+            <li><strong>Printer:</strong> <code>Original Prusa i3 MK3S & MK3S+ 0.4 nozzle</code></li>
+          </ul>
+        </li>
+        <li>
+          <strong>Import your Model:</strong>
+          <br>Press <kbd>Ctrl</kbd> + <kbd>I</kbd> (or drag & drop <code>ESP32-S3.stl</code> from your Downloads folder directly onto the 3D grid).
+        </li>
+        <li>
+          <strong>The Pro Move: "Place on Face" (<kbd>F</kbd>):</strong>
+          <br>3D models often import upside-down or tilted on an edge. In the left toolbar, click the <em>Place on Face</em> icon (or press <kbd>F</kbd>). Click the <strong>largest flat outer bottom surface</strong> of the case. The slicer will instantly snap the case perfectly flush with the heatbed!
+        </li>
+        <li>
+          <strong>Wall Strength: Perimeters vs Infill:</strong>
+          <br>For electronics cases, strength comes from <strong>Perimeters (outer walls)</strong>, not infill:
+          <ul>
+            <li>In the right panel, set <strong>Perimeters to 3</strong> (giving ~1.35 mm solid plastic walls around your ESP32).</li>
+            <li>Set <strong>Infill to 15%</strong> with pattern <strong>Gyroid</strong>.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Supports for USB-C & Port Cutouts:</strong>
+          <br>Set <em>Supports: Everywhere</em>. Under <em>Print Settings &gt; Support material</em>, set <strong>Style: Organic</strong>. Organic (tree) supports branch delicately around the case and snap off cleanly with pliers without scarring your plastic!
+        </li>
+        <li>
+          <strong>Slice and Inspect (<kbd>Ctrl</kbd> + <kbd>G</kbd>):</strong>
+          <br>Click the orange <strong>Slice now</strong> button at bottom-right. The screen switches to Preview mode. Drag the vertical orange scrollbar on the far right up and down to inspect how the nozzle will print each layer from 1 to finish.
+        </li>
+        <li>
+          <strong>Export G-Code:</strong>
+          <br>Click <strong>Export G-code</strong>, save it directly onto your SD card, and safely eject the SD card.
+        </li>
+      </ol>
+    </section>
+
+    <!-- Section 4: Physical Printer Prep -->
+    <section>
+      <h2>4. Preparing the Physical Prusa i3 MK3S</h2>
+      <div class="card-callout">
+        <h3>The 2-Minute Pre-Flight Routine:</h3>
+        <p><strong>1. Clean the Bed:</strong> Pour a few drops of 90%+ Isopropyl Alcohol (IPA) on a paper towel and wipe the smooth PEI spring steel sheet while it is cold. Finger oils prevent plastic from sticking!</p>
+        <p><strong>2. Insert SD Card & Start:</strong> Insert the SD card on the left side of the LCD screen. Turn the silver knob to <code>Print from SD</code>, click to select your ESP32-S3 file.</p>
+        <p><strong>3. The Crucial First Layer (Live Z):</strong> Stay by the printer during the first 2 minutes. The printer will perform 9-point mesh bed leveling, heat the nozzle to 215°C and bed to 60°C, and lay down the first layer. The lines should be slightly squished and completely smooth. If lines look like round noodles or peel up, adjust Live Z down slightly using the knob.</p>
+      </div>
+    </section>
+
+    <!-- Interactive Skill Check -->
+    <section>
+      <h2>5. Check Your Understanding</h2>
+      <div class="quiz-widget" id="nozzle-quiz">
+        <div class="quiz-question">
+          Why should you never set your layer height higher than 0.30 mm when using a standard 0.4 mm nozzle?
+        </div>
+        <div class="quiz-options">
+          <button class="quiz-option" data-idx="0">Layers cannot bond mechanically together.</button>
+          <button class="quiz-option" data-idx="1">Nozzle motor will overheat quickly.</button>
+          <button class="quiz-option" data-idx="2">Print speed becomes excessively slow.</button>
+          <button class="quiz-option" data-idx="3">Filament diameter shrinks during extrusion.</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+    </section>
+
+    <!-- Primary Source Recommendation -->
+    <section>
+      <h2>6. Recommended Primary Source</h2>
+      <div class="card">
+        <p>Watch or read the official Prusa Research guide on getting started:</p>
+        <p><a href="https://help.prusa3d.com/category/original-prusa-i3-mk3s_246" target="_blank" class="action-link primary">Original Prusa i3 MK3S Official Manual & Video Guides ↗</a></p>
+        <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--gb-text-secondary);">Direct from Josef Prusa's engineering team: covers loading filament, first-layer calibration, and LCD menu controls.</p>
+      </div>
+    </section>
+
+    <!-- Teacher Assistance Callout -->
+    <section>
+      <div class="card-callout alert-success">
+        <h3>Pair-Programming & Printing Support</h3>
+        <p>Whenever you hit a question — whether a slicer setting looks unusual, you're not sure which way to orient the case, or you want to check your first layer — simply ask me in the chat. I am your personal 3D printing instructor!</p>
+      </div>
+    </section>
+
+    <footer class="footer-nav">
+      <a href="../reference/0001-prusa-i3-mk3s-quickref.html" class="action-link">Open Quick Reference Sheet →</a>
+      <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--gb-text-tertiary);">Teaching Workspace: Gamebox / C++</span>
+    </footer>
+  </div>
+
+  <script src="../assets/quiz.js"></script>
+  <script>
+    setupQuiz('nozzle-quiz', 0, {
+      correct: "Because extrusion width is ~0.45mm, layer heights exceeding 75% (0.30mm) prevent the nozzle from squishing the molten bead flat against the previous layer, leading to catastrophic layer delamination.",
+      incorrect: [
+        "",
+        "The extruder stepper motor is unaffected by layer height; excessive layer height is an adhesion and fluid geometry issue.",
+        "Higher layer heights actually print faster because fewer slices are required, but the structural integrity collapses.",
+        "Filament diameter remains constant at 1.75mm in the drive gears; the issue is lack of cross-sectional squish at the tip."
+      ]
+    });
+  </script>
+</body>
+</html>

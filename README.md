@@ -16,10 +16,9 @@ cd gamebox-esp32
 
 ## 🚀 How to Launch
 
-You can run this project in three ways:
+You can run this project in two ways:
 1. **Desktop Mode** (recommended for quick testing, development, and grading without hardware)
 2. **ESP32 Hardware Mode** (flashing directly to an ESP32-S3 board)
-3. **Wokwi Simulator** (virtual simulation in VS Code or CLI)
 
 > **Note on Web Assets:** All ClientShell assets (HTML/JS/CSS) are compressed with RFC 1952 Gzip and embedded directly into the binary as C++ byte arrays using the native C++ asset packer (`tools/asset_packer.cpp`). No Python scripts, external package managers, or separate SPIFFS/LittleFS filesystem partitions are needed.
 
@@ -90,15 +89,6 @@ pio device monitor
 
 ---
 
-### Option 3: Wokwi Simulator
-
-You can simulate the ESP32 firmware directly inside VS Code:
-1. Install the **Wokwi Simulator** extension in VS Code.
-2. Build the firmware with `pio run`.
-3. Open `diagram.json` and click **Start Simulation** (or press `F1` and select `Wokwi: Start Simulator`).
-
----
-
 ## 📁 Project Structure
 
 ```
@@ -114,8 +104,6 @@ You can simulate the ESP32 firmware directly inside VS Code:
 ├── tools/                # Native C++ host build utilities (asset_packer)
 ├── tests/                # Unit and integration tests
 ├── platformio.ini        # PlatformIO configuration for ESP32-S3
-├── CMakeLists.txt        # CMake build script for desktop and tests
-├── diagram.json          # Wokwi simulation hardware definition
-└── wokwi.toml            # Wokwi simulation firmware paths
+└── CMakeLists.txt        # CMake build script for desktop and tests
 ```
 

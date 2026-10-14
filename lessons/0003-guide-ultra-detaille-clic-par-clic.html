@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leçon 0003 : Guide Clic par Clic - Boîtier ESP32 sur Prusa i3 MK3S</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .checklist-group {
+      background: var(--gb-surface-1);
+      border: 1px solid var(--gb-border-crisp);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .checklist-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--gb-white);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--gb-border-subtle);
+      transition: background 0.15s ease;
+    }
+    .check-item:last-child {
+      border-bottom: none;
+    }
+    .check-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .check-item input[type="checkbox"] {
+      margin-top: 0.25rem;
+      width: 1.15rem;
+      height: 1.15rem;
+      accent-color: var(--gb-red);
+      cursor: pointer;
+    }
+    .check-content {
+      flex: 1;
+    }
+    .check-content strong {
+      display: block;
+      color: var(--gb-white);
+      margin-bottom: 0.2rem;
+      font-size: 0.95rem;
+    }
+    .check-content p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--gb-text-secondary);
+      line-height: 1.45;
+    }
+    .tag-screen {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--gb-surface-3);
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      color: #ff9e9d;
+    }
+    .progress-bar-container {
+      background: var(--gb-surface-2);
+      border-radius: var(--radius-sm);
+      height: 10px;
+      width: 100%;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .progress-bar-fill {
+      background: var(--gb-red);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="course-container">
+    <header class="course-header">
+      <div class="badge-row">
+        <span class="badge badge-red">Leçon 0003</span>
+        <span class="badge">Niveau Zéro Débutant</span>
+        <span class="badge">Clic par Clic</span>
+      </div>
+      <h1>Guide Micro-Étapes : De l'Écran au Plateau</h1>
+      <p>Cochez chaque case au fur et à mesure que vous effectuez l'action. Chaque étape décrit exactement où cliquer et ce que vous devez voir.</p>
+      
+      <div style="margin-top: 1rem;">
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; color: var(--gb-text-secondary);">
+          <span>Progression globale</span>
+          <span id="progress-text">0 / 18 étapes</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Phase 1 -->
+    <div class="checklist-group">
+      <div class="checklist-title">
+        <span class="badge badge-red">Phase 1</span> Ouvrir et Préparer PrusaSlicer
+      </div>
+      
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>1.1 Lancer le logiciel PrusaSlicer</strong>
+          <p>Ouvrez PrusaSlicer sur votre ordinateur. Une grande fenêtre sombre avec une grille 3D apparaît au centre.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>1.2 Régler la hauteur de couche (0.20mm QUALITY)</strong>
+          <p>Regardez tout en haut à droite. Cliquez sur le premier menu déroulant intitulé <span class="tag-screen">Réglages d'impression</span> et sélectionnez <code>0.20mm QUALITY</code>.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>1.3 Choisir le filament (PLA)</strong>
+          <p>Juste en dessous, cliquez sur le deuxième menu déroulant intitulé <span class="tag-screen">Filament</span> et choisissez <code>Generic PLA</code> (ou <code>Prusament PLA</code> si votre bobine est orange/noire de marque Prusa).</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>1.4 Vérifier l'imprimante et la buse (0.4mm)</strong>
+          <p>Cliquez sur le troisième menu déroulant intitulé <span class="tag-screen">Imprimante</span> et choisissez <code>Original Prusa i3 MK3S & MK3S+ 0.4 nozzle</code>.</p>
+        </div>
+      </label>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="checklist-group">
+      <div class="checklist-title">
+        <span class="badge badge-red">Phase 2</span> Importer et Positionner le Boîtier
+      </div>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>2.1 Trouver le fichier 3D sur votre PC</strong>
+          <p>Ouvrez votre explorateur de fichiers Windows et allez dans le dossier <code>Téléchargements</code>. Repérez le fichier nommé <code>ESP32-S3.stl</code>.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>2.2 Glisser le fichier dans PrusaSlicer</strong>
+          <p>Maintenez le clic gauche sur <code>ESP32-S3.stl</code>, glissez-le au milieu de la grille de PrusaSlicer, et relâchez le bouton. La pièce apparaît en vert/orange.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>2.3 Sélectionner la pièce</strong>
+          <p>Cliquez une fois sur la pièce avec le bouton gauche de la souris. Un cadre de sélection blanc ou des flèches colorées apparaissent autour d'elle.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>2.4 Activer l'outil "Déposer sur la face" (Touche F)</strong>
+          <p>Appuyez sur la touche <kbd>F</kbd> de votre clavier (ou cliquez sur l'icône avec un cube et une flèche vers le bas dans la barre d'outils à gauche). Des facettes blanches plates apparaissent sur la pièce.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>2.5 Plaquer la face plate contre le plateau</strong>
+          <p>Déplacez votre souris sur la <strong>face plate du fond extérieur</strong> du boîtier et faites un clic gauche. La pièce bascule instantanément et se pose parfaitement à plat sur la grille.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>2.6 Centrer le modèle (Touche A)</strong>
+          <p>Appuyez sur la touche <kbd>A</kbd> de votre clavier. La pièce se place automatiquement en plein centre du plateau pour une chauffe homogène.</p>
+        </div>
+      </label>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="checklist-group">
+      <div class="checklist-title">
+        <span class="badge badge-red">Phase 3</span> Solidité et Supports
+      </div>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>3.1 Régler le Remplissage à 15% Gyroïde</strong>
+          <p>Dans la colonne de droite, sous la section <em>Remplissage</em>, vérifiez que la densité est à <code>15%</code> et que le motif est <code>Gyroïde</code> (ou <em>Gyroid</em>).</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>3.2 Activer les supports pour les prises USB</strong>
+          <p>Toujours dans la colonne de droite, à la ligne <em>Supports</em>, cliquez sur le menu déroulant et choisissez <code>Partout</code> (<em>Everywhere</em>).</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>3.3 Activer le style de support "Organique"</strong>
+          <p>Cliquez sur l'onglet <span class="tag-screen">Réglages d'impression</span> en haut à gauche. Dans le menu de gauche, cliquez sur <span class="tag-screen">Matériau de support</span>. À la ligne <strong>Style</strong>, choisissez <code>Organique</code>. Revenez ensuite sur l'onglet <span class="tag-screen">Plateau</span> en haut à gauche.</p>
+        </div>
+      </label>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="checklist-group">
+      <div class="checklist-title">
+        <span class="badge badge-red">Phase 4</span> Découpage et Exportation
+      </div>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>4.1 Cliquer sur "Découper maintenant"</strong>
+          <p>En bas à droite de votre écran, cliquez sur le bouton orange <strong>Découper maintenant</strong> (ou faites <kbd>Ctrl</kbd> + <kbd>G</kbd>). La vue 3D se transforme en couches multicolores.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>4.2 Inspecter le tracé des couches</strong>
+          <p>Attrapez avec la souris la barre orange verticale située à l'extrême droite. Faites-la glisser du bas vers le haut pour vérifier que les parois et les trous USB sont propres.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>4.3 Enregistrer le G-code sur la carte SD</strong>
+          <p>Branchez votre carte SD sur le PC. Cliquez sur le bouton <strong>Exporter le G-code</strong> (en bas à droite), choisissez votre carte SD, puis cliquez sur <em>Enregistrer</em>. Éjectez ensuite proprement la carte SD.</p>
+        </div>
+      </label>
+    </div>
+
+    <!-- Phase 5 -->
+    <div class="checklist-group">
+      <div class="checklist-title">
+        <span class="badge badge-red">Phase 5</span> Gestes Physiques sur la Prusa i3 MK3S
+      </div>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>5.1 Nettoyer le plateau avec de l'alcool IPA</strong>
+          <p>Plateau froid, versez quelques gouttes d'alcool isopropylique (IPA à 90%+) sur un essuie-tout propre et frottez la surface en tôle PEI. Ne posez plus vos doigts dessus.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>5.2 Insérer la carte SD et allumer</strong>
+          <p>Insérez la carte SD dans la fente à gauche de l'écran LCD (puces dorées vers le haut). Allumez l'interrupteur à l'arrière droit de l'imprimante.</p>
+        </div>
+      </label>
+
+      <label class="check-item">
+        <input type="checkbox">
+        <div class="check-content">
+          <strong>5.3 Lancer l'impression et vérifier la 1ère couche</strong>
+          <p>Tournez la molette grise sur <code>Print from SD</code>, cliquez, et sélectionnez le fichier. L'imprimante palpe 9 points, chauffe à 215°C/60°C et commence. Restez 2 minutes pour voir la première couche s'étaler de manière lisse et uniforme !</p>
+        </div>
+      </label>
+    </div>
+
+    <footer class="footer-nav">
+      <a href="../reference/0001-prusa-i3-mk3s-quickref.html" class="action-link">← Fiche Mémo Raccourcis</a>
+      <span style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--gb-text-secondary);">Besoin d'aide ? Posez-moi vos questions à tout moment !</span>
+    </footer>
+  </div>
+
+  <script>
+    const checkboxes = document.querySelectorAll('.check-item input[type="checkbox"]');
+    const fill = document.getElementById('progress-fill');
+    const text = document.getElementById('progress-text');
+    const total = checkboxes.length;
+
+    function updateProgress() {
+      const checked = document.querySelectorAll('.check-item input[type="checkbox"]:checked').length;
+      const pct = Math.round((checked / total) * 100);
+      fill.style.width = pct + '%';
+      text.textContent = checked + ' / ' + total + ' étapes (' + pct + '%)';
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateProgress));
+  </script>
+</body>
+</html>

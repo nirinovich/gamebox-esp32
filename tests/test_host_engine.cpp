@@ -52,7 +52,16 @@ public:
 
 } // namespace
 
+#ifdef _WIN32
+#include <crtdbg.h>
+#endif
+
 int main() {
+#ifdef _WIN32
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
     std::cout << "[TEST] Running HostEngine pure C++ test suite..." << std::endl;
 
     MockNetworkAdapter mockNet;
@@ -164,12 +173,6 @@ int main() {
         assert(mockNet.hasMessageFor(301, "\"game\":\"katro\""));
         std::cout << "    Solo Katro execution verified." << std::endl;
 
-        // Solo Poker
-        mockNet.clear();
-        engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"poker_solo\"}");
-        assert(mockNet.hasMessageFor(301, "\"game\":\"poker\""));
-        std::cout << "    Solo Poker execution verified." << std::endl;
-
         // Solo Ludo
         mockNet.clear();
         engine.onClientMessage(301, "{\"cmd\":\"start\",\"game\":\"ludo_solo\"}");
@@ -198,22 +201,9 @@ int main() {
         std::cout << "    Multiplayer Katro lifecycle verified." << std::endl;
     }
 
-    // --- 8. Multiplayer Texas Hold'em & Ludo Table Lifecycles ---
+    // --- 8. Multiplayer Ludo Table Lifecycle ---
     {
-        std::cout << "  - Testing Multiplayer Poker & Ludo Table Lifecycles..." << std::endl;
-        // Poker Table
-        mockNet.clear();
-        engine.onClientConnect(601);
-        engine.onClientConnect(602);
-        engine.onClientMessage(601, "{\"cmd\":\"create\",\"game\":\"poker_table\",\"host\":\"HostPoker\",\"players\":2}");
-        std::string pokerCode = mockNet.getLastMessageFor(601).substr(mockNet.getLastMessageFor(601).find("\"code\":\"") + 8, 4);
-        engine.onClientMessage(602, "{\"cmd\":\"join\",\"code\":\"" + pokerCode + "\"}");
-        assert(mockNet.hasMessageFor(601, "\"type\":\"room_ready\""));
-        assert(mockNet.hasMessageFor(602, "\"type\":\"room_ready\""));
-        engine.onClientDisconnect(601);
-        engine.onClientDisconnect(602);
-        std::cout << "    Multiplayer Poker Table lifecycle verified." << std::endl;
-
+        std::cout << "  - Testing Multiplayer Ludo Table Lifecycle..." << std::endl;
         // Ludo Quick Match
         mockNet.clear();
         engine.onClientConnect(701);

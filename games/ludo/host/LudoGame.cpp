@@ -52,12 +52,158 @@ REGISTER_GAME("ludo_classic", LudoClassic, &createLudoClassic, {
 namespace gamehub {
 namespace core {
 
-bool LudoGame::isSafeSquare(int trackCell) {
-    static constexpr int SAFE_SQUARES[8] = {0, 8, 13, 21, 26, 34, 39, 47};
-    for (int s : SAFE_SQUARES) {
-        if (s == trackCell) return true;
+// ============================================================================
+// Command Pattern Implementations (Double Dispatch)
+// ============================================================================
+
+bool RollDiceCommand::execute(Game& game, PlayerId playerId) const {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (!ludo) return false;
+    return ludo->processCommand(playerId, *this);
+}
+
+bool MovePawnCommand::execute(Game& game, PlayerId playerId) const {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (!ludo) return false;
+    return ludo->processCommand(playerId, *this);
+}
+
+// ============================================================================
+// State Pattern Implementations
+// ============================================================================
+
+void LudoWaitingRollState::onEnter(Game& game) {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (ludo) {
+        ludo->resetTurnTimer();
+        ludo->resetBotTimer();
+    }
+}
+
+bool LudoWaitingRollState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (!ludo || ludo->isFinished()) return false;
+    if (static_cast<int>(playerId) != ludo->getCurrentTurn()) return false;
+
+    if (command.getType() == "roll") {
+        const auto* rollCmd = dynamic_cast<const RollDiceCommand*>(&command);
+        int forced = rollCmd ? rollCmd->getForcedValue() : 0;
+        return ludo->executeRollDice(forced);
     }
     return false;
+}
+
+void LudoWaitingRollState::update(Game& game, float dt) {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (!ludo || ludo->isFinished()) return;
+
+    ludo->tickTurnTimer(dt);
+    if (ludo->getTurnTimer() <= 0.0f) {
+        ludo->executeRollDice(0);
+        return;
+    }
+
+    int curSeat = ludo->getCurrentTurn() - 1;
+    auto* player = ludo->getPlayerEntity(curSeat);
+    if (player && player->isAutonomous()) {
+        ludo->tickBotTimer(dt);
+        if (ludo->getBotTimer() <= 0.0f) {
+            auto cmd = player->getController()->decideAction(*ludo, static_cast<PlayerId>(curSeat + 1));
+            if (cmd) {
+                cmd->execute(*ludo, static_cast<PlayerId>(curSeat + 1));
+            }
+        }
+    }
+}
+
+void LudoSelectPawnState::onEnter(Game& game) {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (ludo) {
+        ludo->resetTurnTimer();
+        ludo->resetBotTimer();
+    }
+}
+
+bool LudoSelectPawnState::handleCommand(Game& game, PlayerId playerId, const ICommand& command) {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (!ludo || ludo->isFinished()) return false;
+    if (static_cast<int>(playerId) != ludo->getCurrentTurn()) return false;
+
+    if (command.getType() == "move") {
+        const auto* moveCmd = dynamic_cast<const MovePawnCommand*>(&command);
+        if (!moveCmd) return false;
+        return ludo->executeMovePawn(moveCmd->getPawnIndex());
+    }
+    return false;
+}
+
+void LudoSelectPawnState::update(Game& game, float dt) {
+    auto* ludo = dynamic_cast<LudoGame*>(&game);
+    if (!ludo || ludo->isFinished()) return;
+
+    ludo->tickTurnTimer(dt);
+    if (ludo->getTurnTimer() <= 0.0f) {
+        int curSeat = ludo->getCurrentTurn() - 1;
+        int bestPawn = ludo->pickBestBotPawn(curSeat, ludo->getCurrentDice());
+        if (bestPawn != -1) {
+            ludo->executeMovePawn(bestPawn);
+        } else {
+            ludo->setConsecutiveSixes(0);
+            ludo->nextTurn();
+        }
+        return;
+    }
+
+    int curSeat = ludo->getCurrentTurn() - 1;
+    auto* player = ludo->getPlayerEntity(curSeat);
+    if (player && player->isAutonomous()) {
+        ludo->tickBotTimer(dt);
+        if (ludo->getBotTimer() <= 0.0f) {
+            auto cmd = player->getController()->decideAction(*ludo, static_cast<PlayerId>(curSeat + 1));
+            if (cmd) {
+                cmd->execute(*ludo, static_cast<PlayerId>(curSeat + 1));
+            } else {
+                ludo->setConsecutiveSixes(0);
+                ludo->nextTurn();
+            }
+        }
+    }
+}
+
+void LudoGameOverState::onEnter(Game& /*game*/) {}
+
+// ============================================================================
+// Strategy Pattern Implementations (Autonomous Bot Heuristic)
+// ============================================================================
+
+std::unique_ptr<ICommand> LudoBotController::decideAction(const Game& game, PlayerId id) {
+    const auto* ludo = dynamic_cast<const LudoGame*>(&game);
+    if (!ludo || ludo->isFinished()) return nullptr;
+
+    if (static_cast<int>(id) != ludo->getCurrentTurn()) {
+        return nullptr;
+    }
+
+    if (!ludo->isDiceRolled()) {
+        return std::make_unique<RollDiceCommand>();
+    }
+
+    int curSeat = static_cast<int>(id) - 1;
+    int dice = ludo->getCurrentDice();
+    int bestPawn = ludo->pickBestBotPawn(curSeat, dice);
+    if (bestPawn != -1) {
+        return std::make_unique<MovePawnCommand>(bestPawn);
+    }
+
+    return nullptr;
+}
+
+// ============================================================================
+// LudoGame Implementation
+// ============================================================================
+
+bool LudoGame::isSafeSquare(int trackCell) {
+    return LudoBoard::isSafeSquare(trackCell);
 }
 
 LudoGame::LudoGame(bool isSolo, int numPlayers, bool isQuick)
@@ -81,12 +227,24 @@ void LudoGame::setQuickMode(bool q) {
     init();
 }
 
+void LudoGame::transitionTo(std::unique_ptr<IGamePhaseState> nextState) {
+    if (!nextState) return;
+    m_state = std::move(nextState);
+    m_state->onEnter(*this);
+}
+
+bool LudoGame::processCommand(PlayerId player, const ICommand& cmd) {
+    if (m_state) {
+        return m_state->handleCommand(*this, player, cmd);
+    }
+    return false;
+}
+
 void LudoGame::init() {
     m_finished = false;
     m_winner = 0;
     m_currentTurn = 1;
-    m_currentDice = 0;
-    m_diceRolled = false;
+    m_dice.reset();
     m_consecutiveSixes = 0;
     m_turnTimer = 20.0f;
     m_botTimer = m_botDelay;
@@ -95,19 +253,31 @@ void LudoGame::init() {
     static const char* colors[4] = {"red", "green", "yellow", "blue"};
     static const int startTiles[4] = {0, 13, 26, 39};
 
+    m_playerEntities.clear();
     for (int i = 0; i < 4; ++i) {
         m_players[i].id = i + 1;
         m_players[i].color = colors[i];
         m_players[i].startTile = startTiles[i];
         m_players[i].finishedCount = 0;
 
+        std::unique_ptr<PlayerController> controller;
         if (m_isSolo) {
             m_players[i].isBot = (i > 0);
             m_players[i].name = (i == 0) ? "Player 1" : ("Bot " + std::to_string(i));
+            if (i == 0) {
+                controller = std::make_unique<HumanController>();
+            } else {
+                controller = std::make_unique<LudoBotController>();
+            }
         } else {
             m_players[i].isBot = false;
             m_players[i].name = "Player " + std::to_string(i + 1);
+            controller = std::make_unique<HumanController>();
         }
+
+        m_playerEntities.push_back(
+            std::make_unique<Player>(static_cast<PlayerId>(i + 1), m_players[i].name, std::move(controller))
+        );
 
         for (int p = 0; p < 4; ++p) {
             m_players[i].pawns[p].id = p;
@@ -115,6 +285,8 @@ void LudoGame::init() {
             m_players[i].pawns[p].state = PawnState::IN_YARD;
         }
     }
+
+    transitionTo(std::make_unique<LudoWaitingRollState>());
 }
 
 void LudoGame::setPawnStepForTesting(int playerIdx, int pawnIdx, int step) {
@@ -133,16 +305,22 @@ void LudoGame::setPawnStepForTesting(int playerIdx, int pawnIdx, int step) {
     }
 }
 
+void LudoGame::setDiceForTesting(int dice) {
+    m_dice.force(dice);
+    transitionTo(std::make_unique<LudoSelectPawnState>());
+}
+
+void LudoGame::setCurrentTurnForTesting(int seatId) {
+    m_currentTurn = seatId;
+    m_turnTimer = 20.0f;
+    m_botTimer = m_botDelay;
+}
+
 bool LudoGame::canPawnMove(int playerIdx, int pawnIdx, int dice) const {
     if (playerIdx < 0 || playerIdx >= m_numPlayers) return false;
     if (pawnIdx < 0 || pawnIdx >= m_pawnCount) return false;
     const auto& p = m_players[playerIdx].pawns[pawnIdx];
-    if (p.state == PawnState::FINISHED) return false;
-
-    if (p.state == PawnState::IN_YARD) {
-        return dice == 6;
-    }
-    return (p.step + dice) <= 56;
+    return p.canMove(dice);
 }
 
 int LudoGame::getLegalMovesCount(int playerIdx, int dice) const {
@@ -154,23 +332,20 @@ int LudoGame::getLegalMovesCount(int playerIdx, int dice) const {
 }
 
 void LudoGame::rollDiceForTesting(int forcedRoll) {
-    m_diceRolled = false;
-    rollDice(forcedRoll);
+    m_dice.reset();
+    executeRollDice(forcedRoll);
 }
 
-void LudoGame::rollDice(int forcedRoll) {
-    if (m_diceRolled || m_finished) return;
+bool LudoGame::executeRollDice(int forcedRoll) {
+    if (m_dice.isRolled() || m_finished) return false;
 
     int roll = forcedRoll;
-    if (roll < 1 || roll > 6) {
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::uniform_int_distribution<int> dist(1, 6);
-        roll = dist(g);
+    if (roll >= 1 && roll <= 6) {
+        m_dice.force(roll);
+    } else {
+        roll = m_dice.roll();
     }
 
-    m_currentDice = roll;
-    m_diceRolled = true;
     m_turnTimer = 20.0f;
     m_botTimer = m_botDelay;
 
@@ -182,9 +357,9 @@ void LudoGame::rollDice(int forcedRoll) {
         if (m_consecutiveSixes == 3) {
             m_lastAction = m_players[curSeat].name + " rolled three 6s in a row (Turn forfeited)";
             m_consecutiveSixes = 0;
-            m_diceRolled = false;
+            m_dice.reset();
             nextTurn();
-            return;
+            return true;
         }
     }
 
@@ -192,64 +367,66 @@ void LudoGame::rollDice(int forcedRoll) {
     if (legal == 0) {
         if (roll == 6) {
             // Still entitled to bonus roll even if couldn't move
-            m_diceRolled = false;
+            m_dice.reset();
             m_turnTimer = 20.0f;
             m_botTimer = m_botDelay;
+            // Remains in LudoWaitingRollState
         } else {
             m_consecutiveSixes = 0;
-            m_diceRolled = false;
+            m_dice.reset();
             nextTurn();
         }
+    } else {
+        transitionTo(std::make_unique<LudoSelectPawnState>());
     }
+
+    return true;
 }
 
-bool LudoGame::executeMove(int playerIdx, int pawnIdx) {
-    if (playerIdx < 0 || playerIdx >= m_numPlayers) return false;
+bool LudoGame::executeMovePawn(int pawnIdx) {
+    int curSeat = m_currentTurn - 1;
+    if (curSeat < 0 || curSeat >= m_numPlayers) return false;
     if (pawnIdx < 0 || pawnIdx >= m_pawnCount) return false;
-    if (!m_diceRolled) return false;
-    if (!canPawnMove(playerIdx, pawnIdx, m_currentDice)) return false;
+    if (!m_dice.isRolled()) return false;
+    if (!canPawnMove(curSeat, pawnIdx, m_dice.getValue())) return false;
 
-    auto& p = m_players[playerIdx].pawns[pawnIdx];
+    auto& p = m_players[curSeat].pawns[pawnIdx];
     bool bonusRoll = false;
 
     if (p.state == PawnState::IN_YARD) {
-        p.step = 0;
-        p.state = PawnState::ON_TRACK;
-        m_lastAction = m_players[playerIdx].name + " moved pawn #" + std::to_string(pawnIdx + 1) + " out of Yard";
+        p.rollout();
+        m_lastAction = m_players[curSeat].name + " moved pawn #" + std::to_string(pawnIdx + 1) + " out of Yard";
     } else {
-        p.step += m_currentDice;
-        if (p.step == 56) {
-            p.state = PawnState::FINISHED;
-            m_players[playerIdx].finishedCount++;
-            m_lastAction = m_players[playerIdx].name + " moved pawn #" + std::to_string(pawnIdx + 1) + " HOME!";
+        p.advance(m_dice.getValue());
+        if (p.state == PawnState::FINISHED) {
+            m_players[curSeat].finishedCount++;
+            m_lastAction = m_players[curSeat].name + " moved pawn #" + std::to_string(pawnIdx + 1) + " HOME!";
             bonusRoll = true;
 
-            if (m_players[playerIdx].finishedCount == m_pawnCount) {
+            if (m_players[curSeat].finishedCount == m_pawnCount) {
                 m_finished = true;
-                m_winner = m_players[playerIdx].id;
-                m_lastAction = m_players[playerIdx].name + " won the match!";
+                m_winner = m_players[curSeat].id;
+                m_lastAction = m_players[curSeat].name + " won the match!";
+                transitionTo(std::make_unique<LudoGameOverState>());
                 return true;
             }
-        } else if (p.step >= 51) {
-            p.state = PawnState::IN_HOME;
-            m_lastAction = m_players[playerIdx].name + " advanced pawn #" + std::to_string(pawnIdx + 1) + " into Home Stretch";
+        } else if (p.state == PawnState::IN_HOME) {
+            m_lastAction = m_players[curSeat].name + " advanced pawn #" + std::to_string(pawnIdx + 1) + " into Home Stretch";
         } else {
-            p.state = PawnState::ON_TRACK;
-            int trackCell = (m_players[playerIdx].startTile + p.step) % 52;
+            int trackCell = p.getTrackCell(m_players[curSeat].startTile);
             bool isSafe = isSafeSquare(trackCell);
 
             if (!isSafe) {
                 bool captured = false;
                 for (int opp = 0; opp < m_numPlayers; ++opp) {
-                    if (opp == playerIdx) continue;
+                    if (opp == curSeat) continue;
                     for (int opPawn = 0; opPawn < m_pawnCount; ++opPawn) {
                         auto& op = m_players[opp].pawns[opPawn];
                         if (op.state == PawnState::ON_TRACK &&
                             op.getTrackCell(m_players[opp].startTile) == trackCell) {
-                            op.state = PawnState::IN_YARD;
-                            op.step = -1;
+                            op.returnToYard();
                             captured = true;
-                            m_lastAction = m_players[playerIdx].name + " captured " + m_players[opp].name + "'s pawn!";
+                            m_lastAction = m_players[curSeat].name + " captured " + m_players[opp].name + "'s pawn!";
                         }
                     }
                 }
@@ -260,13 +437,14 @@ bool LudoGame::executeMove(int playerIdx, int pawnIdx) {
         }
     }
 
-    if (m_currentDice == 6 || bonusRoll) {
-        m_diceRolled = false;
+    if (m_dice.getValue() == 6 || bonusRoll) {
+        m_dice.reset();
         m_turnTimer = 20.0f;
         m_botTimer = m_botDelay;
+        transitionTo(std::make_unique<LudoWaitingRollState>());
     } else {
         m_consecutiveSixes = 0;
-        m_diceRolled = false;
+        m_dice.reset();
         nextTurn();
     }
 
@@ -276,11 +454,11 @@ bool LudoGame::executeMove(int playerIdx, int pawnIdx) {
 void LudoGame::nextTurn() {
     int curSeat = m_currentTurn - 1;
     m_currentTurn = ((curSeat + 1) % m_numPlayers) + 1;
-    m_currentDice = 0;
-    m_diceRolled = false;
+    m_dice.reset();
     m_consecutiveSixes = 0;
     m_turnTimer = 20.0f;
     m_botTimer = m_botDelay;
+    transitionTo(std::make_unique<LudoWaitingRollState>());
 }
 
 int LudoGame::pickBestBotPawn(int playerIdx, int dice) const {
@@ -334,71 +512,16 @@ int LudoGame::pickBestBotPawn(int playerIdx, int dice) const {
 
 void LudoGame::update(float dt) {
     if (m_finished) return;
-
-    m_turnTimer -= dt;
-    if (m_turnTimer <= 0.0f) {
-        int curSeat = m_currentTurn - 1;
-        if (!m_diceRolled) {
-            rollDice();
-        } else {
-            int bestPawn = pickBestBotPawn(curSeat, m_currentDice);
-            if (bestPawn != -1) {
-                executeMove(curSeat, bestPawn);
-            } else {
-                m_consecutiveSixes = 0;
-                m_diceRolled = false;
-                nextTurn();
-            }
-        }
-        return;
-    }
-
-    int curSeat = m_currentTurn - 1;
-    if (m_players[curSeat].isBot) {
-        m_botTimer -= dt;
-        if (m_botTimer <= 0.0f) {
-            if (!m_diceRolled) {
-                rollDice();
-            } else {
-                int bestPawn = pickBestBotPawn(curSeat, m_currentDice);
-                if (bestPawn != -1) {
-                    executeMove(curSeat, bestPawn);
-                } else {
-                    m_consecutiveSixes = 0;
-                    m_diceRolled = false;
-                    nextTurn();
-                }
-            }
-        }
+    if (m_state) {
+        m_state->update(*this, dt);
     }
 }
 
 void LudoGame::handleInput(PlayerId player, const std::string& input) {
     if (m_finished) return;
-    int seatIdx = static_cast<int>(player) - 1;
-    if (seatIdx < 0 || seatIdx >= m_numPlayers) return;
-    if (m_currentTurn != static_cast<int>(player)) return;
-
-    if (input.find("\"cmd\":\"roll\"") != std::string::npos ||
-        input.find("\"action\":\"roll\"") != std::string::npos) {
-        if (!m_diceRolled) {
-            rollDice();
-        }
-        return;
-    }
-
-    if (input.find("\"cmd\":\"move\"") != std::string::npos ||
-        input.find("\"action\":\"move\"") != std::string::npos) {
-        int pawnIdx = 0;
-        auto pos = input.find("\"pawn\":");
-        if (pos != std::string::npos) {
-            try {
-                pawnIdx = std::stoi(input.substr(pos + 7));
-            } catch (...) {
-                pawnIdx = 0;
-            }
-        }
-        executeMove(seatIdx, pawnIdx);
+    auto cmd = m_commandFactory.createCommand(input);
+    if (cmd) {
+        cmd->execute(*this, player);
     }
 }
 
@@ -414,8 +537,8 @@ std::string LudoGame::serializeStateForPlayer(PlayerId /*id*/) const {
     oss << "\"is_quick\":" << (m_isQuick ? "true" : "false") << ",";
     oss << "\"pawn_count\":" << m_pawnCount << ",";
     oss << "\"current_turn\":" << m_currentTurn << ",";
-    oss << "\"dice\":" << m_currentDice << ",";
-    oss << "\"dice_rolled\":" << (m_diceRolled ? "true" : "false") << ",";
+    oss << "\"dice\":" << m_dice.getValue() << ",";
+    oss << "\"dice_rolled\":" << (m_dice.isRolled() ? "true" : "false") << ",";
     oss << "\"consecutive_sixes\":" << m_consecutiveSixes << ",";
     oss << "\"turn_time_left\":" << std::max(0.0f, m_turnTimer) << ",";
     oss << "\"finished\":" << (m_finished ? "true" : "false") << ",";
@@ -427,10 +550,13 @@ std::string LudoGame::serializeStateForPlayer(PlayerId /*id*/) const {
     for (int i = 0; i < m_numPlayers; ++i) {
         if (i > 0) oss << ",";
         const auto& pl = m_players[i];
+        bool isBot = (i < static_cast<int>(m_playerEntities.size()))
+            ? m_playerEntities[i]->isAutonomous()
+            : pl.isBot;
         oss << "{\"id\":" << pl.id
             << ",\"color\":\"" << pl.color << "\""
             << ",\"name\":\"" << pl.name << "\""
-            << ",\"is_bot\":" << (pl.isBot ? "true" : "false")
+            << ",\"is_bot\":" << (isBot ? "true" : "false")
             << ",\"start_tile\":" << pl.startTile
             << ",\"finished_count\":" << pl.finishedCount
             << ",\"pawns\":[";
@@ -450,11 +576,11 @@ std::string LudoGame::serializeStateForPlayer(PlayerId /*id*/) const {
 
     // Legal moves for currently active player
     oss << "\"legal_moves\":[";
-    if (m_diceRolled && !m_finished) {
+    if (m_dice.isRolled() && !m_finished) {
         int curSeat = m_currentTurn - 1;
         bool first = true;
         for (int p = 0; p < m_pawnCount; ++p) {
-            if (canPawnMove(curSeat, p, m_currentDice)) {
+            if (canPawnMove(curSeat, p, m_dice.getValue())) {
                 if (!first) oss << ",";
                 oss << p;
                 first = false;

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guide d'Impression 3D - Boîtier ESP32-S3 sur Prusa i3 MK3S</title>
+  <style>
+    :root {
+      --gb-black: #14151b;
+      --gb-bg-canvas: #14151b;
+      --gb-surface-1: #1c1d25;
+      --gb-surface-2: #252733;
+      --gb-surface-3: #2f3140;
+      --gb-red: #ef3938;
+      --gb-red-hover: #f15251;
+      --gb-red-dim: rgba(239, 57, 56, 0.16);
+      --gb-white: #ffffff;
+      --gb-text-primary: #ffffff;
+      --gb-text-secondary: #9e9fa8;
+      --gb-text-tertiary: #656775;
+      --gb-border-subtle: rgba(255, 255, 255, 0.08);
+      --gb-border-crisp: rgba(255, 255, 255, 0.16);
+      --gb-border-highlight: rgba(255, 255, 255, 0.32);
+      --gb-success: #2ecc71;
+      --gb-success-dim: rgba(46, 204, 113, 0.16);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    ::selection { background: var(--gb-red); color: #fff; }
+
+    body {
+      background-color: var(--gb-bg-canvas);
+      color: var(--gb-text-primary);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.65;
+      padding: 2.5rem 1rem;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 860px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    header {
+      border-bottom: 1px solid var(--gb-border-crisp);
+      padding-bottom: 1.5rem;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      background: var(--gb-surface-2);
+      color: var(--gb-text-secondary);
+      border: 1px solid var(--gb-border-subtle);
+    }
+
+    .badge-red {
+      background: var(--gb-red-dim);
+      color: var(--gb-red);
+      border-color: rgba(239, 57, 56, 0.35);
+    }
+
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 900;
+      color: var(--gb-white);
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--gb-white);
+      margin-top: 1.75rem;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    p, ul, ol {
+      color: var(--gb-text-secondary);
+      font-size: 0.98rem;
+      margin-bottom: 1rem;
+    }
+
+    strong { color: var(--gb-white); }
+    ul, ol { padding-left: 1.5rem; }
+    li { margin-bottom: 0.5rem; }
+
+    .card {
+      background: var(--gb-surface-1);
+      border: 1px solid var(--gb-border-crisp);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+
+    .card-callout {
+      background: var(--gb-surface-2);
+      border: 1px solid var(--gb-border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .alert-red {
+      border-color: rgba(239, 57, 56, 0.4);
+      background: rgba(239, 57, 56, 0.08);
+    }
+
+    .alert-success {
+      border-color: rgba(46, 204, 113, 0.4);
+      background: rgba(46, 204, 113, 0.08);
+    }
+
+    kbd {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 0.15rem 0.45rem;
+      background: var(--gb-surface-3);
+      color: #fff;
+      border: 1px solid var(--gb-border-highlight);
+      border-radius: var(--radius-sm);
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      background: var(--gb-surface-2);
+      color: #ff7b72;
+      padding: 0.15rem 0.4rem;
+      border-radius: var(--radius-sm);
+    }
+
+    table.spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    table.spec-table th, table.spec-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--gb-border-subtle);
+    }
+
+    table.spec-table th {
+      background: var(--gb-surface-2);
+      color: var(--gb-white);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+
+    table.spec-table td {
+      color: var(--gb-text-secondary);
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .pipeline-step {
+      background: var(--gb-surface-2);
+      border: 1px solid var(--gb-border-crisp);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .pipeline-step .step-num {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--gb-red);
+      margin-bottom: 0.25rem;
+    }
+
+    .pipeline-step .step-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--gb-white);
+      margin-bottom: 0.35rem;
+    }
+
+    .pipeline-step .step-desc {
+      font-size: 0.8rem;
+      color: var(--gb-text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Quiz Widget */
+    .quiz-widget {
+      background: var(--gb-surface-1);
+      border: 1px solid var(--gb-border-crisp);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .quiz-question {
+      font-weight: 800;
+      color: var(--gb-white);
+      font-size: 1.05rem;
+      margin-bottom: 1rem;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .quiz-option {
+      background: var(--gb-surface-2);
+      border: 1px solid var(--gb-border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: var(--gb-text-primary);
+      font-size: 0.92rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+    }
+
+    .quiz-option:hover {
+      background: var(--gb-surface-3);
+      border-color: var(--gb-border-highlight);
+    }
+
+    .quiz-option.correct {
+      background: var(--gb-success-dim) !important;
+      border-color: var(--gb-success) !important;
+      color: #a3e635 !important;
+      font-weight: 700;
+    }
+
+    .quiz-option.incorrect {
+      background: var(--gb-red-dim) !important;
+      border-color: var(--gb-red) !important;
+      color: #ff8b8b !important;
+    }
+
+    .quiz-feedback {
+      margin-top: 1rem;
+      padding: 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .quiz-feedback.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-row">
+        <span class="badge badge-red">Guide Pratique</span>
+        <span class="badge">Original Prusa i3 MK3S</span>
+        <span class="badge">Buse 0.4 mm</span>
+        <span class="badge">Boîtier ESP32-S3</span>
+      </div>
+      <h1>Guide pas à pas : Imprimer un boîtier ESP32-S3</h1>
+      <p>De votre fichier 3D jusqu'à la pièce physique terminée sur votre imprimante Prusa i3 MK3S.</p>
+    </header>
+
+    <section>
+      <h2>Étape 1 : Le Fichier 3D (.STL vs .SRT)</h2>
+      <div class="card-callout alert-success">
+        <p><strong>Votre fichier est prêt :</strong> En impression 3D, le fichier n'est pas un <code>.SRT</code> (sous-titres vidéo) mais un <strong><code>.STL</code></strong> (fichier de géométrie 3D).</p>
+        <p>Il se trouve déjà dans vos téléchargements :<br>
+        <code>C:\Users\Nikita\Downloads\ESP32-S3.stl</code> (337 Ko)</p>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">ÉTAPE 1</div>
+          <div class="step-title">Fichier .STL</div>
+          <div class="step-desc">Modèle 3D numérique de votre boîtier.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">ÉTAPE 2</div>
+          <div class="step-title">PrusaSlicer</div>
+          <div class="step-desc">Découpe en tranches horizontales de 0.20 mm.</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">ÉTAPE 3</div>
+          <div class="step-title">Fichier .GCODE</div>
+          <div class="step-desc">Coordonnées moteurs et chauffe (carte SD).</div>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">ÉTAPE 4</div>
+          <div class="step-title">Prusa i3 MK3S</div>
+          <div class="step-desc">Dépôt du plastique fondu à 215°C sur le plateau.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Étape 2 : Les 3 Profils Clés dans PrusaSlicer</h2>
+      <p>Lancez PrusaSlicer. Dans la colonne en haut à droite, sélectionnez ces 3 réglages :</p>
+      <div class="card">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Catégorie</th>
+              <th>Réglage recommandé</th>
+              <th>Rôle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Réglages d'impression</strong></td>
+              <td><code>0.20mm QUALITY</code></td>
+              <td>Précision optimale pour les ports USB-C et vis.</td>
+            </tr>
+            <tr>
+              <td><strong>Filament</strong></td>
+              <td><code>Generic PLA</code> ou <code>Prusament PLA</code></td>
+              <td>Matière rigide, sans odeur, zéro décollement.</td>
+            </tr>
+            <tr>
+              <td><strong>Imprimante</strong></td>
+              <td><code>Original Prusa i3 MK3S & MK3S+ 0.4 nozzle</code></td>
+              <td>Dimensions du plateau et buse de 0.4 mm.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Étape 3 : Importer et Poser à Plat (Touche <kbd>F</kbd>)</h2>
+      <ol>
+        <li>Faites glisser <code>ESP32-S3.stl</code> directement sur la grille 3D de PrusaSlicer (ou <kbd>Ctrl</kbd> + <kbd>I</kbd>).</li>
+        <li><strong>L'astuce magique :</strong> Appuyez sur la touche <kbd>F</kbd> (<em>Déposer sur la face</em>). Cliquez sur la <strong>plus grande face plate extérieure</strong> du boîtier. La pièce va pivoter et se coller d'elle-même à plat sur le plateau.</li>
+        <li>Appuyez sur <kbd>A</kbd> pour centrer le modèle au milieu du plateau.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Étape 4 : Régler la Solidité (Parois & Remplissage)</h2>
+      <div class="card">
+        <p>Un boîtier électronique a besoin de parois solides pour visser et clipser :</p>
+        <ul>
+          <li><strong>Périmètres (Parois) :</strong> Réglez sur <strong>3 périmètres</strong> (dans le panneau de droite). Cela forme une coque pleine de ~1,35 mm d'épaisseur.</li>
+          <li><strong>Remplissage (Infill) :</strong> Réglez sur <strong>15%</strong> avec le motif <strong>Gyroïde</strong> (<em>Gyroid</em>).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Étape 5 : Supports pour le port USB-C</h2>
+      <p>Si des ouvertures (comme le connecteur USB-C) surplombent le vide :</p>
+      <div class="card-callout">
+        <ul>
+          <li>Activez <strong>Supports : Partout</strong> (<em>Everywhere</em>).</li>
+          <li>Dans <em>Réglages d'impression &gt; Matériau de support</em>, choisissez <strong>Style : Organique</strong> (<em>Organic</em>). Ce sont des supports en forme d'arbres qui s'enlèvent d'un geste sans abîmer la finition.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>Étape 6 : Découper ("Slicer") et Exporter</h2>
+      <ol>
+        <li>Cliquez sur le bouton orange <strong>Découper maintenant</strong> (ou <kbd>Ctrl</kbd> + <kbd>G</kbd>).</li>
+        <li>Faites glisser la barre verticale orange à droite pour inspecter le tracé des couches.</li>
+        <li>Insérez votre carte SD (ou micro-SD avec adaptateur) dans l'ordinateur, cliquez sur <strong>Exporter le G-code</strong> et sauvegardez le fichier sur la carte.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Étape 7 : Lancement sur la Prusa i3 MK3S</h2>
+      <div class="card">
+        <ol>
+          <li><strong>Nettoyage du plateau :</strong> Nettoyez la tôle en acier PEI à froid avec un papier essuie-tout imbibé d'<strong>Alcool Isopropylique (IPA à 90%+)</strong>. Ne touchez pas le plateau avec vos doigts.</li>
+          <li><strong>Insérer la carte SD :</strong> Fente située sur le côté gauche de l'écran LCD.</li>
+          <li><strong>Démarrage :</strong> Tournez la molette grise sur <code>Print from SD</code>, cliquez et sélectionnez votre fichier.</li>
+          <li><strong>Vérifier la première couche :</strong> Le filament déposé doit être lisse, régulier et légèrement aplati. Ni boudins ronds qui se décollent (trop haut), ni plastique transparent écrasé (trop bas).</li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>Vérification Interactive</h2>
+      <div class="quiz-widget" id="quiz-fr">
+        <div class="quiz-question">
+          Quelle touche permet d'orienter et de plaquer directement une face plane du boîtier sur le plateau ?
+        </div>
+        <div class="quiz-options">
+          <button class="quiz-option" data-idx="0">La touche clavier F</button>
+          <button class="quiz-option" data-idx="1">La touche clavier R</button>
+          <button class="quiz-option" data-idx="2">La touche clavier S</button>
+          <button class="quiz-option" data-idx="3">La touche clavier C</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const container = document.getElementById('quiz-fr');
+    const options = container.querySelectorAll('.quiz-option');
+    const feedback = container.querySelector('.quiz-feedback');
+    options.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        options.forEach(b => b.classList.remove('correct', 'incorrect'));
+        if (idx === 0) {
+          btn.classList.add('correct');
+          feedback.className = 'quiz-feedback show card-callout alert-success';
+          feedback.innerHTML = '<strong>Bravo !</strong> La touche F active "Déposer sur la face" (Place on Face), l\'outil indispensable pour les boîtiers.';
+        } else {
+          btn.classList.add('incorrect');
+          feedback.className = 'quiz-feedback show card-callout alert-red';
+          feedback.innerHTML = '<strong>Non :</strong> La touche F (Place on Face) est celle qui pose la face sélectionnée à plat.';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leçon 0002 : Guide pas à pas - Imprimer un boîtier ESP32-S3 sur Prusa i3 MK3S</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="course-container">
+    <header class="course-header">
+      <div class="badge-row">
+        <span class="badge badge-red">Leçon 0002</span>
+        <span class="badge">Prusa i3 MK3S</span>
+        <span class="badge">Buse 0.4 mm</span>
+        <span class="badge">Guide Pas à Pas</span>
+      </div>
+      <h1>Guide Pratique : Imprimer votre Boîtier ESP32-S3</h1>
+      <p>Un tutoriel complet pas à pas pour manipuler votre fichier 3D dans PrusaSlicer, le configurer pour votre buse de 0.4 mm et réussir l'impression sur votre Prusa i3 MK3S.</p>
+    </header>
+
+    <!-- Étape 1 : Le Fichier -->
+    <section>
+      <h2>Étape 1 : Localiser votre fichier 3D</h2>
+      <div class="card-callout alert-success">
+        <p><strong>Rappel Fichier :</strong> Vous pensiez avoir un fichier <code>.SRT</code> (qui est en réalité un fichier de sous-titres vidéo). Votre véritable fichier 3D est au format <strong><code>.STL</code></strong> et se trouve déjà sur votre ordinateur :</p>
+        <p><code>C:\Users\Nikita\Downloads\ESP32-S3.stl</code> (337 Ko)</p>
+      </div>
+    </section>
+
+    <!-- Étape 2 : Lancement et profils -->
+    <section>
+      <h2>Étape 2 : Configurer PrusaSlicer (Le trio magique)</h2>
+      <p>Ouvrez PrusaSlicer. En haut à droite de l'écran, vérifiez et sélectionnez impérativement ces 3 profils :</p>
+      <div class="card">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>Menu PrusaSlicer</th>
+              <th>Réglage à choisir</th>
+              <th>Pourquoi ce choix ?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Réglages d'impression</strong><br><em>(Print settings)</em></td>
+              <td><code>0.20mm QUALITY</code></td>
+              <td>Hauteur de couche idéale pour une buse de 0.4 mm. Offre la précision nécessaire pour les ports USB-C tout en restant rapide.</td>
+            </tr>
+            <tr>
+              <td><strong>2. Filament</strong></td>
+              <td><code>Prusament PLA</code> ou <code>Generic PLA</code></td>
+              <td>Le PLA est rigide, sans odeur, ne rétrécit pas et adhère parfaitement au plateau sans déformation (warping).</td>
+            </tr>
+            <tr>
+              <td><strong>3. Imprimante</strong><br><em>(Printer)</em></td>
+              <td><code>Original Prusa i3 MK3S & MK3S+ 0.4 nozzle</code></td>
+              <td>Définit les dimensions exactes du plateau (250 × 210 mm) et les accélérations de votre machine.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Étape 3 : Import et manipulation -->
+    <section>
+      <h2>Étape 3 : Importer et orienter le boîtier</h2>
+      <p>L'orientation est responsable de 90% du succès ou de l'échec d'une pièce mécanique :</p>
+      <ol>
+        <li><strong>Importer la pièce :</strong> Faites simplement un glisser-déposer du fichier <code>ESP32-S3.stl</code> dans la fenêtre 3D de PrusaSlicer (ou utilisez le raccourci <kbd>Ctrl</kbd> + <kbd>I</kbd>).</li>
+        <li><strong>Poser à plat sur le plateau :</strong> Un boîtier électronique est souvent importé sur la tranche ou à l'envers.
+          <br>Appuyez sur la touche <kbd>F</kbd> (outil <em>Déposer sur la face</em> / <em>Place on Face</em>). Des facettes blanches apparaissent sur votre pièce. <strong>Cliquez sur la face extérieure la plus grande et plate du boîtier</strong>. La pièce va instantanément basculer et se coller à plat sur le plateau.
+        </li>
+        <li><strong>Centrer la pièce :</strong> Appuyez sur la touche <kbd>A</kbd> (<em>Arranger</em>) pour placer la pièce bien au centre du plateau chauffant.</li>
+      </ol>
+    </section>
+
+    <!-- Étape 4 : Solidité & Remplissage -->
+    <section>
+      <h2>Étape 4 : Régler la solidité (Parois vs Remplissage)</h2>
+      <div class="card">
+        <p>Pour un boîtier électronique qui doit accueillir des vis ou résister à des clipsages :</p>
+        <ul>
+          <li><strong>Périmètres (Parois) :</strong> Dans le panneau de droite, mettez <strong>3 périmètres</strong> (au lieu de 2). Avec une buse de 0.4 mm, 3 périmètres créent une paroi en plastique massif d'environ <strong>1,35 mm</strong> d'épaisseur. C'est cela qui donne toute la solidité au boîtier !</li>
+          <li><strong>Remplissage (Infill) :</strong> Réglez à <strong>15%</strong> avec le motif <strong>Gyroïde</strong> (<em>Gyroid</em>). Ce motif offre une résistance égale dans toutes les directions et n'émet aucun claquement au passage de la buse.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Étape 5 : Supports Organiques -->
+    <section>
+      <h2>Étape 5 : Gérer les ouvertures (Ports USB & GPIO)</h2>
+      <p>Si votre boîtier comporte des fenêtres pour le port USB-C ou des trous d'aération qui surplombent le vide :</p>
+      <div class="card-callout">
+        <ol>
+          <li>Dans le panneau de droite, activez <strong>Supports : Partout</strong> (<em>Everywhere</em>).</li>
+          <li>Dans l'onglet <strong>Réglages d'impression &gt; Matériau de support</strong>, choisissez <strong>Style : Organique</strong> (<em>Organic</em>).</li>
+          <li><em>Avantage :</em> Les supports organiques ressemblent à des branches d'arbre : ils n'abîment pas la surface du boîtier et se détachent très facilement à la pince sans laisser de traces.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Étape 6 : Découpage et Exportation -->
+    <section>
+      <h2>Étape 6 : Découper ("Slicer") et inspecter</h2>
+      <ol>
+        <li>Cliquez sur le gros bouton orange en bas à droite : <strong>Découper maintenant</strong> (<em>Slice now</em>, ou raccourci <kbd>Ctrl</kbd> + <kbd>G</kbd>).</li>
+        <li>L'écran passe en mode <strong>Aperçu</strong>. À droite de l'écran se trouve une réglette verticale orange.</li>
+        <li><strong>Faites glisser cette réglette de bas en haut :</strong> vous voyez la buse déposer chaque couche de plastique une à une. Vérifiez que la première couche forme un rectangle bien plein et que les trous USB sont propres.</li>
+        <li>Insérez votre carte SD dans l'ordinateur, puis cliquez sur <strong>Exporter le G-code</strong> et enregistrez le fichier sur la carte SD. Éjectez proprement la carte.</li>
+      </ol>
+    </section>
+
+    <!-- Étape 7 : Sur la machine physique -->
+    <section>
+      <h2>Étape 7 : Lancer l'impression sur la Prusa i3 MK3S</h2>
+      <div class="card">
+        <h3>La routine de démarrage en 3 minutes :</h3>
+        <ol>
+          <li><strong>Nettoyer le plateau PEI :</strong> À froid, versez un peu d'<strong>Alcool Isopropylique (IPA à 90% ou plus)</strong> sur un papier essuie-tout et frottez bien la plaque en acier flexible. <em>Ne touchez jamais le plateau avec vos doigts : le gras de la peau détruit l'adhérence.</em></li>
+          <li><strong>Insérer la carte SD :</strong> La fente se trouve sur le côté gauche de l'écran LCD de l'imprimante.</li>
+          <li><strong>Démarrer :</strong> Tournez la molette grise vers <code>Imprimer depuis SD</code> (ou <code>Print from SD</code>), appuyez sur la molette, et sélectionnez votre fichier de boîtier.</li>
+          <li><strong>Surveiller la Première Couche (Live-Z) :</strong> L'imprimante va palper le plateau sur 9 points (sonde P.I.N.D.A.), chauffer la buse à 215°C et le plateau à 60°C.
+            <br>Restez devant la machine pendant les 2 premières minutes :
+            <ul>
+              <li>Si le filament forme des boudins ronds qui se décollent : la buse est <strong>trop haute</strong>.</li>
+              <li>Si la buse racle le plateau ou que le plastique est quasi invisible : la buse est <strong>trop basse</strong>.</li>
+              <li>Si les lignes sont plates, lisses et parfaitement jointes : l'écrasement est <strong>parfait</strong> !</li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Quiz interactif -->
+    <section>
+      <h2>Testez vos Réflexes</h2>
+      <div class="quiz-widget" id="shortcut-quiz">
+        <div class="quiz-question">
+          Sur PrusaSlicer, quelle touche permet de poser instantanément la face plane du boîtier sur le plateau ?
+        </div>
+        <div class="quiz-options">
+          <button class="quiz-option" data-idx="0">La touche clavier F</button>
+          <button class="quiz-option" data-idx="1">La touche clavier R</button>
+          <button class="quiz-option" data-idx="2">La touche clavier S</button>
+          <button class="quiz-option" data-idx="3">La touche clavier C</button>
+        </div>
+        <div class="quiz-feedback"></div>
+      </div>
+    </section>
+
+    <footer class="footer-nav">
+      <a href="../reference/0001-prusa-i3-mk3s-quickref.html" class="action-link">← Fiche Mémo Technique</a>
+      <a href="../lessons/0001-mastering-prusa-i3-mk3s-and-prusaslicer.html" class="action-link">Leçon 0001 (Anglais) →</a>
+    </footer>
+  </div>
+
+  <script src="../assets/quiz.js"></script>
+  <script>
+    setupQuiz('shortcut-quiz', 0, {
+      correct: "Exact ! La touche F active l'outil 'Déposer sur la face' (Place on Face), indispensable pour plaquer le dos plat du boîtier sur le plateau chauffant.",
+      incorrect: [
+        "",
+        "La touche R active l'outil de rotation tridimensionnelle de la pièce.",
+        "La touche S active l'outil de mise à l'échelle (redimensionnement).",
+        "La touche C active l'outil de coupe (séparation d'un objet en deux)."
+      ]
+    });
+  </script>
+</body>
+</html>
